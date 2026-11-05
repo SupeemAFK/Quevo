@@ -1,4 +1,4 @@
-.PHONY: test test-web test-api test-api-integration test-contract test-e2e
+.PHONY: test test-web test-api test-api-integration test-contract test-e2e dev-all
 
 test: test-web test-api test-api-integration test-contract test-e2e
 
@@ -17,3 +17,8 @@ test-contract:
 
 test-e2e:
 	cd tests && bun install --frozen-lockfile && bun run test
+
+dev-all:
+	docker compose up -d db
+	cd apps/api && go run ./cmd/server/main.go
+	cd apps/web && bun run dev
