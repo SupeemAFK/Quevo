@@ -1,10 +1,5 @@
-import { QueryClient } from '@tanstack/react-query'
-import {
-  HeadContent,
-  Link,
-  Scripts,
-  createRootRouteWithContext,
-} from '@tanstack/react-router'
+import type { QueryClient } from '@tanstack/react-query'
+import { createRootRouteWithContext, HeadContent, Link, Scripts } from '@tanstack/react-router'
 
 import appCss from '../styles.css?url'
 
@@ -43,7 +38,9 @@ function NotFound() {
   return (
     <main className="grid min-h-svh place-items-center bg-background p-6">
       <section className="w-full max-w-lg rounded-xl border bg-card p-10 text-card-foreground shadow-sm">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">404</p>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          404
+        </p>
         <h1 className="text-4xl font-semibold tracking-tight">Page not found</h1>
         <p className="mb-7 mt-3 text-muted-foreground">The page you requested does not exist.</p>
         <Link className="text-primary underline-offset-4 hover:underline" to="/">

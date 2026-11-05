@@ -23,6 +23,15 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Lint web
+        run: make lint-web
+
+      - name: Lint Go
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version-file: .golangci-lint-version
+          working-directory: apps/api
+
       - name: Install Playwright browser
         working-directory: tests
         run: |

@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
-import { Button } from '@/components/ui/button'
 import { ApiHealthStatus } from '@/components/api-health-status'
+import { Button } from '@/components/ui/button'
 import { apiHealthOptions } from '@/lib/api'
 
 export const Route = createFileRoute('/')({

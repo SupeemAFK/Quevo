@@ -114,6 +114,16 @@ cd tests && bunx playwright test             # full stack with real PostgreSQL
 
 The API integration test starts and removes its own PostgreSQL container. Playwright starts a separate temporary PostgreSQL container, builds and starts the API, starts the Bun web server, then shuts everything down after the browser tests. GitHub Actions runs the same `make test` command after installing Go, Bun, and Chromium.
 
+## Lint
+
+Run the web and Go lint checks from the repository root:
+
+```sh
+make lint
+```
+
+The web check uses Biome through Bun. The Go check uses golangci-lint `v2.15.0` (pinned in `apps/api/.golangci-lint-version`) with the standard linter set and `gofmt` formatting checks. `make lint` downloads that pinned version into the ignored `.tools/` directory on first use.
+
 ## API and generated types
 
 `GET /api/v1/health` returns `{"status":"healthy"}`. Swagger UI is served at `/swagger/`, and the generated OpenAPI 3.1 JSON is served at `/openapi.json`.

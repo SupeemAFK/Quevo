@@ -5,6 +5,7 @@
 
 # Node and TanStack
 node_modules/
+.tools/
 .output/
 dist/
 .vite/

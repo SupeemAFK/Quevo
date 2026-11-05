@@ -31,3 +31,5 @@ cd ../web && bun run generate:api
 ```
 
 `openapi-typescript` generates `src/client/api/schema.d.ts`. Run `bun run check:api` to verify it matches the Go spec. `src/lib/api.ts` is the server-only API boundary and combines the typed request with TanStack Query. Run web unit and component tests with `bun run test`; Vitest uses the Node version in the repository's `.nvmrc`. shadcn components live in `src/components/ui`; add more with `bun --bun x shadcn add <component>`.
+
+Run `bun run lint` for Biome checks or `bun run lint:fix` to apply Biome's safe fixes and formatting.

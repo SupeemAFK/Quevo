@@ -60,6 +60,10 @@ To run only the Go PostgreSQL integration test:
 cd apps/api && go test -tags=integration ./internal/platform/database
 ```
 
+## Lint
+
+Run `make lint` from the repository root. It runs Biome on the web app and golangci-lint on the API. On first use, it downloads the pinned Go linter into the ignored `.tools/` directory. The version is recorded in `apps/api/.golangci-lint-version`.
+
 ## Add a backend feature
 
 Create a package under `apps/api/internal` for each feature. Begin with the files the feature needs; add service or repository layers when the logic or persistence warrants them. Register the feature's routes in `internal/app/router.go`. Keep database schema changes in explicit migrations, rather than automatically changing the schema when the API starts.

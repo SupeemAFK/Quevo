@@ -24,6 +24,7 @@
 
 ## Local checks
 
+- Lint: `make lint` (Biome for web; golangci-lint for Go, including gofmt checks).
 - API unit and contract: `cd apps/api && go test ./... && go vet ./...`
 - API PostgreSQL integration: `cd apps/api && go test -tags=integration ./internal/platform/database`
 - Web unit and component: `cd apps/web && bun install --frozen-lockfile && bun run test`
