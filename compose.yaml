@@ -14,6 +14,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    networks:
+      - quevo
 
   api:
     build:
@@ -34,6 +36,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - quevo
 
   web:
     build:
@@ -49,7 +53,13 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    networks:
+      - quevo
 
 volumes:
   postgres-data:
   web-node-modules:
+
+networks:
+  quevo:
+    driver: bridge
