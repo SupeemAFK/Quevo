@@ -1,0 +1,26 @@
+# Environment and local secrets
+.env
+.env.*
+!**/.env.example
+
+# Node and TanStack
+node_modules/
+.output/
+dist/
+.vite/
+
+# Go
+*.exe
+*.test
+*.out
+/quevo-api
+
+# Playwright
+playwright-report/
+test-results/
+blob-report/
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/

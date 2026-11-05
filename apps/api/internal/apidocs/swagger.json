@@ -1,0 +1,58 @@
+{
+    "components": {
+        "schemas": {
+            "health.Response": {
+                "properties": {
+                    "status": {
+                        "example": "healthy",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "status"
+                ],
+                "type": "object"
+            }
+        }
+    },
+    "info": {
+        "description": "HTTP API for the Quevo application.",
+        "title": "Quevo API",
+        "version": "1.0.0"
+    },
+    "externalDocs": {
+        "description": "API documentation in Swagger UI.",
+        "url": "/swagger/"
+    },
+    "paths": {
+        "/health": {
+            "get": {
+                "description": "Returns the current health status of the API.",
+                "operationId": "getHealth",
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/health.Response"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    }
+                },
+                "summary": "Check API health",
+                "tags": [
+                    "health"
+                ]
+            }
+        }
+    },
+    "openapi": "3.1.0",
+    "servers": [
+        {
+            "description": "API v1 base path",
+            "url": "/api/v1"
+        }
+    ]
+}

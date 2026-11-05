@@ -1,0 +1,7 @@
+node_modules
+.output
+dist
+.playwright
+playwright-report
+test-results
+.git
