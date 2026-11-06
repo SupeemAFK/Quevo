@@ -15,6 +15,13 @@ type LoginRequest struct {
 	Password   string `json:"password" binding:"required" example:"local-demo-password"`
 }
 
+// Identity is the safe user data returned by authenticated endpoints.
+type Identity struct {
+	ID          string `json:"id" binding:"required" example:"6f8dc23d-01dd-41bc-8a5c-991a77f1c003"`
+	DisplayName string `json:"displayName" binding:"required" example:"Demo Customer"`
+	Role        Role   `json:"role" binding:"required" example:"CUSTOMER"`
+}
+
 type LoginResponse struct {
 	User         Identity  `json:"user" binding:"required"`
 	SessionToken string    `json:"sessionToken" binding:"required" example:"opaque-session-token"`
@@ -80,7 +87,11 @@ func (h Handler) login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, LoginResponse(result))
+	c.JSON(http.StatusOK, LoginResponse{
+		User:         identityResponse(result.User),
+		SessionToken: result.SessionToken,
+		ExpiresAt:    result.ExpiresAt,
+	})
 }
 
 // CurrentUser returns the identity associated with the active API session.
@@ -103,7 +114,7 @@ func (h Handler) me(c *gin.Context) {
 		writeError(c, http.StatusUnauthorized, "unauthorized", "Authentication is required")
 		return
 	}
-	c.JSON(http.StatusOK, MeResponse{User: actor})
+	c.JSON(http.StatusOK, MeResponse{User: identityResponse(actor)})
 }
 
 // Logout revokes the current API session.
@@ -136,106 +147,14 @@ func (h Handler) logout(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-func RequireSession(service *Service) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if service == nil {
-			writeError(c, http.StatusServiceUnavailable, "service_unavailable", "Authentication is temporarily unavailable")
-			c.Abort()
-			return
-		}
-		token, ok := bearerToken(c)
-		if !ok {
-			writeError(c, http.StatusUnauthorized, "unauthorized", "Authentication is required")
-			c.Abort()
-			return
-		}
-		actor, err := service.Authenticate(c.Request.Context(), token)
-		if errors.Is(err, ErrUnauthenticated) {
-			writeError(c, http.StatusUnauthorized, "unauthorized", "Authentication is required")
-			c.Abort()
-			return
-		}
-		if err != nil {
-			writeError(c, http.StatusInternalServerError, "internal_error", "The request could not be completed")
-			c.Abort()
-			return
-		}
-		c.Set(actorContextKey, actor)
-		c.Next()
-	}
-}
-
-func RequireRoles(roles ...Role) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		actor, ok := ActorFromContext(c)
-		if !ok {
-			writeError(c, http.StatusUnauthorized, "unauthorized", "Authentication is required")
-			c.Abort()
-			return
-		}
-		for _, role := range roles {
-			if actor.Role == role {
-				c.Next()
-				return
-			}
-		}
-		writeError(c, http.StatusForbidden, "forbidden", "You do not have permission to perform this action")
-		c.Abort()
-	}
-}
-
-func RequireOperatorService(service *Service, serviceIDParam string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if service == nil {
-			writeError(c, http.StatusServiceUnavailable, "service_unavailable", "Authentication is temporarily unavailable")
-			c.Abort()
-			return
-		}
-		actor, ok := ActorFromContext(c)
-		if !ok {
-			writeError(c, http.StatusUnauthorized, "unauthorized", "Authentication is required")
-			c.Abort()
-			return
-		}
-		err := service.AuthorizeOperatorService(c.Request.Context(), actor, c.Param(serviceIDParam))
-		if errors.Is(err, ErrForbidden) {
-			writeError(c, http.StatusForbidden, "forbidden", "You do not have permission to access this queue")
-			c.Abort()
-			return
-		}
-		if err != nil {
-			writeError(c, http.StatusInternalServerError, "internal_error", "The request could not be completed")
-			c.Abort()
-			return
-		}
-		c.Next()
-	}
-}
-
-const actorContextKey = "quevo.auth.actor"
-
-func ActorFromContext(c *gin.Context) (Actor, bool) {
-	actor, ok := c.Get(actorContextKey)
-	if !ok {
-		return Actor{}, false
-	}
-	identity, ok := actor.(Identity)
-	return identity, ok
-}
-
-func bearerToken(c *gin.Context) (string, bool) {
-	header := c.GetHeader("Authorization")
-	if len(header) < len("Bearer ") || !strings.EqualFold(header[:len("Bearer ")], "Bearer ") {
-		return "", false
-	}
-	token := strings.TrimSpace(header[len("Bearer "):])
-	return token, token != ""
-}
-
 func writeError(c *gin.Context, status int, code, message string) {
 	requestID := strings.TrimSpace(c.GetHeader("X-Request-ID"))
 	if requestID == "" {
 		requestID = uuid.NewString()
 	}
 	c.JSON(status, ErrorResponse{Code: code, Message: message, RequestID: requestID})
+}
+
+func identityResponse(actor Actor) Identity {
+	return Identity{ID: actor.ID, DisplayName: actor.DisplayName, Role: actor.Role}
 }

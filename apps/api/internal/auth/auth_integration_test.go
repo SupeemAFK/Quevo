@@ -106,8 +106,8 @@ func TestAuthFlowWithPostgres(t *testing.T) {
 		t.Fatalf("seed operator service access: %v", err)
 	}
 
-	router := app.NewRouter(zap.NewNop(), db, time.Hour)
 	authService := auth.NewService(auth.NewGORMRepository(db), time.Hour)
+	router := app.NewRouter(zap.NewNop(), authService)
 	router.Group("/api/v1").GET("/operator/services/:serviceID", auth.RequireSession(authService), auth.RequireOperatorService(authService, "serviceID"), func(c *gin.Context) {
 		c.Status(http.StatusNoContent)
 	})

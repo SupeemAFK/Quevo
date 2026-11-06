@@ -6,14 +6,13 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"example.com/quevo/apps/api/internal/app"
 	"go.uber.org/zap"
 )
 
 func TestHealthRoute(t *testing.T) {
-	router := app.NewRouter(zap.NewNop(), nil, 12*time.Hour)
+	router := app.NewRouter(zap.NewNop(), nil)
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/health", nil)
 
@@ -38,7 +37,7 @@ func TestHealthRoute(t *testing.T) {
 }
 
 func TestUnknownRouteReturnsNotFound(t *testing.T) {
-	router := app.NewRouter(zap.NewNop(), nil, 12*time.Hour)
+	router := app.NewRouter(zap.NewNop(), nil)
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/unknown", nil)
 

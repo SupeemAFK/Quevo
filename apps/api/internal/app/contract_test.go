@@ -50,7 +50,7 @@ func TestHealthProviderMatchesOpenAPI(t *testing.T) {
 
 	response := httptest.NewRecorder()
 	providerRequest := httptest.NewRequest(http.MethodGet, "/api/v1/health", nil)
-	app.NewRouter(zap.NewNop(), nil, 12*time.Hour).ServeHTTP(response, providerRequest)
+	app.NewRouter(zap.NewNop(), nil).ServeHTTP(response, providerRequest)
 
 	responseInput := &openapi3filter.ResponseValidationInput{
 		RequestValidationInput: requestInput,

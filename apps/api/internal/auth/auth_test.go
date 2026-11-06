@@ -85,14 +85,14 @@ func TestAuthenticateRejectsExpiredAndRevokedSessions(t *testing.T) {
 }
 
 func TestRequireCustomerOwnership(t *testing.T) {
-	customer := Identity{ID: "customer-1", Role: RoleCustomer}
+	customer := Actor{ID: "customer-1", Role: RoleCustomer}
 	if err := RequireCustomerOwnership(customer, "customer-1"); err != nil {
 		t.Fatalf("owner check error = %v, want nil", err)
 	}
 	if err := RequireCustomerOwnership(customer, "customer-2"); !errors.Is(err, ErrNotOwner) {
 		t.Fatalf("other customer's resource error = %v, want ErrNotOwner", err)
 	}
-	operator := Identity{ID: "operator-1", Role: RoleOperator}
+	operator := Actor{ID: "operator-1", Role: RoleOperator}
 	if err := RequireCustomerOwnership(operator, "operator-1"); !errors.Is(err, ErrNotOwner) {
 		t.Fatalf("operator resource error = %v, want ErrNotOwner", err)
 	}

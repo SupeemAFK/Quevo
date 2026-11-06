@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"example.com/quevo/apps/api/internal/auth"
 	"example.com/quevo/apps/api/internal/platform/config"
 	"example.com/quevo/apps/api/internal/platform/database"
 	"go.uber.org/zap"
@@ -30,9 +31,14 @@ func New(cfg config.Config, logger *zap.Logger) (*App, error) {
 		}
 	}
 
+	var authService *auth.Service
+	if db != nil {
+		authService = auth.NewService(auth.NewGORMRepository(db), cfg.SessionTTL)
+	}
+
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
-		Handler:           NewRouter(logger, db, cfg.SessionTTL),
+		Handler:           NewRouter(logger, authService),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      30 * time.Second,

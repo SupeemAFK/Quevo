@@ -15,14 +15,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Role string
-
-const (
-	RoleCustomer Role = "CUSTOMER"
-	RoleOperator Role = "OPERATOR"
-
-	DefaultSessionTTL = 12 * time.Hour
-)
+const DefaultSessionTTL = 12 * time.Hour
 
 var (
 	ErrNotFound           = errors.New("auth record not found")
@@ -31,46 +24,6 @@ var (
 	ErrForbidden          = errors.New("forbidden")
 	ErrNotOwner           = errors.New("resource is not owned by customer")
 )
-
-type User struct {
-	ID              string
-	Role            Role
-	DisplayName     string
-	LoginIdentifier string
-	CredentialHash  string
-}
-
-type Session struct {
-	ID        string
-	UserID    string
-	TokenHash string
-	CreatedAt time.Time
-	ExpiresAt time.Time
-	RevokedAt *time.Time
-}
-
-type Identity struct {
-	ID          string `json:"id" binding:"required" example:"6f8dc23d-01dd-41bc-8a5c-991a77f1c003"`
-	DisplayName string `json:"displayName" binding:"required" example:"Demo Customer"`
-	Role        Role   `json:"role" binding:"required" example:"CUSTOMER"`
-}
-
-type Actor = Identity
-
-type LoginResult struct {
-	User         Identity
-	SessionToken string
-	ExpiresAt    time.Time
-}
-
-type Repository interface {
-	FindUserByIdentifier(context.Context, string) (User, error)
-	FindUserByID(context.Context, string) (User, error)
-	HasOperatorServiceAccess(context.Context, string, string) (bool, error)
-	CreateSession(context.Context, Session) error
-	FindSessionByTokenHash(context.Context, string) (Session, error)
-	RevokeSession(context.Context, string, time.Time) error
-}
 
 type Service struct {
 	repository Repository
@@ -114,7 +67,7 @@ func (s *Service) Login(ctx context.Context, identifier, password string) (Login
 	}
 
 	return LoginResult{
-		User:         Identity{ID: user.ID, DisplayName: user.DisplayName, Role: user.Role},
+		User:         Actor{ID: user.ID, DisplayName: user.DisplayName, Role: user.Role},
 		SessionToken: token,
 		ExpiresAt:    expiresAt,
 	}, nil
@@ -132,8 +85,7 @@ func (s *Service) Authenticate(ctx context.Context, token string) (Actor, error)
 		}
 		return Actor{}, fmt.Errorf("find session: %w", err)
 	}
-	now := time.Now().UTC()
-	if session.RevokedAt != nil || !session.ExpiresAt.After(now) {
+	if session.RevokedAt != nil || !session.ExpiresAt.After(time.Now().UTC()) {
 		return Actor{}, ErrUnauthenticated
 	}
 
@@ -148,7 +100,7 @@ func (s *Service) Authenticate(ctx context.Context, token string) (Actor, error)
 		return Actor{}, ErrUnauthenticated
 	}
 
-	return Identity{ID: user.ID, DisplayName: user.DisplayName, Role: user.Role}, nil
+	return Actor{ID: user.ID, DisplayName: user.DisplayName, Role: user.Role}, nil
 }
 
 func (s *Service) Logout(ctx context.Context, token string) error {
@@ -196,7 +148,7 @@ func hashSessionToken(token string) string {
 	return hex.EncodeToString(hash[:])
 }
 
-// RequireCustomerOwnership hides a different customer's resource as not found.
+// RequireCustomerOwnership hides another customer's resource as not found.
 func RequireCustomerOwnership(actor Actor, customerID string) error {
 	if actor.Role != RoleCustomer || actor.ID != customerID {
 		return ErrNotOwner
