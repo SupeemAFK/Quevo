@@ -50,7 +50,7 @@ Stop a foreground selection with `Ctrl+C`. The API's current health endpoint doe
 ├── apps/
 │   ├── api/        Go, Gin, GORM, PostgreSQL, Zap, and OpenAPI 3.1
 │   └── web/        React, TanStack Start, TypeScript, Tailwind, shadcn, and Bun
-├── docs/           Development notes
+├── docs/           Requirements, system design, and development notes
 ├── tests/e2e/      Playwright browser tests
 ├── compose.yaml    Local development services
 └── AGENTS.md       AI coding guidance
@@ -60,7 +60,7 @@ The web app calls the API through a TanStack server function, so the API address
 
 ## Product workflows
 
-Quevo supports customer queue joining and operator ticket processing. The user journey and ticket lifecycle are documented in [docs/requirements/workflows.md](docs/requirements/workflows.md). They describe intended behavior, not implemented features.
+Quevo supports customer queue joining and operator ticket processing. The user journey and ticket lifecycle are documented in [docs/requirements/workflows.md](docs/requirements/workflows.md). They describe intended behavior, not implemented features. The proposed system architecture, data model, API/UI conventions, session lifecycle, and deployment strategy are in [docs/design/system-sds.md](docs/design/system-sds.md). The requirements-to-feature-to-sprint matrix and official Theme 9 / Deliverable 1 crosswalk are in [docs/requirements/traceability.md](docs/requirements/traceability.md).
 
 ## Run locally
 

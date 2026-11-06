@@ -1,32 +1,33 @@
 # Quevo Feature Inventory
 
-**Status:** Provisional baseline — pending the official group_work_specs_v1 and project_deliverable_1_v1 specifications.
-**Source:** Product scope in the current task; see docs/requirements/srs.md.
-**Planning note:** Sprint 1 assignments below are proposed from the supplied scope. They must be compared with the official rubric before being treated as final.
+**Status:** Draft baseline cross-checked against the supplied course documents; feature interpretations and proposals are labeled in the source-basis column.
+**Sources:** group_work_specs_v1.pdf (§§5–8; draft for instructor review) and project_deliverable_1_v1.pdf (§§2–3), plus the Quevo product scope in srs.md.
+**Planning note:** Sprint allocations are planning proposals. Step 3 will confirm sprint goals, feasibility, and dependencies.
 
 Feature IDs are stable. Keep an existing ID attached to a feature if its description changes; add a new ID rather than reusing a retired one. The customer/operator journey and ticket lifecycle are detailed in [workflows.md](workflows.md).
 
-| Feature ID | Feature | Scope and outcome | Requirement links | Planned scope |
-| --- | --- | --- | --- | --- |
-| F-001 | Identity and access | Customer/operator authenticate, logout, read current identity, and receive role- and ownership-based protection. | FR-001–FR-003, FR-013; BR-010 | Sprint 1 |
-| F-002 | Service discovery | Customer can see and select an available branch service. Service administration is excluded. | FR-004 | Sprint 1 |
-| F-003 | Join queue and issue ticket | Customer joins one service queue and receives a ticket number unique within the agreed branch/service/business-date scope. Includes transactional duplicate prevention. | FR-005–FR-006, FR-014, FR-016; BR-002–BR-005, BR-012 | Sprint 1 |
-| F-004 | Customer ticket view | Customer can read their ticket and current status; server enforces ownership. | FR-007, FR-013, FR-016; BR-010, BR-012 | Sprint 1 |
-| F-005 | Operator dashboard and queue views | Operator can view an overview of authorized queues, WAITING tickets in those queues, and a read-only history of COMPLETED or SKIPPED tickets. | FR-008, FR-013, FR-017; BR-006 | Sprint 1 |
-| F-006 | Call next ticket | Operator atomically claims the oldest eligible WAITING ticket, assigns it to themselves, and changes it to PENDING while respecting the one-active-ticket rule. | FR-009, FR-013–FR-016; BR-001, BR-005–BR-008, BR-011–BR-012 | Sprint 1 |
-| F-007 | Start service | Assigned operator moves a PENDING ticket to OPERATING and records the start timestamp. | FR-010, FR-013–FR-016; BR-007, BR-009, BR-011–BR-012 | Sprint 1 |
-| F-008 | Complete or skip ticket | Assigned operator completes an OPERATING ticket or skips a PENDING ticket; the terminal state and timestamp are persisted. | FR-011–FR-016; BR-007, BR-009, BR-011–BR-012 | Sprint 1 |
-| F-009 | Queue integrity and lifecycle data | Shared persistence, state-transition validation, unique constraints, ownership/assignment consistency, and lifecycle timestamps across queue flows. | FR-006, FR-013–FR-016; BR-001–BR-012 | Sprint 1 |
-| F-010 | Service catalog administration | Authorized staff can create, update, enable, and disable branch services. | Future requirements to be elicited | Future; sprint TBD |
-| F-011 | Counter and operator assignment management | Authorized staff can manage counters and operator-to-service assignments. | Future requirements to be elicited | Future; sprint TBD |
-| F-012 | Customer cancellation | Customer can cancel an eligible WAITING ticket, proposed transition WAITING → CANCELLED. | Future requirements to be elicited; cancellation is explicitly deferred by BR-013 | Future; sprint TBD |
-| F-013 | No-show handling | Operator can handle an unarrived customer under an agreed timeout and state policy. | Future requirements to be elicited | Future; sprint TBD |
-| F-014 | Queue analytics and reporting | Staff can review agreed queue volume and service-time measures. | Future requirements to be elicited | Future; sprint TBD |
-| F-015 | Extended audit history | Authorized staff can review a defined history of ticket and operator actions beyond required lifecycle timestamps. | Future requirements to be elicited | Future; sprint TBD |
-| F-016 | Real-time queue updates | Customer or operator views can update without manual refresh using an agreed delivery mechanism. | Future requirements to be elicited | Future; sprint TBD |
+| Feature ID | Feature | Scope and outcome | Requirement links | Dependencies | Planned scope | Source basis |
+| --- | --- | --- | --- | --- | --- | --- |
+| F-001 | Identity and access | Customer/operator authenticate, logout, read current identity, and receive role- and ownership-based protection. | FR-001–FR-003, FR-013; BR-010 | Seeded Customer and Operator accounts | Sprint 1 | Group spec §5.2: authentication, current identity, roles, backend authorization. |
+| F-002 | Service discovery | Customer can see and select an available branch service. Service administration is excluded. | FR-004 | F-001; seeded branch and service data | Sprint 1 | Theme 9 queue scope; branch service selection is a Quevo product interpretation. |
+| F-003 | Join queue and issue ticket | Customer joins one service queue and receives a ticket number unique within the agreed branch/service/business-date scope. Includes transactional duplicate prevention. | FR-005–FR-006, FR-014, FR-016; BR-002–BR-005, BR-012 | F-001, F-002, F-009 | Sprint 1 | Theme 9 Sprint 1 example: authenticated customer joins seeded queue and sees number/status. |
+| F-004 | Customer ticket view | Customer can read their ticket and current status; server enforces ownership. | FR-007, FR-013, FR-016; BR-010, BR-012 | F-001, F-003 | Sprint 1 | Theme 9 identity/access: customers see their own detailed queue entry. |
+| F-005 | Operator dashboard and queue views | Operator can view an overview of authorized queues, WAITING tickets in those queues, and a read-only history of COMPLETED or SKIPPED tickets. | FR-008, FR-013, FR-017; BR-006 | F-001, F-009; seeded operator-service authorizations | Sprint 1 | Theme 9 identity/access plus the user-provided operator journey diagram. |
+| F-006 | Call next ticket | Operator atomically claims the oldest eligible WAITING ticket, assigns it to themselves, and changes it to PENDING while respecting the one-active-ticket rule. | FR-009, FR-013–FR-016; BR-001, BR-005–BR-008, BR-011–BR-012 | F-001, F-003, F-005, F-009 | Sprint 1 | Theme 9 Sprint 1 example; FIFO is a proposed queue-order policy, not a mandated value. |
+| F-007 | Start service | Assigned operator moves a PENDING ticket to OPERATING and records the start timestamp. | FR-010, FR-013–FR-016; BR-007, BR-009, BR-011–BR-012 | F-001, F-006 | Sprint 1 | User-provided journey diagram; separate start transition is a product design choice. |
+| F-008 | Complete or skip ticket | Assigned operator completes an OPERATING ticket or skips a PENDING ticket; the terminal state and timestamp are persisted. | FR-011–FR-016; BR-007, BR-009, BR-011–BR-012 | F-001, F-006, F-007 | Sprint 1 | Theme 9 Sprint 1 completion example and the user-provided lifecycle diagram; skip is a design detail. |
+| F-009 | Queue integrity and lifecycle data | Shared persistence, state-transition validation, unique constraints, ownership/assignment consistency, and lifecycle timestamps across queue flows. | FR-006, FR-013–FR-016; BR-001–BR-012 | Initial data model and explicit migrations | Sprint 1 | Group spec §5.1 persistence and Theme 9 uniqueness, duplicate, and transition rules. |
+| F-010 | Service catalog administration | Authorized branch staff can create, update, enable, and disable branch services; management role remains to be agreed. | FR-018 | F-001, F-002; management role to be agreed | Sprint 2 | Proposed product capability; Theme 9 does not explicitly require service catalog administration. |
+| F-011 | Queue, counter, and operator assignment management | Authorized staff can manage queues, counters, and operator-to-service assignments. | FR-019 | F-001, F-010; management role to be agreed | Sprint 2 | Theme 9 lists multiple queues/counters in later sprints; assignment-management workflow is proposed. |
+| F-012 | Customer cancellation | Customer can cancel their own WAITING ticket; transition WAITING → CANCELLED. | FR-020; BR-013 | F-001, F-003; cancellation policy | Sprint 2 | Theme 9 later-sprint cancellation; the WAITING-only rule is Quevo policy proposal. |
+| F-013 | No-show handling | Authorized operator records a no-show under an approved wait and rejoin policy; proposed transition PENDING → NO_SHOW. | FR-021; BR-014 | F-001, F-006; approved no-show policy | Sprint 2 | Theme 9 later-sprint no-show handling; exact transition and policy are proposals. |
+| F-014 | Queue summaries | Authorized staff review ticket counts and agreed waiting/service-duration measures by branch, service, and date range. | FR-022 | F-003, F-006–F-008; agreed summary measures | Sprint 3 | Theme 9 calls for useful service summaries; exact measures are proposals. |
+| F-015 | Extended audit history | Authorized staff review ticket state changes with actor and event timestamps. | FR-024 | F-003, F-006–F-008; audit event model | Sprint 3 | Proposed product capability; not stated as a Theme 9 or D1 requirement. |
+| F-016 | Real-time queue updates | Optional enhancement to refresh customer/operator views as persisted queue state changes. | Optional; no baseline FR | F-003–F-008; optional delivery mechanism | Optional Sprint 3 | Optional product enhancement; not stated as a Theme 9 or D1 requirement. |
+| F-017 | Service-specific request forms | Customer submits fields configured for a service when joining its queue. | FR-023 | F-003, F-010; configured service fields | Sprint 3 | Proposed product capability; not stated as a Theme 9 or D1 requirement. |
 
 ## Sprint boundary
 
-Sprint 1 is the proposed customer/operator vertical slice from identity through ticket completion or skip. It includes the integrity work needed for these flows. It does not include administration workflows or the candidate future features F-010 through F-016.
+Sprint 1 is the customer/operator vertical slice from identity through ticket completion or skip, with a seeded service queue and persisted ticket state. Sprint 2 is proposed for service/queue administration, counter/operator assignments, cancellation, and no-show handling. Sprint 3 is proposed for summaries, extended audit history, and service-specific request forms. Real-time updates are an optional enhancement after required scope.
 
-No future feature should be implemented early solely because it appears in this inventory. The Step 3 sprint plan will allocate future work after the official specifications and dependencies are reviewed.
+The official Theme 9 text places cancellation/no-show handling, multiple queues/counters, priority policy if applicable, and service summaries in later-sprint scope. Other rows are explicitly marked as Quevo proposals rather than official rubric clauses. Step 3 will review allocations, dependencies, risks, and outcomes. Do not implement future features before their feature contracts are approved.
