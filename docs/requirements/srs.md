@@ -1,12 +1,12 @@
 # Quevo Software Requirements Specification
 
-**Status:** Provisional baseline — official course specifications not yet available
+**Status:** Draft baseline — reconciled against the supplied course specifications; team decisions remain open
 **Product:** Quevo, a walk-in bank branch queue management platform
 **Project milestone:** CPE334 Project Deliverable 1, due November 8, 2026 at 23:59 Asia/Bangkok
 **Baseline date:** November 6, 2026
-**Repository baseline inspected:** main at 76558cc
+**Repository baseline inspected:** origin/main after PR #3, e2eb489
 
-> This is a working requirements draft based on the product scope supplied in the task and repository inspection. It is not ready to be treated as a graded, rubric-complete deliverable. The official group_work_specs_v1 and project_deliverable_1_v1 files were not found in the repository or the available pasted-text attachments. Theme 9 coverage therefore remains unverified. Supply those files so this baseline can be checked and revised before submission.
+> Sources reviewed: the supplied group_work_specs_v1.pdf (§§5–8; marked “Draft for instructor review,” issued October 6, 2026) and project_deliverable_1_v1.pdf (§§2–3). The crosswalk in docs/requirements/traceability.md separates direct source clauses from Quevo interpretations and proposals. Proposed policies and targets remain marked; this SRS covers only the requirements portion of Deliverable 1, not the full submission.
 
 ## 1. Purpose and product vision
 
@@ -23,7 +23,7 @@ This SRS records the desired product behavior. It does not claim that these feat
 | Customer | Authenticates, selects a service, joins its queue, and views their own ticket. |
 | Operator | Authenticates, views authorized queues, and processes assigned tickets. |
 | Project team | Defines, implements, tests, and maintains the product. |
-| Course evaluators | Assess the deliverable against the official course specifications, which are still needed to verify this draft. |
+| Course evaluators | Assess the deliverable against the supplied course specifications and submitted evidence. |
 | Branch | Provides the operating context and the services and queue authorizations. Branch administration workflows are outside the first-sprint baseline. |
 
 Only Customer and Operator are confirmed product actors. Administrative identities and workflows are unresolved.
@@ -43,8 +43,8 @@ Only Customer and Operator are confirmed product actors. Administrative identiti
 
 - Core banking, accounts, balances, payments, deposits, withdrawals, or transaction execution.
 - Appointment booking.
-- Service catalog administration, counters, and operator/service assignment management.
-- Customer ticket cancellation, no-show workflows, analytics, extended audit history, and real-time updates. These are candidate future-sprint capabilities, subject to the course specification and team planning.
+- The official Theme 9 brief places cancellation/no-show handling, multiple queues/counters, priority policy if applicable, and service summaries in later-sprint scope. Quevo has allocated those items in the feature inventory; exact policies and selected management workflows remain open.
+- Service catalog administration, extended audit history, service-specific request forms, and real-time updates are product proposals, not explicit Theme 9 requirements. Keep their proposal status visible during sprint planning.
 - Message brokers such as Kafka or RabbitMQ.
 
 ## 4. Operating context and constraints
@@ -58,7 +58,7 @@ Only Customer and Operator are confirmed product actors. Administrative identiti
 
 ## 5. Functional requirements
 
-The following IDs are stable references for the requirements baseline.
+These are Quevo requirement statements, not verbatim rubric clauses. Their source basis is recorded in traceability.md; proposed product policies and optional features are identified there.
 
 | ID | Requirement |
 | --- | --- |
@@ -79,6 +79,13 @@ The following IDs are stable references for the requirements baseline.
 | FR-015 | The system shall persist the timestamps for queue join, ticket call, service start, and completion or skip. |
 | FR-016 | The system shall persist queue and ticket state in PostgreSQL and return committed state on subsequent reads. |
 | FR-017 | The system shall provide operators an overview of their authorized queues, a view of WAITING tickets in those queues, and a history view of tickets in COMPLETED or SKIPPED states for those queues. |
+| FR-018 | Authorized branch staff shall be able to create, update, enable, and disable services offered by a branch. |
+| FR-019 | Authorized branch staff shall be able to manage service queues, counters, and operator-to-service assignments. |
+| FR-020 | A customer shall be able to cancel their own ticket while it is WAITING; the ticket shall then be CANCELLED. |
+| FR-021 | An authorized operator shall be able to record that a called customer did not arrive, under an approved no-show policy. The proposed state transition is PENDING → NO_SHOW. |
+| FR-022 | Authorized staff shall be able to view service summaries for a selected branch, service, and date range, including ticket counts and agreed waiting/service-duration measures. |
+| FR-023 | When a service requires additional information, a customer shall be able to submit its service-specific request fields while joining the queue; the service defines the fields and validation. |
+| FR-024 | Authorized staff shall be able to review ticket state-change history, including the acting user and event time. |
 
 ## 6. Business rules
 
@@ -86,7 +93,7 @@ The following IDs are stable references for the requirements baseline.
 | --- | --- |
 | BR-001 | Waiting tickets are served FIFO, ordered by their join time. A deterministic tie-breaker for equal timestamps must be chosen in the feature contract. |
 | BR-002 | Ticket-number uniqueness is scoped by branch, service, and business date. The business timezone and exact numbering/reset policy are unresolved. |
-| BR-003 | WAITING, PENDING, and OPERATING are active ticket states for duplicate-ticket and operator workload rules unless the official specification defines otherwise. |
+| BR-003 | Quevo proposes WAITING, PENDING, and OPERATING as active ticket states for duplicate-ticket and operator workload rules. |
 | BR-004 | A customer may not hold duplicate active tickets in the same service queue. |
 | BR-005 | Queue joining and claiming a ticket are atomic PostgreSQL transactions protected against concurrent requests. |
 | BR-006 | An operator may act only on queues to which that operator is authorized. |
@@ -96,7 +103,8 @@ The following IDs are stable references for the requirements baseline.
 | BR-010 | A customer may read only their own ticket; ticket ownership is checked by the server on every applicable request. |
 | BR-011 | Join, call, start, and completion-or-skip timestamps are persisted with the corresponding ticket lifecycle event. |
 | BR-012 | PostgreSQL is the authoritative source for queue ordering, ticket state, and persisted lifecycle data. |
-| BR-013 | Customer cancellation is not part of the initial baseline. If approved in a later sprint, its proposed transition is WAITING → CANCELLED. |
+| BR-013 | Customer cancellation is excluded from Sprint 1. In a later sprint, cancellation is allowed only from WAITING and transitions the customer's own ticket to CANCELLED. |
+| BR-014 | No-show handling is excluded from Sprint 1. The proposed transition is PENDING → NO_SHOW; the timeout/arrival policy, notification, and rejoin rules must be approved before implementation. |
 
 ## 7. Non-functional requirements
 
@@ -136,31 +144,38 @@ An operator must not process another operator's assigned ticket or hold two acti
 
 ## 9. Proposed release boundary
 
-### Sprint 1 baseline (proposed; verify against official course specs)
+### Sprint 1 baseline (proposed from the supplied Theme 9 example)
 
 The vertical slice covers authentication, logout, current identity and RBAC; customer service selection, queue join, and ticket view; operator overview, authorized waiting-ticket and history views, call-next, customer-notification step, start, complete, and skip; validation and PostgreSQL persistence; duplicate prevention, safe concurrent joins and claims; and lifecycle timestamps.
 
 ### Future sprints
 
-Candidate work includes service management CRUD and service request forms; counter and operator assignments; customer cancellation and no-show handling; analytics, audit history beyond lifecycle timestamps, and optional real-time updates. Exact sprint allocation is intentionally deferred to the planning step.
+Theme 9 identifies cancellation/no-show handling, multiple queues/counters, priority policy if applicable, and service summaries as later-sprint work. The current proposal allocates cancellation/no-show and queue/counter scope to Sprint 2, with summaries in Sprint 3. Service catalog administration, operator assignment management, extended audit history, service-specific request forms, and real-time updates are Quevo proposals or implementation choices; they are not stated as rubric requirements. FIFO is the current proposed ordering policy, so no priority policy is planned unless the team changes that decision. Step 3 will confirm the backlog and dependencies.
 
 ## 10. Assumptions and decision log
 
 | ID | Assumption or unresolved decision | Current treatment | Owner or resolution point |
 | --- | --- | --- | --- |
-| D-001 | Official group_work_specs_v1 and project_deliverable_1_v1 are unavailable in checked repository/reference text. | This SRS and related baseline documents remain provisional; Theme 9 coverage is not asserted. | Project team; provide files before finalizing the graded baseline. |
-| D-002 | Authentication/session mechanism, credential lifecycle, account provisioning, and password recovery are unspecified. | Require authentication/session behavior but do not select a mechanism here. | Feature-level design, after course spec review. |
+| D-001 | The supplied group_work_specs_v1.pdf is marked “Draft for instructor review,” issued October 6, 2026; project_deliverable_1_v1.pdf is supplied as the Deliverable 1 v1 source. | Use both as the course sources for this baseline and retain the draft label when citing the group specification. Theme 9 coverage is cross-referenced in traceability.md. | Requirements review. |
+| D-002 | Authentication/session mechanism, credential lifecycle, account provisioning, and password recovery are unspecified. | Require authentication/session behavior but do not select a mechanism here. | Feature-level authentication contract and team decision. |
 | D-003 | Customer/operator account creation and branch onboarding are unspecified. | Treat identities and branch/service authorizations as provisioned outside the Sprint 1 user workflows unless the rubric says otherwise. | Product/course review. |
 | D-004 | Branch service hours, queue opening/closing, and business-date timezone are unspecified. | Do not invent queue schedule behavior; confirm branch-local business-date rule. | Product/course review. |
 | D-005 | Ticket format is described as an example such as A-001, but prefix, padding, reset, uniqueness enforcement, and display rules are unspecified. | Preserve uniqueness scope; define formatting before implementation. | Feature-level design. |
 | D-006 | Equal join timestamps need a stable FIFO tie-breaker. | Proposed tie-breaker is database creation sequence or immutable ticket ID; confirm with the schema design. | Feature-level design. |
 | D-007 | Whether SKIPPED customers can rejoin, and how repeated skips are handled, is unspecified. | Do not automatically requeue skipped tickets. | Product/course review. |
-| D-008 | “Queue” scope for duplicate customer tickets needs exact branch/service/date interpretation. | Apply the rule to the same service queue; align precise key with BR-002 and the official specification. | Product/course review. |
+| D-008 | “Queue” scope for duplicate customer tickets needs exact branch/service/date interpretation. | Use the proposed key in BR-002; confirm its branch/service/date scope in the queue data-model review. | Product/course review. |
 | D-009 | Service catalog seed data and operator-to-queue authorization data have no management workflow in the first-sprint scope. | A controlled fixture or seed process may be needed for a demonstrable vertical slice; specify it in Step 4 without adding admin features. | Sprint 1 contracts. |
 | D-010 | Performance, usability, and accessibility targets in NFR-003–005 are proposed. | Validate targets, test conditions, and any required standard with the team and official spec. | Requirements review. |
-| D-011 | Data retention, personal data fields, audit access, and deployment security policy are unspecified. | Minimize collected customer data and avoid claiming a compliance posture until requirements are known. | System design and course spec review. |
+| D-011 | Data retention, personal data fields, audit access, and deployment security policy are unspecified. | Minimize collected customer data and avoid claiming a compliance posture until requirements are known. | System design and team review. |
 | D-012 | The supplied journey diagram includes “Notify customer” after Call next but does not define whether this is a staff action or an automated message, nor a delivery channel. | Document it as a workflow step; do not assume a staff announcement or automated delivery channel. | Product/course review before feature contracts. |
-| D-013 | The supplied operator dashboard diagram includes a History view for COMPLETED and SKIPPED tickets. Its retention, filters, and pagination are unspecified. | Include a basic read-only history view in the proposed baseline; keep analytics and extended audit history in future scope. | Feature-level design. |
+| D-013 | The supplied operator dashboard diagram includes a History view for COMPLETED and SKIPPED tickets. Its retention, filters, and pagination are unspecified. | Include a basic read-only history view in Sprint 1; keep analytics and extended audit history in future scope. | Feature-level design. |
+| D-014 | The group specification assigns themes by the final digit of a team member's student ID; the project request identifies Quevo as Theme 9. | Treat Theme 9 as the selected context for this baseline; the team must confirm its assignment eligibility before submission. | Team requirements review. |
+| D-015 | Theme 9 permits a public queue display with limited non-private status but does not require one. | No public display is in the Sprint 1 scope. If added later, show only approved non-private queue/ticket status and never customer identity or contact data. | Product/privacy review. |
+| D-016 | Theme 9 mentions a priority policy “if applicable.” | FIFO is selected in BR-001; no priority feature is planned unless the team approves a scope change. | Product review. |
+| D-017 | The no-show transition is not defined by the supplied theme brief. | PENDING → NO_SHOW is a proposal only; agree on timing, reassignment, customer notification, and rejoin behavior before F-013 implementation. | Sprint 2 feature contract. |
+| D-018 | Theme 9 asks for useful service summaries but does not define measures. | Ticket counts and waiting/service durations are candidate measures; define exact formulas, filters, and privacy before F-014 implementation. | Sprint 3 feature contract. |
+| D-019 | Service-specific request forms appear in the product's future scope, but field schemas are unspecified. | A service may define validated request fields; finalize allowed field types and handling in the F-017 contract. | Sprint 3 feature contract. |
+| D-020 | Future service, counter, and operator-assignment management does not define a new administrative actor. | Keep management operations unavailable until the authorized role and branch scope are approved; do not infer an administrator role. | Product/course review. |
 
 ## 11. Glossary
 
@@ -168,7 +183,8 @@ Candidate work includes service management CRUD and service request forms; count
 | --- | --- |
 | Queue | Ordered set of walk-in tickets for a branch service. |
 | Ticket | A customer's persisted queue entry and its lifecycle state; this is what the supplied diagram calls a queue instance. |
-| Active ticket | Ticket in WAITING, PENDING, or OPERATING state, per proposed BR-003. |
+| Active ticket | Ticket in WAITING, PENDING, or OPERATING state, per BR-003. |
 | Call | Atomic selection and assignment of the oldest eligible waiting ticket to an operator. |
 | Business date | Branch-local date used for ticket numbering; timezone and reset rules remain unresolved. |
 | Authorized queue | Queue the authenticated operator is permitted to access and process. |
+| NO_SHOW | Proposed future terminal outcome when an operator records a called customer as not arrived; policy is unresolved. |
