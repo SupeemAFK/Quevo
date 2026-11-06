@@ -16,6 +16,19 @@ The server listens on `:8080` by default. Environment values can be exported in 
 
 `DATABASE_URL` is optional. When it is set, the app creates a GORM PostgreSQL connection pool without pinging the database at startup. The health endpoint therefore remains available if PostgreSQL is offline. No schema or migrations are created automatically.
 
+## Database setup
+
+Apply versioned migrations explicitly, then seed synthetic demo accounts. Run from `apps/api` with PostgreSQL available:
+
+```sh
+make migrate-up
+export QUEVO_CUSTOMER_PASSWORD='choose-a-local-demo-password'
+export QUEVO_OPERATOR_PASSWORD='choose-another-local-demo-password'
+make seed-demo
+```
+
+The seed creates one UTC demo branch, one active service, a Customer, an Operator, and the operator's service authorization. It is safe to rerun. Passwords are supplied through the environment, hashed with bcrypt, and never printed or committed. Demo logins are `customer@quevo.local` and `operator@quevo.local`. Do not use these local accounts in a deployed environment.
+
 ## Logging
 
 Zap writes structured JSON for application and HTTP request logs. Request logs include the method, matched route, status, and latency; query strings are omitted. Panic recovery also logs a stack trace.

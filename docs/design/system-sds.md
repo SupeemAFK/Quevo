@@ -27,7 +27,7 @@ Design goals:
 | --- | --- | --- |
 | API | Go HTTP server using Gin, GORM, Zap, and an API v1 router; health route only. | Feature packages for identity, service discovery, and ticket workflows, wired explicitly through the app router. |
 | Web | React and TypeScript with TanStack Start, TanStack Query, Bun, Tailwind, and shadcn. The home page calls the API health route. | Customer and operator route groups call the Go API through TanStack Start server functions and typed API helpers. |
-| Database | Optional GORM PostgreSQL pool; no application migrations yet. | PostgreSQL owns users, branches, services, operator-service authorization, sessions, queue numbering, and tickets. |
+| Database | Optional GORM PostgreSQL pool plus explicitly invoked, versioned SQL migrations and a repeatable Sprint 1 seed command. | PostgreSQL owns users, branches, services, operator-service authorization, sessions, queue numbering, and tickets. The API never migrates at startup. |
 | Contract | OpenAPI 3.1 is generated and served; TypeScript types are generated from it. | Every implemented endpoint has an OpenAPI contract; provider, client-type, and E2E checks verify it. |
 | Tests | Starter unit/component, OpenAPI contract, PostgreSQL integration, and Playwright infrastructure. | Add tests with each feature. E2E runs the real web app and API against PostgreSQL. |
 | Deployment | Local Compose network and multi-stage Dockerfiles. | Candidate Cloud Run services with Cloud SQL for PostgreSQL; Artifact Registry, Secret Manager, IAM service accounts, and Cloud Logging. Confirm topology in Lab 5; no cloud deployment is required for D1. |
@@ -410,9 +410,9 @@ Use PostgreSQL transactions and constraints as the correctness boundary. Do not 
 
 ### 10.5 Database setup, migrations, and seed data
 
-The repository currently has a PostgreSQL connection pool but no application schema migrations or domain seed data. Add versioned SQL migrations when the first persisted feature is implemented. A planned location is apps/api/internal/platform/database/migrations; choose a migration runner in that feature contract. Apply migrations through an explicit local/CI/release command before serving traffic. Never apply GORM AutoMigrate during API startup.
+The repository provides a versioned SQL migration under `apps/api/internal/platform/database/migrations`, an explicit migration command (`make migrate-up` from `apps/api`), and an idempotent synthetic seed command (`make seed-demo`). Apply migrations before seeding or serving database-backed features. The migration ledger is `schema_migrations`; never apply GORM AutoMigrate during API startup. The initial schema includes users and sessions, branches and services, operator-service authorization, queue sequence rows, and Sprint 1 tickets with uniqueness, lifecycle, and active-ticket constraints.
 
-For local Compose, PostgreSQL 17 uses the existing named volume so database data survives container or application restarts. A clean environment starts the database, applies migrations, then runs an idempotent seed command that creates synthetic branch/service data and one Customer and one Operator account with operator-service authorization. Seed stable IDs and safe fixture data so the same demo state can be recreated; do not commit usable passwords or production secrets. Provide local demo credentials only through a safe local handoff/seed procedure.
+For local Compose, PostgreSQL 17 uses the existing named volume so database data survives container or application restarts. A clean environment starts the database, applies migrations, then runs the idempotent seed command to create one UTC synthetic branch/service and one Customer and one Operator with operator-service authorization. Seed IDs are stable. The seed command takes local passwords from environment variables, hashes them with bcrypt, and never stores plaintext passwords in Git. Ticket numbers are currently decimal sequence strings; any display prefix/padding remains a product contract decision.
 
 Integration and E2E tests create isolated databases or disposable PostgreSQL containers, apply the same migrations, and seed unique test identities per run. Each test cleans up its own records/container so parallel or repeated runs do not share mutable ticket state. Production uses Cloud SQL durable storage and configured backups; retention and recovery objectives are Lab 5 decisions. These are design plans, not current implemented migrations or seeds.
 
@@ -463,7 +463,7 @@ Run explicit versioned migrations as a release/deployment job before the new app
 | Contract | Provider responses conform to generated OpenAPI; web types match generated schema. | kin-openapi, OpenAPI generation, openapi-typescript check. |
 | Full-stack E2E | Customer/operator journeys and persisted state across browser, web server, API, and database. | Playwright with real Go API and Testcontainers PostgreSQL; no mocked backend. |
 
-The current tests exercise starter health and infrastructure. They do not yet verify authentication, authorization, queue transitions, or concurrency.
+The API and web still lack the authentication flow and customer/operator UI journeys. PostgreSQL integration coverage now exercises migration and seed repeatability, database uniqueness constraints, transactional ticket numbering and call-next, FIFO ordering, and concurrent queue operations. Authentication/authorization endpoint behavior and full-stack customer/operator flows remain for their feature issues.
 
 ## 14. Design decisions and open questions
 
@@ -472,7 +472,7 @@ The current tests exercise starter health and infrastructure. They do not yet ve
 | Official course specifications | The supplied group_work_specs_v1 is labeled draft for instructor review; project_deliverable_1_v1 is the D1 v1 source. | Keep direct clauses and Quevo proposals distinguished in traceability.md; confirm draft/spec changes with the team. |
 | Authentication | Propose opaque server-side sessions with a web-origin HttpOnly cookie and API-side validation. | Confirm identity fields, credential or SSO mechanism, session lifetime, rotation, CSRF policy, and account provisioning. |
 | Queue key and business date | Branch, service, and business date; calculate date in branch timezone. | Set timezone source, queue open/close rules, and ticket reset policy. |
-| Ticket number | Unique within branch/service/business date. QueueSequence allocates it transactionally. | Confirm prefix, padding, start number, and whether gaps are acceptable after errors. |
+| Ticket number | Unique within branch/service/business date; decimal sequence strings allocated transactionally by QueueSequence. | Confirm display prefix/padding and whether gaps are acceptable after errors. |
 | Operator authorization | OperatorService records access to a service; provisioned data is enough for the first vertical slice. | Confirm who creates/revokes assignments and whether counters are required in the baseline. |
 | Customer notification | A notification step follows call-next. | Decide whether it is a staff action, in-app message, SMS, or another channel and define delivery guarantees. |
 | Ticket history | Read-only COMPLETED and SKIPPED tickets for authorized services. | Decide retention, pagination, filters, and whether more audit history is required. |
