@@ -25,6 +25,7 @@ Sprint assignments for baseline requirements are proposed Sprint 1 scope, derive
 | FR-014 | F-003, F-006, F-007, F-008, F-009 | Sprint 1 |
 | FR-015 | F-006, F-007, F-008, F-009 | Sprint 1 |
 | FR-016 | F-003, F-004, F-006, F-007, F-008, F-009 | Sprint 1 |
+| FR-017 | F-005 | Sprint 1 |
 
 ## Business rules
 

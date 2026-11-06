@@ -12,7 +12,7 @@ Feature IDs are stable. Keep an existing ID attached to a feature if its descrip
 | F-002 | Service discovery | Customer can see and select an available branch service. Service administration is excluded. | FR-004 | Sprint 1 |
 | F-003 | Join queue and issue ticket | Customer joins one service queue and receives a ticket number unique within the agreed branch/service/business-date scope. Includes transactional duplicate prevention. | FR-005–FR-006, FR-014, FR-016; BR-002–BR-005, BR-012 | Sprint 1 |
 | F-004 | Customer ticket view | Customer can read their ticket and current status; server enforces ownership. | FR-007, FR-013, FR-016; BR-010, BR-012 | Sprint 1 |
-| F-005 | Operator queue view | Operator can list only queues they are authorized to serve. | FR-008, FR-013; BR-006 | Sprint 1 |
+| F-005 | Operator dashboard and queue views | Operator can view an overview of authorized queues, WAITING tickets in those queues, and a read-only history of COMPLETED or SKIPPED tickets. | FR-008, FR-013, FR-017; BR-006 | Sprint 1 |
 | F-006 | Call next ticket | Operator atomically claims the oldest eligible WAITING ticket, assigns it to themselves, and changes it to PENDING while respecting the one-active-ticket rule. | FR-009, FR-013–FR-016; BR-001, BR-005–BR-008, BR-011–BR-012 | Sprint 1 |
 | F-007 | Start service | Assigned operator moves a PENDING ticket to OPERATING and records the start timestamp. | FR-010, FR-013–FR-016; BR-007, BR-009, BR-011–BR-012 | Sprint 1 |
 | F-008 | Complete or skip ticket | Assigned operator completes an OPERATING ticket or skips a PENDING ticket; the terminal state and timestamp are persisted. | FR-011–FR-016; BR-007, BR-009, BR-011–BR-012 | Sprint 1 |

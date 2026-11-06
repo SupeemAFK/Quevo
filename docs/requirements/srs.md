@@ -34,7 +34,7 @@ Only Customer and Operator are confirmed product actors. Administrative identiti
 
 - Customer and operator authentication, logout, current identity, and role-based access.
 - Customer service selection, queue joining, ticket issuance, and ticket status lookup.
-- Operator authorized-queue listing and ticket call, start, complete, and skip workflows.
+- Operator dashboard views for authorized queues, waiting tickets, and completed/skipped history, plus call, start, complete, and skip workflows.
 - Server-side authorization, ticket ownership checks, validation, and persistence.
 - PostgreSQL-backed queue ordering and state changes, including safe concurrent joins and claims.
 - Recording lifecycle timestamps for join, call, service start, and completion or skip.
@@ -44,7 +44,7 @@ Only Customer and Operator are confirmed product actors. Administrative identiti
 - Core banking, accounts, balances, payments, deposits, withdrawals, or transaction execution.
 - Appointment booking.
 - Service catalog administration, counters, and operator/service assignment management.
-- Customer ticket cancellation, no-show workflows, analytics, and real-time updates. These are candidate future-sprint capabilities, subject to the course specification and team planning.
+- Customer ticket cancellation, no-show workflows, analytics, extended audit history, and real-time updates. These are candidate future-sprint capabilities, subject to the course specification and team planning.
 - Message brokers such as Kafka or RabbitMQ.
 
 ## 4. Operating context and constraints
@@ -78,6 +78,7 @@ The following IDs are stable references for the requirements baseline.
 | FR-014 | The system shall reject invalid ticket state transitions, a customer's duplicate active ticket for the same service queue, and an operator action that would give that operator more than one active ticket. |
 | FR-015 | The system shall persist the timestamps for queue join, ticket call, service start, and completion or skip. |
 | FR-016 | The system shall persist queue and ticket state in PostgreSQL and return committed state on subsequent reads. |
+| FR-017 | The system shall provide operators an overview of their authorized queues, a view of WAITING tickets in those queues, and a history view of tickets in COMPLETED or SKIPPED states for those queues. |
 
 ## 6. Business rules
 
@@ -117,8 +118,8 @@ These are proposed product targets to make the baseline measurable. They are not
 
 1. Authenticate.
 2. View and select an available banking service.
-3. Join its queue.
-4. Receive and view a uniquely numbered ticket and its current status.
+3. Join its queue; the system creates a WAITING ticket.
+4. Receive the ticket number and view the ticket's current status.
 5. Be denied access if attempting to view another customer's ticket.
 
 Cancellation is deferred.
@@ -126,19 +127,18 @@ Cancellation is deferred.
 ### 8.2 Operator
 
 1. Authenticate.
-2. View queues authorized for that operator.
-3. Call the next eligible waiting ticket; the ticket is assigned to the operator and becomes PENDING.
-4. Start service when the customer arrives; the ticket becomes OPERATING.
-5. Complete service; the ticket becomes COMPLETED.
-6. Or skip a called customer while the ticket is PENDING; the ticket becomes SKIPPED.
+2. Open the operator dashboard: overview of authorized queues, WAITING queue tickets, and history of COMPLETED or SKIPPED tickets for authorized queues.
+3. Call the next eligible waiting ticket. The system assigns it to the operator and moves it to PENDING atomically. The customer is notified after the call; whether this is a staff action or automated delivery, and via which channel, is undecided.
+4. When the customer arrives, start service; the ticket becomes OPERATING.
+5. Complete service; the ticket becomes COMPLETED. Alternatively, skip a called customer while the ticket is PENDING; the ticket becomes SKIPPED.
 
-An operator must not process another operator's assigned ticket or hold two active tickets.
+An operator must not process another operator's assigned ticket or hold two active tickets. The detailed workflow and lifecycle diagrams are in the README's Product workflows section.
 
 ## 9. Proposed release boundary
 
 ### Sprint 1 baseline (proposed; verify against official course specs)
 
-The vertical slice covers authentication, logout, current identity and RBAC; customer service selection, queue join, ticket view; operator authorized queue listing, call-next, start, complete, and skip; validation and PostgreSQL persistence; duplicate prevention, safe concurrent joins and claims; and lifecycle timestamps.
+The vertical slice covers authentication, logout, current identity and RBAC; customer service selection, queue join, and ticket view; operator overview, authorized waiting-ticket and history views, call-next, customer-notification step, start, complete, and skip; validation and PostgreSQL persistence; duplicate prevention, safe concurrent joins and claims; and lifecycle timestamps.
 
 ### Future sprints
 
@@ -159,13 +159,15 @@ Candidate work includes service management CRUD and service request forms; count
 | D-009 | Service catalog seed data and operator-to-queue authorization data have no management workflow in the first-sprint scope. | A controlled fixture or seed process may be needed for a demonstrable vertical slice; specify it in Step 4 without adding admin features. | Sprint 1 contracts. |
 | D-010 | Performance, usability, and accessibility targets in NFR-003–005 are proposed. | Validate targets, test conditions, and any required standard with the team and official spec. | Requirements review. |
 | D-011 | Data retention, personal data fields, audit access, and deployment security policy are unspecified. | Minimize collected customer data and avoid claiming a compliance posture until requirements are known. | System design and course spec review. |
+| D-012 | The supplied journey diagram includes “Notify customer” after Call next but does not define whether this is a staff action or an automated message, nor a delivery channel. | Document it as a workflow step; do not assume a staff announcement or automated delivery channel. | Product/course review before feature contracts. |
+| D-013 | The supplied operator dashboard diagram includes a History view for COMPLETED and SKIPPED tickets. Its retention, filters, and pagination are unspecified. | Include a basic read-only history view in the proposed baseline; keep analytics and extended audit history in future scope. | Feature-level design. |
 
 ## 11. Glossary
 
 | Term | Meaning |
 | --- | --- |
 | Queue | Ordered set of walk-in tickets for a branch service. |
-| Ticket | Customer's persisted place in a service queue and its lifecycle state. |
+| Ticket | A customer's persisted queue entry and its lifecycle state; this is what the supplied diagram calls a queue instance. |
 | Active ticket | Ticket in WAITING, PENDING, or OPERATING state, per proposed BR-003. |
 | Call | Atomic selection and assignment of the oldest eligible waiting ticket to an operator. |
 | Business date | Branch-local date used for ticket numbering; timezone and reset rules remain unresolved. |
