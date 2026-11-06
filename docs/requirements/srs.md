@@ -132,7 +132,7 @@ Cancellation is deferred.
 4. When the customer arrives, start service; the ticket becomes OPERATING.
 5. Complete service; the ticket becomes COMPLETED. Alternatively, skip a called customer while the ticket is PENDING; the ticket becomes SKIPPED.
 
-An operator must not process another operator's assigned ticket or hold two active tickets. The detailed workflow and lifecycle diagrams are in the README's Product workflows section.
+An operator must not process another operator's assigned ticket or hold two active tickets. The detailed workflow and lifecycle diagrams are in [workflows.md](workflows.md).
 
 ## 9. Proposed release boundary
 

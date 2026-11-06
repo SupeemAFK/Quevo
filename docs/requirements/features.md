@@ -4,7 +4,7 @@
 **Source:** Product scope in the current task; see docs/requirements/srs.md.
 **Planning note:** Sprint 1 assignments below are proposed from the supplied scope. They must be compared with the official rubric before being treated as final.
 
-Feature IDs are stable. Keep an existing ID attached to a feature if its description changes; add a new ID rather than reusing a retired one.
+Feature IDs are stable. Keep an existing ID attached to a feature if its description changes; add a new ID rather than reusing a retired one. The customer/operator journey and ticket lifecycle are detailed in [workflows.md](workflows.md).
 
 | Feature ID | Feature | Scope and outcome | Requirement links | Planned scope |
 | --- | --- | --- | --- | --- |

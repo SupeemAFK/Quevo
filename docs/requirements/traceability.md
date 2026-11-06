@@ -1,7 +1,7 @@
 # Quevo Requirements Traceability
 
 **Status:** Provisional — official course rubric mapping cannot be confirmed until group_work_specs_v1 and project_deliverable_1_v1 are supplied.
-**Companion documents:** docs/requirements/srs.md and docs/requirements/features.md.
+**Companion documents:** [srs.md](srs.md), [features.md](features.md), and [workflows.md](workflows.md).
 
 Sprint assignments for baseline requirements are proposed Sprint 1 scope, derived from the supplied project task. Future items are left as future, sprint TBD. This matrix maps every requirement in the current SRS to one or more features and a planned scope.
 
