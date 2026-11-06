@@ -58,6 +58,10 @@ Stop a foreground selection with `Ctrl+C`. The API's current health endpoint doe
 
 The web app calls the API through a TanStack server function, so the API address stays on the server and does not need browser CORS access.
 
+## Product workflows
+
+Quevo supports customer queue joining and operator ticket processing. The user journey and ticket lifecycle are documented in [docs/requirements/workflows.md](docs/requirements/workflows.md). They describe intended behavior, not implemented features.
+
 ## Run locally
 
 See [docs/development.md](docs/development.md) for standalone API and web commands, environment variables, Playwright setup, and guidance for adding backend features.
