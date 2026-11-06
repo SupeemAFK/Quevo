@@ -57,8 +57,10 @@ Run the full CI suite from the repository root with `make test`. It runs web uni
 To run only the Go PostgreSQL integration test:
 
 ```sh
-cd apps/api && go test -tags=integration ./internal/platform/database
+cd apps/api && go test -tags=integration ./...
 ```
+
+The API integration suite uses Testcontainers PostgreSQL for the database and authentication flows. Authentication requires the users and sessions migrations and seeded identities described in [the authentication contract](design/authentication.md); issue #15 owns those migrations and seeds.
 
 ## Lint
 

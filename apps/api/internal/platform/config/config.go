@@ -14,6 +14,7 @@ type Config struct {
 	DBMaxIdleConns    int
 	DBMaxOpenConns    int
 	DBConnMaxLifetime time.Duration
+	SessionTTL        time.Duration
 }
 
 func Load() (Config, error) {
@@ -22,6 +23,7 @@ func Load() (Config, error) {
 		DBMaxIdleConns:    5,
 		DBMaxOpenConns:    10,
 		DBConnMaxLifetime: 30 * time.Minute,
+		SessionTTL:        12 * time.Hour,
 		DatabaseURL:       strings.TrimSpace(os.Getenv("DATABASE_URL")),
 	}
 
@@ -42,6 +44,9 @@ func Load() (Config, error) {
 	if cfg.DBConnMaxLifetime, err = durationFromEnv("DB_CONN_MAX_LIFETIME", cfg.DBConnMaxLifetime); err != nil {
 		return Config{}, err
 	}
+	if cfg.SessionTTL, err = durationFromEnv("SESSION_TTL", cfg.SessionTTL); err != nil {
+		return Config{}, err
+	}
 
 	if cfg.Port < 1 || cfg.Port > 65535 {
 		return Config{}, fmt.Errorf("PORT must be between 1 and 65535")
@@ -54,6 +59,9 @@ func Load() (Config, error) {
 	}
 	if cfg.DBConnMaxLifetime <= 0 {
 		return Config{}, fmt.Errorf("DB_CONN_MAX_LIFETIME must be greater than 0")
+	}
+	if cfg.SessionTTL <= 0 {
+		return Config{}, fmt.Errorf("SESSION_TTL must be greater than 0")
 	}
 
 	return cfg, nil

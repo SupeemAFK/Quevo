@@ -32,7 +32,7 @@ func New(cfg config.Config, logger *zap.Logger) (*App, error) {
 
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
-		Handler:           NewRouter(logger),
+		Handler:           NewRouter(logger, db, cfg.SessionTTL),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      30 * time.Second,

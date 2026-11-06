@@ -1,11 +1,11 @@
 # Quevo System Design Specification
 
-**Status:** Draft system-level design cross-checked against the supplied course specifications; proposed implementation choices remain subject to team review.
+**Status:** Draft system-level design cross-checked against the supplied course specifications. Implemented authentication choices are recorded in [authentication.md](authentication.md); remaining design decisions stay marked as proposals.
 **Product:** Quevo walk-in bank branch queue management
 **Related requirements:** docs/requirements/srs.md, docs/requirements/features.md, docs/requirements/workflows.md
-**Repository baseline inspected:** origin/main after merge of PR #3
+**Repository baseline inspected:** origin/staging after merge of PR #5
 
-> This document describes intended architecture, not implemented product behavior. At the inspected repository revision, the API exposes a health endpoint and the web app demonstrates the API connection. Authentication and queue features remain design targets. The supplied group_work_specs_v1 is labeled draft for instructor review; project_deliverable_1_v1 is the supplied D1 v1. docs/requirements/traceability.md distinguishes those source clauses from Quevo design proposals.
+> This document describes intended architecture and remaining product behavior. Authentication endpoints and the web sign-in/session boundary are being implemented for issue #7; database migrations and seed data are owned by issue #15. Queue behavior remains a design target. The supplied group_work_specs_v1 is labeled draft for instructor review; project_deliverable_1_v1 is the supplied D1 v1. docs/requirements/traceability.md distinguishes those source clauses from Quevo design proposals.
 
 ## 1. Purpose and design goals
 
@@ -25,14 +25,14 @@ Design goals:
 
 | Area | Current repository | Intended product design |
 | --- | --- | --- |
-| API | Go HTTP server using Gin, GORM, Zap, and an API v1 router; health route only. | Feature packages for identity, service discovery, and ticket workflows, wired explicitly through the app router. |
-| Web | React and TypeScript with TanStack Start, TanStack Query, Bun, Tailwind, and shadcn. The home page calls the API health route. | Customer and operator route groups call the Go API through TanStack Start server functions and typed API helpers. |
+| API | Go HTTP server using Gin, GORM, Zap, and an API v1 router; health and auth routes are implemented. Auth persistence expects the users/sessions schema from issue #15. | Feature packages for identity, service discovery, and ticket workflows, wired explicitly through the app router. |
+| Web | React and TypeScript with TanStack Start, TanStack Query, Bun, Tailwind, and shadcn. The web app has a login screen and server-managed session flow. | Customer and operator route groups call the Go API through TanStack Start server functions and typed API helpers. |
 | Database | Optional GORM PostgreSQL pool; no application migrations yet. | PostgreSQL owns users, branches, services, operator-service authorization, sessions, queue numbering, and tickets. |
-| Contract | OpenAPI 3.1 is generated and served; TypeScript types are generated from it. | Every implemented endpoint has an OpenAPI contract; provider, client-type, and E2E checks verify it. |
-| Tests | Starter unit/component, OpenAPI contract, PostgreSQL integration, and Playwright infrastructure. | Add tests with each feature. E2E runs the real web app and API against PostgreSQL. |
+| Contract | OpenAPI 3.1 includes health and auth endpoints; TypeScript types are generated from it. | Every implemented endpoint has an OpenAPI contract; provider, client-type, and E2E checks verify it. |
+| Tests | Starter unit/component and infrastructure tests, plus auth unit/provider tests and a PostgreSQL auth integration test. Queue behavior remains unimplemented. | Add tests with each feature. E2E runs the real web app and API against PostgreSQL. |
 | Deployment | Local Compose network and multi-stage Dockerfiles. | Candidate Cloud Run services with Cloud SQL for PostgreSQL; Artifact Registry, Secret Manager, IAM service accounts, and Cloud Logging. Confirm topology in Lab 5; no cloud deployment is required for D1. |
 
-No application feature is implemented by this design step.
+This design document does not implement application behavior; see the current-repository column for implementation status.
 
 ## 3. System architecture
 
@@ -198,7 +198,7 @@ Validate inputs in the browser for quick feedback and repeat every rule in the A
 
 Use an opaque, high-entropy session token. Persist only a cryptographic hash of the token in PostgreSQL with its user, creation, expiry, and revocation timestamps. The token is carried in a web-origin cookie and is never placed in browser JavaScript, URLs, or logs.
 
-The API remains the authority for authentication and authorization. The web server function forwards the opaque token to the Go API in a server-to-server authorization header. The token format, password verifier, session duration, rotation policy, and recovery flows require review before implementation.
+The API remains the authority for authentication and authorization. The web server function forwards the opaque token to the Go API in a server-to-server authorization header. The implemented token, password, role, expiry, cookie, and error choices are recorded in [authentication.md](authentication.md). Registration, recovery, and global session revocation remain out of scope.
 
 ```mermaid
 sequenceDiagram
@@ -233,13 +233,13 @@ sequenceDiagram
 
 ### 6.2 Cookie and request protections
 
-Proposed production cookie settings: HttpOnly, Secure, SameSite=Lax, and Path=/. Use HTTPS in deployed environments. Apply Origin/Referer validation or a CSRF token strategy to state-changing requests; SameSite alone is not the complete authorization policy. Set a bounded server-side session expiry and clear expired/revoked cookies in the web response.
+The web cookie uses HttpOnly, SameSite=Lax, Path=/, and Secure in production. Use HTTPS in deployed environments. TanStack Start's server-function request-origin checks protect state-changing web calls; Go independently validates the API session. Session expiry is bounded and expired/revoked cookies are cleared by the web server function.
 
 Never log raw credentials, cookie values, authorization headers, password hashes, or session-token hashes. Rate limiting and account lockout policy require security review and are not yet specified.
 
 ### 6.3 Lifecycle rules
 
-1. Login verifies the submitted identity and credential, creates a new random session, and invalidates or rotates any prior session according to the final policy.
+1. Login normalizes the identifier, verifies the bcrypt credential, and creates a new random session. Multiple sessions may coexist; logout revokes only the current session.
 2. A protected request validates the session against server-side storage and derives the user ID and role from that record.
 3. Logout revokes the current session in the API and clears the browser cookie.
 4. Expired or revoked sessions receive 401 and cannot mutate data.
@@ -463,14 +463,14 @@ Run explicit versioned migrations as a release/deployment job before the new app
 | Contract | Provider responses conform to generated OpenAPI; web types match generated schema. | kin-openapi, OpenAPI generation, openapi-typescript check. |
 | Full-stack E2E | Customer/operator journeys and persisted state across browser, web server, API, and database. | Playwright with real Go API and Testcontainers PostgreSQL; no mocked backend. |
 
-The current tests exercise starter health and infrastructure. They do not yet verify authentication, authorization, queue transitions, or concurrency.
+Authentication unit, provider-contract, web component, and PostgreSQL integration tests cover the current sign-in/session behavior and role/ownership policy. Queue transition and concurrency behavior remain unimplemented and untested.
 
 ## 14. Design decisions and open questions
 
 | Decision | Current design position | Needs resolution |
 | --- | --- | --- |
 | Official course specifications | The supplied group_work_specs_v1 is labeled draft for instructor review; project_deliverable_1_v1 is the D1 v1 source. | Keep direct clauses and Quevo proposals distinguished in traceability.md; confirm draft/spec changes with the team. |
-| Authentication | Propose opaque server-side sessions with a web-origin HttpOnly cookie and API-side validation. | Confirm identity fields, credential or SSO mechanism, session lifetime, rotation, CSRF policy, and account provisioning. |
+| Authentication | Opaque server-side sessions, bcrypt local passwords, `CUSTOMER`/`OPERATOR` roles, 12-hour default expiry, and a web-origin HttpOnly cookie with Go-side validation. See [authentication.md](authentication.md). | Issue #15 must create the agreed users/sessions schema and seeded accounts. Production identity providers and account recovery are out of scope. |
 | Queue key and business date | Branch, service, and business date; calculate date in branch timezone. | Set timezone source, queue open/close rules, and ticket reset policy. |
 | Ticket number | Unique within branch/service/business date. QueueSequence allocates it transactionally. | Confirm prefix, padding, start number, and whether gaps are acceptable after errors. |
 | Operator authorization | OperatorService records access to a service; provisioned data is enough for the first vertical slice. | Confirm who creates/revokes assignments and whether counters are required in the baseline. |

@@ -60,7 +60,7 @@ The web app calls the API through a TanStack server function, so the API address
 
 ## Product workflows
 
-Quevo supports customer queue joining and operator ticket processing. The user journey and ticket lifecycle are documented in [docs/requirements/workflows.md](docs/requirements/workflows.md). They describe intended behavior, not implemented features. The proposed system architecture, data model, API/UI conventions, session lifecycle, and deployment strategy are in [docs/design/system-sds.md](docs/design/system-sds.md). The requirements-to-feature-to-sprint matrix and official Theme 9 / Deliverable 1 crosswalk are in [docs/requirements/traceability.md](docs/requirements/traceability.md). The course milestones and proposed feature allocation are in [docs/sprints/plan.md](docs/sprints/plan.md). Issue effort weights and label conventions are in [docs/sprints/estimation.md](docs/sprints/estimation.md).
+Quevo supports customer queue joining and operator ticket processing. The user journey and ticket lifecycle are documented in [docs/requirements/workflows.md](docs/requirements/workflows.md). They describe intended behavior, not implemented features. The proposed system architecture and data model are in [docs/design/system-sds.md](docs/design/system-sds.md); the implemented sign-in, session, and browser/API contract is in [docs/design/authentication.md](docs/design/authentication.md). The requirements-to-feature-to-sprint matrix and official Theme 9 / Deliverable 1 crosswalk are in [docs/requirements/traceability.md](docs/requirements/traceability.md). The course milestones and proposed feature allocation are in [docs/sprints/plan.md](docs/sprints/plan.md). Issue effort weights and label conventions are in [docs/sprints/estimation.md](docs/sprints/estimation.md).
 
 ## Run locally
 
@@ -112,7 +112,7 @@ Run individual suites:
 ```sh
 cd apps/web && bun run test
 cd apps/api && go test ./...                 # unit and OpenAPI provider contract
-cd apps/api && go test -tags=integration ./internal/platform/database
+cd apps/api && go test -tags=integration ./...
 cd tests && bunx playwright test             # full stack with real PostgreSQL
 ```
 
@@ -130,7 +130,7 @@ The web check uses Biome through Bun. The Go check uses golangci-lint `v2.15.0` 
 
 ## API and generated types
 
-`GET /api/v1/health` returns `{"status":"healthy"}`. Swagger UI is served at `/swagger/`, and the generated OpenAPI 3.1 JSON is served at `/openapi.json`.
+`GET /api/v1/health` returns `{"status":"healthy"}`. The API also exposes `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, and `POST /api/v1/auth/logout`. Authentication requires the users and sessions migrations and seed data owned by issue #15; see [docs/design/authentication.md](docs/design/authentication.md). Swagger UI is served at `/swagger/`, and the generated OpenAPI 3.1 JSON is served at `/openapi.json`.
 
 To regenerate after changing Go endpoint annotations or response types, run from the repository root:
 
@@ -139,4 +139,4 @@ cd apps/api && make generate-openapi
 cd ../web && bun install --frozen-lockfile && bun run generate:api
 ```
 
-`openapi-typescript` generates `apps/web/src/client/api/schema.d.ts`; `openapi-fetch` uses it for typed requests, and TanStack Query calls those requests through a TanStack Start server function. `kin-openapi` validates the generated API document and a real health response in Go tests. `DATABASE_URL` is optional for standalone API development; Compose sets it for the local stack.
+`openapi-typescript` generates `apps/web/src/client/api/schema.d.ts`; `openapi-fetch` uses it for typed requests, and TanStack Start server functions call the health and auth endpoints. `kin-openapi` validates the generated API document and health/auth provider responses in Go tests. `DATABASE_URL` is optional for standalone API development; Compose sets it for the local stack.

@@ -1,6 +1,6 @@
 # Quevo API
 
-A Go API scaffold using Gin and GORM, organized as a feature-first modular monolith. The current endpoint is `GET /api/v1/health`; it does not use the database. OpenAPI 3.1 JSON is served at `/openapi.json`, and Swagger UI is served at `/swagger/`.
+A Go API using Gin and GORM, organized as a feature-first modular monolith. It exposes `GET /api/v1/health` and sign-in, sign-out, and current-user endpoints under `/api/v1/auth`. Health does not use the database. Auth endpoints expect the users and sessions tables described in [the authentication contract](../../docs/design/authentication.md); issue #15 owns their migrations and seed data. OpenAPI 3.1 JSON is served at `/openapi.json`, and Swagger UI is served at `/swagger/`.
 
 The `go.mod` module path is a placeholder (`example.com/quevo/apps/api`) because this checkout has no Git remote or established Go import path. Update it and the internal imports when the canonical repository path is known.
 
@@ -29,6 +29,7 @@ Zap writes structured JSON for application and HTTP request logs. Request logs i
 | `DB_MAX_IDLE_CONNS` | `5` | Maximum idle database connections |
 | `DB_MAX_OPEN_CONNS` | `10` | Maximum open database connections |
 | `DB_CONN_MAX_LIFETIME` | `30m` | Maximum lifetime for a pooled database connection |
+| `SESSION_TTL` | `12h` | Lifetime for newly created sessions |
 
 ## Endpoint
 
@@ -59,6 +60,7 @@ The health handler does not connect to PostgreSQL.
 - `internal/app` wires optional infrastructure and configures the HTTP server and router.
 - `internal/platform/config` parses and validates environment variables.
 - `internal/platform/database` initializes the reusable GORM PostgreSQL pool.
+- `internal/auth` verifies credentials, stores opaque server-side sessions, and enforces session and role checks.
 - `internal/health` owns the current HTTP handler and route registration.
 
 Future features should live in their own `internal/<feature>` package. A feature should add handler, service, repository, model, and DTO files only when needed, then expose a route-registration function that `internal/app/router.go` calls with a group under `/api/v1`. Keep cross-feature wiring explicit and avoid placeholder interfaces until a concrete use requires them.
