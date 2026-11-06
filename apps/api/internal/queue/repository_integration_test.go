@@ -1,17 +1,16 @@
 //go:build integration
 
-package database
+package queue
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"sync"
 	"testing"
 	"time"
 
+	"example.com/quevo/apps/api/internal/platform/database"
 	"github.com/google/uuid"
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 )
@@ -34,30 +33,34 @@ func TestSprint1MigrationsSeedAndQueueTransactions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get PostgreSQL URL: %v", err)
 	}
-	db, err := sql.Open("pgx", url)
+	gormDB, err := database.Open(url, database.PoolConfig{MaxIdleConns: 2, MaxOpenConns: 10, ConnMaxLifetime: time.Minute})
 	if err != nil {
 		t.Fatalf("open PostgreSQL: %v", err)
+	}
+	db, err := gormDB.DB()
+	if err != nil {
+		t.Fatalf("get PostgreSQL pool: %v", err)
 	}
 	t.Cleanup(func() { _ = db.Close() })
 	if err := db.PingContext(ctx); err != nil {
 		t.Fatalf("ping PostgreSQL: %v", err)
 	}
 
-	if err := Migrate(ctx, db); err != nil {
+	if err := database.Migrate(ctx, gormDB); err != nil {
 		t.Fatalf("apply migrations: %v", err)
 	}
-	if err := Migrate(ctx, db); err != nil {
+	if err := database.Migrate(ctx, gormDB); err != nil {
 		t.Fatalf("repeat migrations: %v", err)
 	}
 	var migrationCount int
 	if err := db.QueryRowContext(ctx, `SELECT count(*) FROM schema_migrations`).Scan(&migrationCount); err != nil || migrationCount != 1 {
 		t.Fatalf("migration ledger count = %d, err %v; want 1", migrationCount, err)
 	}
-	seed := SeedCredentials{CustomerHash: "test-customer-hash", OperatorHash: "test-operator-hash"}
-	if err := SeedDemo(ctx, db, seed); err != nil {
+	seed := database.SeedCredentials{CustomerHash: "test-customer-hash", OperatorHash: "test-operator-hash"}
+	if err := database.SeedDemo(ctx, gormDB, seed); err != nil {
 		t.Fatalf("seed demo: %v", err)
 	}
-	if err := SeedDemo(ctx, db, seed); err != nil {
+	if err := database.SeedDemo(ctx, gormDB, seed); err != nil {
 		t.Fatalf("repeat demo seed: %v", err)
 	}
 	for table, want := range map[string]int{"branches": 1, "services": 1, "app_users": 2, "operator_services": 1} {
@@ -81,19 +84,20 @@ func TestSprint1MigrationsSeedAndQueueTransactions(t *testing.T) {
 		}
 	}
 	for _, operator := range []string{operator2, operator3, operator4} {
-		if _, err := db.ExecContext(ctx, `INSERT INTO operator_services (operator_id, service_id) VALUES ($1, $2)`, operator, DemoServiceID); err != nil {
+		if _, err := db.ExecContext(ctx, `INSERT INTO operator_services (operator_id, service_id) VALUES ($1, $2)`, operator, database.DemoServiceID); err != nil {
 			t.Fatalf("authorize test operator: %v", err)
 		}
 	}
+	repo := NewRepository(gormDB)
 	date := time.Date(2026, 11, 7, 0, 0, 0, 0, time.UTC)
-	first, err := JoinQueue(ctx, db, JoinQueueInput{CustomerID: DemoCustomerID, ServiceID: DemoServiceID, BusinessDate: date})
+	first, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: database.DemoCustomerID, ServiceID: database.DemoServiceID, BusinessDate: date})
 	if err != nil || first.TicketNumber != "1" || first.Status != "WAITING" {
 		t.Fatalf("first join = %#v, err %v", first, err)
 	}
-	if _, err := JoinQueue(ctx, db, JoinQueueInput{CustomerID: DemoCustomerID, ServiceID: DemoServiceID, BusinessDate: date}); !errors.Is(err, ErrActiveTicket) {
+	if _, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: database.DemoCustomerID, ServiceID: database.DemoServiceID, BusinessDate: date}); !errors.Is(err, ErrActiveTicket) {
 		t.Fatalf("duplicate join error = %v; want ErrActiveTicket", err)
 	}
-	second, err := JoinQueue(ctx, db, JoinQueueInput{CustomerID: customer2, ServiceID: DemoServiceID, BusinessDate: date})
+	second, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: customer2, ServiceID: database.DemoServiceID, BusinessDate: date})
 	if err != nil || second.TicketNumber != "2" {
 		t.Fatalf("second join = %#v, err %v; want ticket 2 (duplicate must not consume sequence)", second, err)
 	}
@@ -101,14 +105,14 @@ func TestSprint1MigrationsSeedAndQueueTransactions(t *testing.T) {
 		t.Fatalf("set FIFO fixture time: %v", err)
 	}
 
-	called, ok, err := CallNext(ctx, db, CallNextInput{OperatorID: DemoOperatorID, ServiceID: DemoServiceID, BusinessDate: date})
+	called, ok, err := repo.CallNext(ctx, CallNextInput{OperatorID: database.DemoOperatorID, ServiceID: database.DemoServiceID, BusinessDate: date})
 	if err != nil || !ok || called.ID != second.ID || called.Status != "PENDING" || !called.CalledAt.Valid {
 		t.Fatalf("call-next = %#v, ok %v, err %v; want oldest ticket %s in PENDING", called, ok, err, second.ID)
 	}
-	if _, _, err := CallNext(ctx, db, CallNextInput{OperatorID: DemoOperatorID, ServiceID: DemoServiceID, BusinessDate: date}); !errors.Is(err, ErrOperatorHasActiveTicket) {
+	if _, _, err := repo.CallNext(ctx, CallNextInput{OperatorID: database.DemoOperatorID, ServiceID: database.DemoServiceID, BusinessDate: date}); !errors.Is(err, ErrOperatorHasActiveTicket) {
 		t.Fatalf("second active ticket error = %v; want ErrOperatorHasActiveTicket", err)
 	}
-	claimed, ok, err := CallNext(ctx, db, CallNextInput{OperatorID: operator2, ServiceID: DemoServiceID, BusinessDate: date})
+	claimed, ok, err := repo.CallNext(ctx, CallNextInput{OperatorID: operator2, ServiceID: database.DemoServiceID, BusinessDate: date})
 	if err != nil || !ok || claimed.ID != first.ID {
 		t.Fatalf("second operator call-next = %#v, ok %v, err %v; want remaining ticket %s", claimed, ok, err, first.ID)
 	}
@@ -121,7 +125,7 @@ func TestSprint1MigrationsSeedAndQueueTransactions(t *testing.T) {
 	joinResults := make(chan joinResult, 2)
 	for _, customer := range []string{customer3, customer4} {
 		go func(customer string) {
-			ticket, err := JoinQueue(ctx, db, JoinQueueInput{CustomerID: customer, ServiceID: DemoServiceID, BusinessDate: date})
+			ticket, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: customer, ServiceID: database.DemoServiceID, BusinessDate: date})
 			joinResults <- joinResult{ticket: ticket, err: err}
 		}(customer)
 	}
@@ -151,7 +155,7 @@ func TestSprint1MigrationsSeedAndQueueTransactions(t *testing.T) {
 	for _, operator := range []string{operator3, operator4} {
 		go func(operator string) {
 			start.Wait()
-			ticket, ok, err := CallNext(ctx, db, CallNextInput{OperatorID: operator, ServiceID: DemoServiceID, BusinessDate: date})
+			ticket, ok, err := repo.CallNext(ctx, CallNextInput{OperatorID: operator, ServiceID: database.DemoServiceID, BusinessDate: date})
 			callResults <- callResult{ticket: ticket, ok: ok, err: err}
 		}(operator)
 	}
@@ -171,13 +175,13 @@ func TestSprint1MigrationsSeedAndQueueTransactions(t *testing.T) {
 	// future caller bypasses the repository transaction helpers.
 	_, err = db.ExecContext(ctx, `INSERT INTO tickets
 		(id, branch_id, service_id, business_date, ticket_number, customer_id, status)
-		VALUES ($1, $2, $3, $4, '999', $5, 'WAITING')`, uuid.NewString(), DemoBranchID, DemoServiceID, date, DemoCustomerID)
+		VALUES ($1, $2, $3, $4, '999', $5, 'WAITING')`, uuid.NewString(), database.DemoBranchID, database.DemoServiceID, date, database.DemoCustomerID)
 	if err == nil {
 		t.Fatal("database accepted a duplicate active customer ticket")
 	}
 	_, err = db.ExecContext(ctx, `INSERT INTO tickets
 		(id, branch_id, service_id, business_date, ticket_number, customer_id, assigned_operator_id, status, called_at)
-		VALUES ($1, $2, $3, $4, '998', $5, $6, 'PENDING', now())`, uuid.NewString(), DemoBranchID, DemoServiceID, date, customer5, DemoOperatorID)
+		VALUES ($1, $2, $3, $4, '998', $5, $6, 'PENDING', now())`, uuid.NewString(), database.DemoBranchID, database.DemoServiceID, date, customer5, database.DemoOperatorID)
 	if err == nil {
 		t.Fatal("database accepted a second active ticket for one operator")
 	}

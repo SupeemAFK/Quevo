@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -14,32 +16,45 @@ type Config struct {
 	DBMaxIdleConns    int
 	DBMaxOpenConns    int
 	DBConnMaxLifetime time.Duration
+	CustomerPassword  string
+	OperatorPassword  string
 }
 
 func Load() (Config, error) {
+	values, err := godotenv.Read(".env")
+	if err != nil && !os.IsNotExist(err) {
+		return Config{}, fmt.Errorf("load .env: %w", err)
+	}
+	get := func(key string) string {
+		if value, ok := os.LookupEnv(key); ok {
+			return value
+		}
+		return values[key]
+	}
 	cfg := Config{
 		Port:              8080,
 		DBMaxIdleConns:    5,
 		DBMaxOpenConns:    10,
 		DBConnMaxLifetime: 30 * time.Minute,
-		DatabaseURL:       strings.TrimSpace(os.Getenv("DATABASE_URL")),
+		DatabaseURL:       strings.TrimSpace(get("DATABASE_URL")),
+		CustomerPassword:  get("QUEVO_CUSTOMER_PASSWORD"),
+		OperatorPassword:  get("QUEVO_OPERATOR_PASSWORD"),
 	}
 
-	var err error
-	if cfg.Port, err = intFromEnv("PORT", cfg.Port); err != nil {
+	if cfg.Port, err = intFromEnv(get, "PORT", cfg.Port); err != nil {
 		return Config{}, err
 	}
-	if cfg.DBMaxOpenConns, err = intFromEnv("DB_MAX_OPEN_CONNS", cfg.DBMaxOpenConns); err != nil {
+	if cfg.DBMaxOpenConns, err = intFromEnv(get, "DB_MAX_OPEN_CONNS", cfg.DBMaxOpenConns); err != nil {
 		return Config{}, err
 	}
 	idleConnDefault := cfg.DBMaxIdleConns
 	if cfg.DBMaxOpenConns < idleConnDefault {
 		idleConnDefault = cfg.DBMaxOpenConns
 	}
-	if cfg.DBMaxIdleConns, err = intFromEnv("DB_MAX_IDLE_CONNS", idleConnDefault); err != nil {
+	if cfg.DBMaxIdleConns, err = intFromEnv(get, "DB_MAX_IDLE_CONNS", idleConnDefault); err != nil {
 		return Config{}, err
 	}
-	if cfg.DBConnMaxLifetime, err = durationFromEnv("DB_CONN_MAX_LIFETIME", cfg.DBConnMaxLifetime); err != nil {
+	if cfg.DBConnMaxLifetime, err = durationFromEnv(get, "DB_CONN_MAX_LIFETIME", cfg.DBConnMaxLifetime); err != nil {
 		return Config{}, err
 	}
 
@@ -59,8 +74,8 @@ func Load() (Config, error) {
 	return cfg, nil
 }
 
-func intFromEnv(key string, fallback int) (int, error) {
-	value := strings.TrimSpace(os.Getenv(key))
+func intFromEnv(get func(string) string, key string, fallback int) (int, error) {
+	value := strings.TrimSpace(get(key))
 	if value == "" {
 		return fallback, nil
 	}
@@ -71,8 +86,8 @@ func intFromEnv(key string, fallback int) (int, error) {
 	return parsed, nil
 }
 
-func durationFromEnv(key string, fallback time.Duration) (time.Duration, error) {
-	value := strings.TrimSpace(os.Getenv(key))
+func durationFromEnv(get func(string) string, key string, fallback time.Duration) (time.Duration, error) {
+	value := strings.TrimSpace(get(key))
 	if value == "" {
 		return fallback, nil
 	}

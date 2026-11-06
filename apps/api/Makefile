@@ -8,7 +8,7 @@ test-unit:
 	go test ./...
 
 test-integration:
-	go test -tags=integration ./internal/platform/database
+	go test -tags=integration ./internal/platform/database ./internal/queue
 
 migrate-up:
 	go run ./cmd/migrate

@@ -112,7 +112,7 @@ Run individual suites:
 ```sh
 cd apps/web && bun run test
 cd apps/api && go test ./...                 # unit and OpenAPI provider contract
-cd apps/api && go test -tags=integration ./internal/platform/database
+cd apps/api && go test -tags=integration ./internal/platform/database ./internal/queue
 cd tests && bunx playwright test             # full stack with real PostgreSQL
 ```
 

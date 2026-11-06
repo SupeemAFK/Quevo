@@ -12,7 +12,7 @@ Requires Go 1.25 or later. From this directory:
 go run ./cmd/server
 ```
 
-The server listens on `:8080` by default. Environment values can be exported in the shell or provided by the deployment environment. `.env.example` lists the supported variables; the application does not load `.env` files itself.
+The server listens on `:8080` by default. Configuration loads an optional `.env` file from the current directory; exported environment values take precedence. `.env.example` lists the supported variables. The server, migration command, and seed command use the same configuration.
 
 `DATABASE_URL` is optional. When it is set, the app creates a GORM PostgreSQL connection pool without pinging the database at startup. The health endpoint therefore remains available if PostgreSQL is offline. No schema or migrations are created automatically.
 
@@ -27,7 +27,7 @@ export QUEVO_OPERATOR_PASSWORD='choose-another-local-demo-password'
 make seed-demo
 ```
 
-The seed creates one UTC demo branch, one active service, a Customer, an Operator, and the operator's service authorization. It is safe to rerun. Passwords are supplied through the environment, hashed with bcrypt, and never printed or committed. Demo logins are `customer@quevo.local` and `operator@quevo.local`. Do not use these local accounts in a deployed environment.
+The seed creates one UTC demo branch, one active service, a Customer, an Operator, and the operator's service authorization. It is safe to rerun. Passwords are supplied through `.env` or the environment, hashed with bcrypt, and never printed or committed. Demo logins are `customer@quevo.local` and `operator@quevo.local`. Do not use these local accounts in a deployed environment.
 
 ## Logging
 

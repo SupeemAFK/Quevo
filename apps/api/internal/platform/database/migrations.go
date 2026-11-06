@@ -2,12 +2,13 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"embed"
 	"fmt"
 	"io/fs"
 	"sort"
 	"strings"
+
+	"gorm.io/gorm"
 )
 
 //go:embed migrations/*.up.sql
@@ -15,11 +16,12 @@ var migrationFiles embed.FS
 
 // Migrate applies each embedded versioned migration once. It is called by an
 // explicit command; application startup never changes the schema.
-func Migrate(ctx context.Context, db *sql.DB) error {
-	if _, err := db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS schema_migrations (
+func Migrate(ctx context.Context, db *gorm.DB) error {
+	db = db.WithContext(ctx)
+	if err := db.Exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
 		version TEXT PRIMARY KEY,
 		applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
-	)`); err != nil {
+	)`).Error; err != nil {
 		return fmt.Errorf("create migration ledger: %w", err)
 	}
 
@@ -31,7 +33,7 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 	for _, path := range entries {
 		version := strings.TrimSuffix(strings.TrimPrefix(path, "migrations/"), ".up.sql")
 		var applied bool
-		if err := db.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE version = $1)`, version).Scan(&applied); err != nil {
+		if err := db.Raw(`SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE version = ?)`, version).Row().Scan(&applied); err != nil {
 			return fmt.Errorf("check migration %s: %w", version, err)
 		}
 		if applied {
@@ -41,26 +43,22 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 		if err != nil {
 			return fmt.Errorf("read migration %s: %w", version, err)
 		}
-		tx, err := db.BeginTx(ctx, nil)
-		if err != nil {
-			return fmt.Errorf("begin migration %s: %w", version, err)
-		}
-		for _, statement := range strings.Split(string(sqlBytes), ";") {
-			statement = strings.TrimSpace(statement)
-			if statement == "" {
-				continue
+		if err := db.Transaction(func(tx *gorm.DB) error {
+			for _, statement := range strings.Split(string(sqlBytes), ";") {
+				statement = strings.TrimSpace(statement)
+				if statement == "" {
+					continue
+				}
+				if err := tx.Exec(statement).Error; err != nil {
+					return fmt.Errorf("apply migration %s: %w", version, err)
+				}
 			}
-			if _, err := tx.ExecContext(ctx, statement); err != nil {
-				_ = tx.Rollback()
-				return fmt.Errorf("apply migration %s: %w", version, err)
+			if err := tx.Exec(`INSERT INTO schema_migrations (version) VALUES (?)`, version).Error; err != nil {
+				return fmt.Errorf("record migration %s: %w", version, err)
 			}
-		}
-		if _, err := tx.ExecContext(ctx, `INSERT INTO schema_migrations (version) VALUES ($1)`, version); err != nil {
-			_ = tx.Rollback()
-			return fmt.Errorf("record migration %s: %w", version, err)
-		}
-		if err := tx.Commit(); err != nil {
-			return fmt.Errorf("commit migration %s: %w", version, err)
+			return nil
+		}); err != nil {
+			return fmt.Errorf("run migration %s: %w", version, err)
 		}
 	}
 	return nil
