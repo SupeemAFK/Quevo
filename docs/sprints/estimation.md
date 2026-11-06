@@ -60,16 +60,16 @@ Closed detail issues consolidated into a parent are historical references and ar
 | #6 | Review Sprint Plan and Scope | 1 | Plan and peer review only |
 | #7 | Sign In and Enforce Permissions | 3 | Authentication and access tests |
 | #9 | Customer Queue Journey | 3 | Service selection, join, own-ticket view, and tests |
-| #12 | Operate the Queue and Process Tickets | 5 | Queue access, atomic call-next, transitions, skip, and tests |
+| #12 | View the Operator Queue and Process Tickets | 5 | Queue access, atomic call-next, transitions, skip, and tests |
 | #15 | Persist Queue Data and Enforce Integrity | 3 | Migrations, seed, invariants, PostgreSQL tests |
-| #16 | Decide on Service Catalog Management | 1 | Scope and contract decision only |
-| #17 | Plan Multiple Queues and Counters | 2 | Domain, access, migration, and child-issue breakdown only |
-| #18 | Define Ticket Cancellation Policy | 1 | Policy and contract only |
-| #19 | Define No-Show Handling | 1 | Policy and contract only |
-| #20 | Define Queue Summary Measures | 2 | Measures, access, and calculation contract only |
-| #21 | Decide on Extended Ticket History | 1 | Product decision and contract only |
-| #22 | Decide on Automatic Queue Updates | 1 | Product decision and technical contract only |
-| #23 | Decide on Service-Specific Request Details | 1 | Product decision and data/privacy contract only |
-| #24 | Integrate and Verify Sprint 1 Release | 3 | Full-stack acceptance and delivery evidence |
+| #16 | Decide Whether to Manage the Service Catalog | 1 | Scope and contract decision only |
+| #17 | Plan Support for Multiple Queues and Counters | 2 | Domain, access, migration, and child-issue breakdown only |
+| #18 | Define the Customer Cancellation Policy | 1 | Policy and contract only |
+| #19 | Define the No-Show Policy | 1 | Policy and contract only |
+| #20 | Define Queue Service Summary Measures | 2 | Measures, access, and calculation contract only |
+| #21 | Decide Whether to Keep Extended Ticket History | 1 | Product decision and contract only |
+| #22 | Decide Whether to Add Automatic Queue Updates | 1 | Product decision and technical contract only |
+| #23 | Decide Whether Services Need Custom Request Details | 1 | Product decision and data/privacy contract only |
+| #24 | Integrate and Verify the Sprint 1 Release | 3 | Full-stack acceptance and delivery evidence |
 
 Effort weights are initial team estimates. Re-estimate when scope changes. Backlog grooming weights do not estimate the implementation of future features.
