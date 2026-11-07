@@ -7,7 +7,7 @@ import (
 
 // Repository is the persistence boundary used by the auth service.
 type Repository interface {
-	FindUserByIdentifier(context.Context, string) (User, error)
+	FindUserByEmail(context.Context, string) (User, error)
 	FindUserByID(context.Context, string) (User, error)
 	HasOperatorServiceAccess(context.Context, string, string) (bool, error)
 	CreateSession(context.Context, Session) error

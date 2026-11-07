@@ -26,7 +26,7 @@ func TestQueueRepositoryPostgres(t *testing.T) {
 		{operator2, "OPERATOR", "Second Operator"}, {operator3, "OPERATOR", "Third Operator"},
 		{operator4, "OPERATOR", "Fourth Operator"}, {operator5, "OPERATOR", "Fifth Operator"},
 	} {
-		if _, err := db.ExecContext(ctx, `INSERT INTO app_users (id, role, display_name, login_identifier, credential_hash)
+		if _, err := db.ExecContext(ctx, `INSERT INTO users (id, role, display_name, email, password_hash)
 			VALUES ($1, $2, $3, $4, 'test-hash')`, user.id, user.role, user.name, user.id+"@quevo.local"); err != nil {
 			t.Fatalf("insert test user: %v", err)
 		}

@@ -20,7 +20,7 @@ func newMemoryRepository(t *testing.T, role Role) *memoryRepository {
 	return &memoryRepository{
 		user: User{
 			ID: "b173f94e-9db0-41eb-945e-44c8af09027d", Role: role, DisplayName: "Demo Customer",
-			LoginIdentifier: "customer@example.test", CredentialHash: string(hash),
+			Email: "customer@example.test", PasswordHash: string(hash),
 		},
 	}
 }
@@ -31,8 +31,8 @@ type memoryRepository struct {
 	operatorServices map[string]bool
 }
 
-func (r *memoryRepository) FindUserByIdentifier(_ context.Context, identifier string) (User, error) {
-	if identifier != r.user.LoginIdentifier {
+func (r *memoryRepository) FindUserByEmail(_ context.Context, email string) (User, error) {
+	if email != r.user.Email {
 		return User{}, ErrNotFound
 	}
 	return r.user, nil

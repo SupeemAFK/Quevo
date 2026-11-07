@@ -6,7 +6,7 @@ import { createApiClient } from './api-client'
 export type Identity = components['schemas']['auth.Identity']
 
 export type LoginInput = {
-  identifier: string
+  email: string
   password: string
 }
 
@@ -27,7 +27,7 @@ function cookieOptions() {
 
 export const signIn = createServerFn({ method: 'POST' })
   .validator((data: LoginInput) => ({
-    identifier: data.identifier.trim(),
+    email: data.email.trim().toLowerCase(),
     password: data.password,
   }))
   .handler(async ({ data }) => {

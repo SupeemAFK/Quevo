@@ -16,7 +16,7 @@ func TestRequireOperatorServiceChecksRoleAndAssignment(t *testing.T) {
 		repository.user.ID + ":service-1": true,
 	}
 	service := NewService(repository, time.Hour)
-	login, err := service.Login(context.Background(), repository.user.LoginIdentifier, "correct-password")
+	login, err := service.Login(context.Background(), repository.user.Email, "correct-password")
 	if err != nil {
 		t.Fatalf("login operator: %v", err)
 	}

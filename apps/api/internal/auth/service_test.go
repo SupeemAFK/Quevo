@@ -34,16 +34,16 @@ func TestLoginCreatesHashedSession(t *testing.T) {
 
 func TestLoginRejectsInvalidCredentialsWithoutCreatingSession(t *testing.T) {
 	for _, test := range []struct {
-		name       string
-		identifier string
-		password   string
+		name     string
+		email    string
+		password string
 	}{
-		{name: "wrong password", identifier: "customer@example.test", password: "wrong-password"},
-		{name: "unknown user", identifier: "unknown@example.test", password: "correct-password"},
+		{name: "wrong password", email: "customer@example.test", password: "wrong-password"},
+		{name: "unknown user", email: "unknown@example.test", password: "correct-password"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			repository := newMemoryRepository(t, RoleCustomer)
-			_, err := NewService(repository, time.Hour).Login(context.Background(), test.identifier, test.password)
+			_, err := NewService(repository, time.Hour).Login(context.Background(), test.email, test.password)
 			if !errors.Is(err, ErrInvalidCredentials) {
 				t.Fatalf("Login() error = %v, want ErrInvalidCredentials", err)
 			}

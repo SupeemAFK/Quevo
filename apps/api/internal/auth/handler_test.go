@@ -30,7 +30,7 @@ func TestAuthRoutesEnforceSessionRoleAndOwnership(t *testing.T) {
 		c.Status(http.StatusOK)
 	})
 
-	login := performRequest(router, http.MethodPost, "/api/v1/auth/login", `{"identifier":"customer@example.test","password":"correct-password"}`, "")
+	login := performRequest(router, http.MethodPost, "/api/v1/auth/login", `{"email":"customer@example.test","password":"correct-password"}`, "")
 	if login.Code != http.StatusOK {
 		t.Fatalf("login status = %d, want %d: %s", login.Code, http.StatusOK, login.Body.String())
 	}
@@ -38,7 +38,7 @@ func TestAuthRoutesEnforceSessionRoleAndOwnership(t *testing.T) {
 	if err := json.Unmarshal(login.Body.Bytes(), &loginResponse); err != nil {
 		t.Fatalf("decode login response: %v", err)
 	}
-	if strings.Contains(login.Body.String(), "correct-password") || strings.Contains(login.Body.String(), repository.user.CredentialHash) {
+	if strings.Contains(login.Body.String(), "correct-password") || strings.Contains(login.Body.String(), repository.user.PasswordHash) {
 		t.Fatal("login response exposed a password or password hash")
 	}
 	if loginResponse.SessionToken == "" {
@@ -77,7 +77,7 @@ func TestAuthRoutesReturnSafeErrors(t *testing.T) {
 	router := gin.New()
 	RegisterRoutes(router.Group("/api/v1"), nil)
 
-	response := performRequest(router, http.MethodPost, "/api/v1/auth/login", `{"identifier":"x","password":"y"}`, "")
+	response := performRequest(router, http.MethodPost, "/api/v1/auth/login", `{"email":"not-an-email","password":"y"}`, "")
 	if response.Code != http.StatusServiceUnavailable {
 		t.Fatalf("login status = %d, want %d", response.Code, http.StatusServiceUnavailable)
 	}

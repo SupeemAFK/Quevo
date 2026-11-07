@@ -66,10 +66,13 @@ func TestAuthFlowWithPostgres(t *testing.T) {
 		t.Fatalf("hash test password: %v", err)
 	}
 	if err := database.SeedDemo(ctx, db, database.SeedCredentials{
-		CustomerHash: string(passwordHash),
-		OperatorHash: string(passwordHash),
+		CustomerPasswordHash: string(passwordHash),
+		OperatorPasswordHash: string(passwordHash),
 	}); err != nil {
 		t.Fatalf("seed demo users: %v", err)
+	}
+	if _, err := sqlDB.ExecContext(ctx, `UPDATE users SET email = ' Customer@Quevo.Local ' WHERE id = $1`, database.DemoCustomerID); err != nil {
+		t.Fatalf("prepare mixed-case email: %v", err)
 	}
 
 	authorizedServiceID := database.DemoServiceID
@@ -80,16 +83,16 @@ func TestAuthFlowWithPostgres(t *testing.T) {
 		c.Status(http.StatusNoContent)
 	})
 	for _, user := range []struct {
-		identifier, id, displayName string
-		role                        auth.Role
+		email, id, displayName string
+		role                   auth.Role
 	}{
-		{identifier: "customer@quevo.local", id: database.DemoCustomerID, displayName: "Demo Customer", role: auth.RoleCustomer},
-		{identifier: "operator@quevo.local", id: database.DemoOperatorID, displayName: "Demo Operator", role: auth.RoleOperator},
+		{email: "customer@quevo.local", id: database.DemoCustomerID, displayName: "Demo Customer", role: auth.RoleCustomer},
+		{email: "operator@quevo.local", id: database.DemoOperatorID, displayName: "Demo Operator", role: auth.RoleOperator},
 	} {
 		t.Run(string(user.role), func(t *testing.T) {
 			login := request(router, http.MethodPost, "/api/v1/auth/login", map[string]string{
-				"identifier": user.identifier,
-				"password":   "local-demo-password",
+				"email":    user.email,
+				"password": "local-demo-password",
 			}, "")
 			if login.Code != http.StatusOK {
 				t.Fatalf("login status = %d, want %d: %s", login.Code, http.StatusOK, login.Body.String())
@@ -140,8 +143,8 @@ func TestAuthFlowWithPostgres(t *testing.T) {
 	}
 
 	badLogin := request(router, http.MethodPost, "/api/v1/auth/login", map[string]string{
-		"identifier": "customer@quevo.local",
-		"password":   "incorrect",
+		"email":    "customer@quevo.local",
+		"password": "incorrect",
 	}, "")
 	if badLogin.Code != http.StatusUnauthorized {
 		t.Fatalf("invalid login status = %d, want %d", badLogin.Code, http.StatusUnauthorized)

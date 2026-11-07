@@ -106,7 +106,7 @@ export interface components {
         };
         "auth.LoginRequest": {
             /** @example customer@example.test */
-            identifier: string;
+            email: string;
             /** @example local-demo-password */
             password: string;
         };

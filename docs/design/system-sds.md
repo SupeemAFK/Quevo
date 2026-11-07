@@ -239,7 +239,7 @@ Never log raw credentials, cookie values, authorization headers, password hashes
 
 ### 6.3 Lifecycle rules
 
-1. Login normalizes the identifier, verifies the bcrypt credential, and creates a new random session. Multiple sessions may coexist; logout revokes only the current session.
+1. Login normalizes the email, verifies the bcrypt password hash, and creates a new random session. Multiple sessions may coexist; logout revokes only the current session.
 2. A protected request validates the session against server-side storage and derives the user ID and role from that record.
 3. Logout revokes the current session in the API and clears the browser cookie.
 4. Expired or revoked sessions receive 401 and cannot mutate data.
@@ -293,8 +293,8 @@ erDiagram
     uuid id PK
     string role
     string display_name
-    string login_identifier
-    string credential_hash
+    string email
+    string password_hash
   }
   SESSION {
     uuid id PK
@@ -355,7 +355,7 @@ erDiagram
   USER o|--o{ TICKET : assigned_operator
 ```
 
-This ER diagram is conceptual. Exact PostgreSQL types, identifier format, indexes, and migration SQL belong in Step 4 feature contracts. In particular, login identifier fields and branch-local timezone rules must be agreed before implementation.
+This ER diagram is conceptual. Exact PostgreSQL types, email format, indexes, and migration SQL belong in Step 4 feature contracts. Branch-local timezone rules must also be agreed before implementation.
 
 ## 10. PostgreSQL constraints and transactional design
 
@@ -363,7 +363,7 @@ This ER diagram is conceptual. Exact PostgreSQL types, identifier format, indexe
 
 | Invariant | Database protection |
 | --- | --- |
-| A login identity identifies one user. | Unique normalized login identifier, if email or another identifier is selected. |
+| An email identifies one user. | Unique normalized email address. |
 | A service belongs to one branch. | Foreign key from service to branch; unique service/branch key for composite references. |
 | One operator authorization per service. | Unique operator_id and service_id pair in OperatorService. |
 | One queue-number counter per branch/service/business date. | Primary or unique key across branch_id, service_id, business_date. |
@@ -470,7 +470,7 @@ Authentication unit, provider-contract, web component, and PostgreSQL integratio
 | Decision | Current design position | Needs resolution |
 | --- | --- | --- |
 | Official course specifications | The supplied group_work_specs_v1 is labeled draft for instructor review; project_deliverable_1_v1 is the D1 v1 source. | Keep direct clauses and Quevo proposals distinguished in traceability.md; confirm draft/spec changes with the team. |
-| Authentication | Opaque server-side sessions, bcrypt local passwords, `CUSTOMER`/`OPERATOR` roles, 12-hour default expiry, and a web-origin HttpOnly cookie with Go-side validation. See [authentication.md](authentication.md). | Issue #15 provides migrations and seeded accounts for the agreed `app_users`/`sessions` schema. Production identity providers and account recovery are out of scope. |
+| Authentication | Opaque server-side sessions, bcrypt local passwords, `CUSTOMER`/`OPERATOR` roles, 12-hour default expiry, and a web-origin HttpOnly cookie with Go-side validation. See [authentication.md](authentication.md). | Issue #15 provides the versioned user/session schema and seeded accounts. Production identity providers and account recovery are out of scope. |
 | Queue key and business date | Branch, service, and business date; calculate date in branch timezone. | Set timezone source, queue open/close rules, and ticket reset policy. |
 | Ticket number | Unique within branch/service/business date; decimal sequence strings allocated transactionally by QueueSequence. | Confirm display prefix/padding and whether gaps are acceptable after errors. |
 | Operator authorization | OperatorService records access to a service; provisioned data is enough for the first vertical slice. | Confirm who creates/revokes assignments and whether counters are required in the baseline. |

@@ -47,7 +47,7 @@
             },
             "auth.LoginRequest": {
                 "properties": {
-                    "identifier": {
+                    "email": {
                         "example": "customer@example.test",
                         "type": "string"
                     },
@@ -57,7 +57,7 @@
                     }
                 },
                 "required": [
-                    "identifier",
+                    "email",
                     "password"
                 ],
                 "type": "object"

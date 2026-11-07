@@ -31,11 +31,11 @@ func run() error {
 	if customerPassword == "" || operatorPassword == "" {
 		return fmt.Errorf("QUEVO_CUSTOMER_PASSWORD and QUEVO_OPERATOR_PASSWORD are required")
 	}
-	customerHash, err := bcrypt.GenerateFromPassword([]byte(customerPassword), bcrypt.DefaultCost)
+	customerPasswordHash, err := bcrypt.GenerateFromPassword([]byte(customerPassword), bcrypt.DefaultCost)
 	if err != nil {
 		return fmt.Errorf("hash customer password: %w", err)
 	}
-	operatorHash, err := bcrypt.GenerateFromPassword([]byte(operatorPassword), bcrypt.DefaultCost)
+	operatorPasswordHash, err := bcrypt.GenerateFromPassword([]byte(operatorPassword), bcrypt.DefaultCost)
 	if err != nil {
 		return fmt.Errorf("hash operator password: %w", err)
 	}
@@ -53,7 +53,7 @@ func run() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 	if err := database.SeedDemo(ctx, db, database.SeedCredentials{
-		CustomerHash: string(customerHash), OperatorHash: string(operatorHash),
+		CustomerPasswordHash: string(customerPasswordHash), OperatorPasswordHash: string(operatorPasswordHash),
 	}); err != nil {
 		return err
 	}

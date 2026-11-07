@@ -14,12 +14,12 @@ describe('LoginForm', () => {
 
     render(<LoginForm signIn={signIn} />)
 
-    await user.type(screen.getByLabelText('Identifier'), 'customer@example.test')
+    await user.type(screen.getByLabelText('Email'), 'customer@example.test')
     await user.type(screen.getByLabelText('Password'), 'local-demo-password')
     await user.click(screen.getByRole('button', { name: 'Sign in' }))
 
     expect(signIn).toHaveBeenCalledWith({
-      identifier: 'customer@example.test',
+      email: 'customer@example.test',
       password: 'local-demo-password',
     })
     expect(await screen.findByRole('status')).toHaveTextContent('Signed in successfully.')
@@ -32,12 +32,12 @@ describe('LoginForm', () => {
 
     render(<LoginForm signIn={signIn} />)
 
-    await user.type(screen.getByLabelText('Identifier'), 'customer@example.test')
+    await user.type(screen.getByLabelText('Email'), 'customer@example.test')
     await user.type(screen.getByLabelText('Password'), 'incorrect-password')
     await user.click(screen.getByRole('button', { name: 'Sign in' }))
 
     expect(await screen.findByRole('status')).toHaveTextContent(
-      'Sign in failed. Check your identifier and password.',
+      'Sign in failed. Check your email and password.',
     )
     expect(screen.getByRole('status')).not.toHaveTextContent('invalid_credentials')
     expect(screen.getByLabelText('Password')).toHaveValue('')

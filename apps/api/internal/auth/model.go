@@ -11,11 +11,11 @@ const (
 
 // User is the authentication data needed for identity and authorization.
 type User struct {
-	ID              string
-	Role            Role
-	DisplayName     string
-	LoginIdentifier string
-	CredentialHash  string
+	ID           string
+	Role         Role
+	DisplayName  string
+	Email        string
+	PasswordHash string
 }
 
 // Session stores metadata for a single authenticated login.

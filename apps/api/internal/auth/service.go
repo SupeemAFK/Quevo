@@ -37,15 +37,15 @@ func NewService(repository Repository, sessionTTL time.Duration) *Service {
 	return &Service{repository: repository, sessionTTL: sessionTTL}
 }
 
-func (s *Service) Login(ctx context.Context, identifier, password string) (LoginResult, error) {
-	user, err := s.repository.FindUserByIdentifier(ctx, normalizeIdentifier(identifier))
+func (s *Service) Login(ctx context.Context, email, password string) (LoginResult, error) {
+	user, err := s.repository.FindUserByEmail(ctx, normalizeEmail(email))
 	if errors.Is(err, ErrNotFound) {
 		return LoginResult{}, ErrInvalidCredentials
 	}
 	if err != nil {
-		return LoginResult{}, fmt.Errorf("find login user: %w", err)
+		return LoginResult{}, fmt.Errorf("find user by email: %w", err)
 	}
-	if bcrypt.CompareHashAndPassword([]byte(user.CredentialHash), []byte(password)) != nil || !validRole(user.Role) {
+	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)) != nil || !validRole(user.Role) {
 		return LoginResult{}, ErrInvalidCredentials
 	}
 
@@ -127,8 +127,8 @@ func (s *Service) AuthorizeOperatorService(ctx context.Context, actor Actor, ser
 	return nil
 }
 
-func normalizeIdentifier(identifier string) string {
-	return strings.ToLower(strings.TrimSpace(identifier))
+func normalizeEmail(email string) string {
+	return strings.ToLower(strings.TrimSpace(email))
 }
 
 func validRole(role Role) bool {

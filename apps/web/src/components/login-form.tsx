@@ -8,7 +8,7 @@ type LoginFormProps = {
 }
 
 export function LoginForm({ signIn, onSuccess }: LoginFormProps) {
-  const [identifier, setIdentifier] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -20,11 +20,11 @@ export function LoginForm({ signIn, onSuccess }: LoginFormProps) {
     setPassword('')
 
     try {
-      await signIn({ identifier, password })
+      await signIn({ email, password })
       setMessage('Signed in successfully.')
       onSuccess?.()
     } catch {
-      setMessage('Sign in failed. Check your identifier and password.')
+      setMessage('Sign in failed. Check your email and password.')
     } finally {
       setIsSubmitting(false)
     }
@@ -33,17 +33,18 @@ export function LoginForm({ signIn, onSuccess }: LoginFormProps) {
   return (
     <form className="grid gap-5" method="post" onSubmit={handleSubmit}>
       <div className="grid gap-2">
-        <label className="text-sm font-medium" htmlFor="identifier">
-          Identifier
+        <label className="text-sm font-medium" htmlFor="email">
+          Email
         </label>
         <input
-          autoComplete="username"
+          autoComplete="email"
           className="h-10 rounded-md border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          id="identifier"
-          name="identifier"
-          onChange={(event) => setIdentifier(event.target.value)}
+          id="email"
+          name="email"
+          onChange={(event) => setEmail(event.target.value)}
           required
-          value={identifier}
+          type="email"
+          value={email}
         />
       </div>
 

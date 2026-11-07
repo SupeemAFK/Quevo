@@ -11,8 +11,8 @@ import (
 )
 
 type LoginRequest struct {
-	Identifier string `json:"identifier" binding:"required" example:"customer@example.test"`
-	Password   string `json:"password" binding:"required" example:"local-demo-password"`
+	Email    string `json:"email" binding:"required,email" example:"customer@example.test"`
+	Password string `json:"password" binding:"required" example:"local-demo-password"`
 }
 
 // Identity is the safe user data returned by authenticated endpoints.
@@ -74,12 +74,12 @@ func (h Handler) login(c *gin.Context) {
 
 	var request LoginRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
-		writeError(c, http.StatusBadRequest, "invalid_request", "A valid identifier and password are required")
+		writeError(c, http.StatusBadRequest, "invalid_request", "A valid email and password are required")
 		return
 	}
-	result, err := h.service.Login(c.Request.Context(), request.Identifier, request.Password)
+	result, err := h.service.Login(c.Request.Context(), request.Email, request.Password)
 	if errors.Is(err, ErrInvalidCredentials) {
-		writeError(c, http.StatusUnauthorized, "invalid_credentials", "Invalid identifier or password")
+		writeError(c, http.StatusUnauthorized, "invalid_credentials", "Invalid email or password")
 		return
 	}
 	if err != nil {

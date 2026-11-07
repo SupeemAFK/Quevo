@@ -81,7 +81,7 @@ func TestAuthProviderMatchesOpenAPI(t *testing.T) {
 	}
 	repository := &contractAuthRepository{user: auth.User{
 		ID: "b173f94e-9db0-41eb-945e-44c8af09027d", Role: auth.RoleCustomer,
-		DisplayName: "Contract Customer", LoginIdentifier: "customer@example.test", CredentialHash: string(passwordHash),
+		DisplayName: "Contract Customer", Email: "customer@example.test", PasswordHash: string(passwordHash),
 	}}
 	provider := gin.New()
 	auth.RegisterRoutes(provider.Group("/api/v1"), auth.NewService(repository, 12*time.Hour))
@@ -93,8 +93,8 @@ func TestAuthProviderMatchesOpenAPI(t *testing.T) {
 		authorize  string
 		wantStatus int
 	}{
-		{name: "valid login", method: http.MethodPost, path: "/api/v1/auth/login", body: `{"identifier":"customer@example.test","password":"correct-password"}`, wantStatus: http.StatusOK},
-		{name: "invalid login", method: http.MethodPost, path: "/api/v1/auth/login", body: `{"identifier":"user@example.test","password":"password"}`, wantStatus: http.StatusUnauthorized},
+		{name: "valid login", method: http.MethodPost, path: "/api/v1/auth/login", body: `{"email":"customer@example.test","password":"correct-password"}`, wantStatus: http.StatusOK},
+		{name: "invalid login", method: http.MethodPost, path: "/api/v1/auth/login", body: `{"email":"user@example.test","password":"password"}`, wantStatus: http.StatusUnauthorized},
 		{name: "anonymous current user", method: http.MethodGet, path: "/api/v1/auth/me", wantStatus: http.StatusUnauthorized},
 		{name: "anonymous logout", method: http.MethodPost, path: "/api/v1/auth/logout", authorize: "Bearer invalid", wantStatus: http.StatusUnauthorized},
 	}
@@ -158,8 +158,8 @@ type contractAuthRepository struct {
 	session *auth.Session
 }
 
-func (r *contractAuthRepository) FindUserByIdentifier(_ context.Context, identifier string) (auth.User, error) {
-	if identifier != r.user.LoginIdentifier {
+func (r *contractAuthRepository) FindUserByEmail(_ context.Context, email string) (auth.User, error) {
+	if email != r.user.Email {
 		return auth.User{}, auth.ErrNotFound
 	}
 	return r.user, nil

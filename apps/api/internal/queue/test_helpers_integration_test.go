@@ -71,8 +71,8 @@ func newSeededPostgresDB(t *testing.T) (context.Context, *gorm.DB, *sql.DB) {
 		t.Fatalf("migrate PostgreSQL schema: %v", err)
 	}
 	if err := database.SeedDemo(ctx, gormDB, database.SeedCredentials{
-		CustomerHash: "test-customer-hash",
-		OperatorHash: "test-operator-hash",
+		CustomerPasswordHash: "test-customer-hash",
+		OperatorPasswordHash: "test-operator-hash",
 	}); err != nil {
 		t.Fatalf("seed PostgreSQL fixtures: %v", err)
 	}

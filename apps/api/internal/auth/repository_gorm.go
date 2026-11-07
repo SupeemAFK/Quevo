@@ -18,9 +18,9 @@ func NewGORMRepository(db *gorm.DB) *GORMRepository {
 	return &GORMRepository{db: db}
 }
 
-func (r *GORMRepository) FindUserByIdentifier(ctx context.Context, identifier string) (User, error) {
+func (r *GORMRepository) FindUserByEmail(ctx context.Context, email string) (User, error) {
 	var record userRecord
-	err := r.db.WithContext(ctx).Where("login_identifier = ?", identifier).Take(&record).Error
+	err := r.db.WithContext(ctx).Where("lower(trim(email)) = ?", email).Take(&record).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return User{}, ErrNotFound
 	}
@@ -95,22 +95,22 @@ func (r *GORMRepository) RevokeSession(ctx context.Context, tokenHash string, re
 }
 
 type userRecord struct {
-	ID              uuid.UUID `gorm:"type:uuid;primaryKey"`
-	Role            string
-	DisplayName     string
-	LoginIdentifier string
-	CredentialHash  string
+	ID           uuid.UUID `gorm:"type:uuid;primaryKey"`
+	Role         string
+	DisplayName  string
+	Email        string
+	PasswordHash string
 }
 
-func (userRecord) TableName() string { return "app_users" }
+func (userRecord) TableName() string { return "users" }
 
 func (record userRecord) user() User {
 	return User{
-		ID:              record.ID.String(),
-		Role:            Role(record.Role),
-		DisplayName:     record.DisplayName,
-		LoginIdentifier: record.LoginIdentifier,
-		CredentialHash:  record.CredentialHash,
+		ID:           record.ID.String(),
+		Role:         Role(record.Role),
+		DisplayName:  record.DisplayName,
+		Email:        record.Email,
+		PasswordHash: record.PasswordHash,
 	}
 }
 

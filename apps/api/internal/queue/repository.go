@@ -27,7 +27,7 @@ func (r *Repository) JoinQueue(ctx context.Context, input JoinQueueInput) (Ticke
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var branchID, role string
 		var active bool
-		err := tx.Raw(`SELECT s.branch_id::text, u.role, s.active FROM services s CROSS JOIN app_users u
+		err := tx.Raw(`SELECT s.branch_id::text, u.role, s.active FROM services s CROSS JOIN users u
 			WHERE s.id = ? AND u.id = ?`, input.ServiceID, input.CustomerID).Row().Scan(&branchID, &role, &active)
 		if errors.Is(err, sql.ErrNoRows) || (err == nil && (role != "CUSTOMER" || !active)) {
 			return ErrQueueUnauthorized
@@ -81,7 +81,7 @@ func (r *Repository) CallNext(ctx context.Context, input CallNextInput) (Ticket,
 		var branchID string
 		var allowed bool
 		err := tx.Raw(`SELECT s.branch_id::text, (u.role = 'OPERATOR' AND os.operator_id IS NOT NULL)
-			FROM services s CROSS JOIN app_users u
+			FROM services s CROSS JOIN users u
 			LEFT JOIN operator_services os ON os.service_id = s.id AND os.operator_id = u.id
 			WHERE s.id = ? AND u.id = ? AND s.active FOR UPDATE OF u`, input.ServiceID, input.OperatorID).Row().Scan(&branchID, &allowed)
 		if errors.Is(err, sql.ErrNoRows) || (err == nil && !allowed) {
