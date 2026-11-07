@@ -25,7 +25,7 @@ test-api:
 	cd apps/api && go test ./... && go vet ./...
 
 test-api-integration:
-	cd apps/api && go test -tags=integration ./internal/platform/database
+	cd apps/api && go test -tags=integration ./internal/platform/database ./internal/queue
 
 test-contract:
 	cd apps/api && go test ./internal/app -run '^TestHealthProviderMatchesOpenAPI$$'

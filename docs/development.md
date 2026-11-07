@@ -57,7 +57,7 @@ Run the full CI suite from the repository root with `make test`. It runs web uni
 To run only the Go PostgreSQL integration test:
 
 ```sh
-cd apps/api && go test -tags=integration ./internal/platform/database
+cd apps/api && go test -tags=integration ./internal/platform/database ./internal/queue
 ```
 
 ## Lint
