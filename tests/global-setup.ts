@@ -9,6 +9,7 @@ const repoRoot = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const apiRoot = resolve(repoRoot, 'apps/api')
 const webRoot = resolve(repoRoot, 'apps/web')
 const processErrors = new WeakMap<ChildProcess, Error>()
+const e2eCustomerPassword = 'quevo-e2e-customer-password'
 
 export default async function globalSetup() {
   const tempDirectory = await mkdtemp(join(tmpdir(), 'quevo-e2e-'))
@@ -34,16 +35,30 @@ export default async function globalSetup() {
     stopPostgres = () => postgres.stop()
     databaseURL = postgres.getConnectionUri()
 
+    const apiEnv = {
+      ...process.env,
+      PORT: '8080',
+      DATABASE_URL: databaseURL,
+      QUEVO_CUSTOMER_PASSWORD: e2eCustomerPassword,
+      QUEVO_OPERATOR_PASSWORD: 'quevo-e2e-operator-password',
+    }
+
+    execFileSync('go', ['run', './cmd/migrate'], {
+      cwd: apiRoot,
+      env: apiEnv,
+      stdio: 'inherit',
+    })
+    execFileSync('go', ['run', './cmd/seed'], {
+      cwd: apiRoot,
+      env: apiEnv,
+      stdio: 'inherit',
+    })
     execFileSync('go', ['build', '-o', apiBinary, './cmd/server'], {
       cwd: apiRoot,
       stdio: 'inherit',
     })
 
-    api = startProcess(apiBinary, [], {
-      ...process.env,
-      PORT: '8080',
-      DATABASE_URL: databaseURL,
-    }, apiRoot)
+    api = startProcess(apiBinary, [], apiEnv, apiRoot)
     await waitFor('http://127.0.0.1:8080/api/v1/health', api, 'Go API')
 
     web = startProcess(

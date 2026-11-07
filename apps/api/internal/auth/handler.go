@@ -156,5 +156,5 @@ func writeError(c *gin.Context, status int, code, message string) {
 }
 
 func identityResponse(actor Actor) Identity {
-	return Identity{ID: actor.ID, DisplayName: actor.DisplayName, Role: actor.Role}
+	return Identity(actor)
 }

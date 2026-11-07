@@ -17,6 +17,7 @@ export function LoginForm({ signIn, onSuccess }: LoginFormProps) {
     event.preventDefault()
     setMessage('')
     setIsSubmitting(true)
+    setPassword('')
 
     try {
       await signIn({ identifier, password })
@@ -30,7 +31,7 @@ export function LoginForm({ signIn, onSuccess }: LoginFormProps) {
   }
 
   return (
-    <form className="grid gap-5" onSubmit={handleSubmit}>
+    <form className="grid gap-5" method="post" onSubmit={handleSubmit}>
       <div className="grid gap-2">
         <label className="text-sm font-medium" htmlFor="identifier">
           Identifier

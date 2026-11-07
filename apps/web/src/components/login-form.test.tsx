@@ -23,6 +23,7 @@ describe('LoginForm', () => {
       password: 'local-demo-password',
     })
     expect(await screen.findByRole('status')).toHaveTextContent('Signed in successfully.')
+    expect(screen.getByLabelText('Password')).toHaveValue('')
   })
 
   it('shows a generic error when credentials are rejected', async () => {
@@ -39,5 +40,6 @@ describe('LoginForm', () => {
       'Sign in failed. Check your identifier and password.',
     )
     expect(screen.getByRole('status')).not.toHaveTextContent('invalid_credentials')
+    expect(screen.getByLabelText('Password')).toHaveValue('')
   })
 })

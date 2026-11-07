@@ -1,20 +1,31 @@
 # Quevo API
 
-A Go API using Gin and GORM, organized as a feature-first modular monolith. It exposes `GET /api/v1/health` and sign-in, sign-out, and current-user endpoints under `/api/v1/auth`. Health does not use the database. Auth endpoints expect the `app_users` and `sessions` tables described in [the authentication contract](../../docs/design/authentication.md); issue #15 owns their migrations and seed data. OpenAPI 3.1 JSON is served at `/openapi.json`, and Swagger UI is served at `/swagger/`.
-
-The `go.mod` module path is a placeholder (`example.com/quevo/apps/api`) because this checkout has no Git remote or established Go import path. Update it and the internal imports when the canonical repository path is known.
+A Go API using Gin and GORM, organized as a feature-first modular monolith. It exposes `GET /api/v1/health` and sign-in, sign-out, and current-user endpoints under `/api/v1/auth`. Health does not use the database. Auth endpoints use the `app_users` and `sessions` tables from the versioned migrations; see [the authentication contract](../../docs/design/authentication.md). OpenAPI 3.1 JSON is served at `/openapi.json`, and Swagger UI is served at `/swagger/`.
 
 ## Run
 
-Requires Go 1.25 or later. From this directory:
+Requires Go 1.26, as specified in `go.mod`. From this directory:
 
 ```sh
 go run ./cmd/server
 ```
 
-The server listens on `:8080` by default. Environment values can be exported in the shell or provided by the deployment environment. `.env.example` lists the supported variables; the application does not load `.env` files itself.
+The server listens on `:8080` by default. Configuration loads an optional `.env` file from the current directory; exported environment values take precedence. `.env.example` lists the supported variables. The server, migration command, and seed command use the same configuration.
 
 `DATABASE_URL` is optional. When it is set, the app creates a GORM PostgreSQL connection pool without pinging the database at startup. The health endpoint therefore remains available if PostgreSQL is offline. No schema or migrations are created automatically.
+
+## Database setup
+
+Apply versioned migrations explicitly, then seed synthetic demo accounts. Run from `apps/api` with PostgreSQL available:
+
+```sh
+make migrate-up
+export QUEVO_CUSTOMER_PASSWORD='choose-a-local-demo-password'
+export QUEVO_OPERATOR_PASSWORD='choose-another-local-demo-password'
+make seed-demo
+```
+
+The seed creates one UTC demo branch, one active service, a Customer, an Operator, and the operator's service authorization. It is safe to rerun. Passwords are supplied through `.env` or the environment, hashed with bcrypt, and never printed or committed. Demo logins are `customer@quevo.local` and `operator@quevo.local`. Do not use these local accounts in a deployed environment.
 
 ## Logging
 
@@ -30,6 +41,8 @@ Zap writes structured JSON for application and HTTP request logs. Request logs i
 | `DB_MAX_OPEN_CONNS` | `10` | Maximum open database connections |
 | `DB_CONN_MAX_LIFETIME` | `30m` | Maximum lifetime for a pooled database connection |
 | `SESSION_TTL` | `12h` | Lifetime for newly created sessions |
+| `QUEVO_CUSTOMER_PASSWORD` | unset | Local demo customer password used by `make seed-demo` |
+| `QUEVO_OPERATOR_PASSWORD` | unset | Local demo operator password used by `make seed-demo` |
 
 ## Endpoint
 
@@ -59,7 +72,7 @@ The health handler does not connect to PostgreSQL.
 - `cmd/server` loads configuration and starts the HTTP server.
 - `internal/app` wires optional infrastructure and configures the HTTP server and router.
 - `internal/platform/config` parses and validates environment variables.
-- `internal/platform/database` initializes the reusable GORM PostgreSQL pool.
+- `internal/platform/database` owns the reusable PostgreSQL pool, versioned migrations, and demo seed logic.
 - `internal/auth` verifies credentials, stores opaque server-side sessions, and enforces session and role checks.
 - `internal/health` owns the current HTTP handler and route registration.
 

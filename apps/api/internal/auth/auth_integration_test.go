@@ -57,54 +57,22 @@ func TestAuthFlowWithPostgres(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = sqlDB.Close() })
 
-	if err := db.Exec(`CREATE TABLE app_users (
-		id uuid PRIMARY KEY,
-		role text NOT NULL,
-		display_name text NOT NULL,
-		login_identifier text NOT NULL UNIQUE,
-		credential_hash text NOT NULL
-	)`).Error; err != nil {
-		t.Fatalf("create auth test schema: %v", err)
-	}
-	if err := db.Exec(`CREATE TABLE sessions (
-		id uuid PRIMARY KEY,
-		user_id uuid NOT NULL REFERENCES app_users(id),
-		token_hash text NOT NULL UNIQUE,
-		created_at timestamptz NOT NULL,
-		expires_at timestamptz NOT NULL,
-		revoked_at timestamptz
-	)`).Error; err != nil {
-		t.Fatalf("create session test schema: %v", err)
-	}
-	if err := db.Exec(`CREATE TABLE operator_services (
-		operator_id uuid NOT NULL REFERENCES app_users(id),
-		service_id uuid NOT NULL,
-		PRIMARY KEY (operator_id, service_id)
-	)`).Error; err != nil {
-		t.Fatalf("create operator service test schema: %v", err)
+	if err := database.Migrate(ctx, db); err != nil {
+		t.Fatalf("apply production migrations: %v", err)
 	}
 
-	customerID := uuid.New()
-	operatorID := uuid.New()
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte("local-demo-password"), bcrypt.MinCost)
 	if err != nil {
 		t.Fatalf("hash test password: %v", err)
 	}
-	for _, user := range []struct {
-		id, role, name, identifier string
-	}{
-		{customerID.String(), string(auth.RoleCustomer), "Demo Customer", "customer@example.test"},
-		{operatorID.String(), string(auth.RoleOperator), "Demo Operator", "operator@example.test"},
-	} {
-		if err := db.Exec(`INSERT INTO app_users (id, role, display_name, login_identifier, credential_hash) VALUES (?, ?, ?, ?, ?)`, user.id, user.role, user.name, user.identifier, string(passwordHash)).Error; err != nil {
-			t.Fatalf("seed test user: %v", err)
-		}
+	if err := database.SeedDemo(ctx, db, database.SeedCredentials{
+		CustomerHash: string(passwordHash),
+		OperatorHash: string(passwordHash),
+	}); err != nil {
+		t.Fatalf("seed demo users: %v", err)
 	}
 
-	authorizedServiceID := uuid.New()
-	if err := db.Exec(`INSERT INTO operator_services (operator_id, service_id) VALUES (?, ?)`, operatorID, authorizedServiceID).Error; err != nil {
-		t.Fatalf("seed operator service access: %v", err)
-	}
+	authorizedServiceID := database.DemoServiceID
 
 	authService := auth.NewService(auth.NewGORMRepository(db), time.Hour)
 	router := app.NewRouter(zap.NewNop(), authService)
@@ -112,11 +80,11 @@ func TestAuthFlowWithPostgres(t *testing.T) {
 		c.Status(http.StatusNoContent)
 	})
 	for _, user := range []struct {
-		identifier string
-		role       auth.Role
+		identifier, id, displayName string
+		role                        auth.Role
 	}{
-		{identifier: "customer@example.test", role: auth.RoleCustomer},
-		{identifier: "operator@example.test", role: auth.RoleOperator},
+		{identifier: "customer@quevo.local", id: database.DemoCustomerID, displayName: "Demo Customer", role: auth.RoleCustomer},
+		{identifier: "operator@quevo.local", id: database.DemoOperatorID, displayName: "Demo Operator", role: auth.RoleOperator},
 	} {
 		t.Run(string(user.role), func(t *testing.T) {
 			login := request(router, http.MethodPost, "/api/v1/auth/login", map[string]string{
@@ -130,21 +98,28 @@ func TestAuthFlowWithPostgres(t *testing.T) {
 			if err := json.Unmarshal(login.Body.Bytes(), &body); err != nil {
 				t.Fatalf("decode login response: %v", err)
 			}
-			if body.User.Role != user.role || body.SessionToken == "" {
-				t.Fatalf("login response = %#v, want role %q and session", body, user.role)
+			if body.User.ID != user.id || body.User.DisplayName != user.displayName || body.User.Role != user.role || body.SessionToken == "" {
+				t.Fatalf("login response = %#v; want user %s with role %q and a session", body, user.id, user.role)
 			}
 
 			me := request(router, http.MethodGet, "/api/v1/auth/me", nil, body.SessionToken)
 			if me.Code != http.StatusOK {
 				t.Fatalf("current-user status = %d, want %d: %s", me.Code, http.StatusOK, me.Body.String())
 			}
+			var currentUser auth.MeResponse
+			if err := json.Unmarshal(me.Body.Bytes(), &currentUser); err != nil {
+				t.Fatalf("decode current-user response: %v", err)
+			}
+			if currentUser.User.ID != user.id || currentUser.User.Role != user.role {
+				t.Fatalf("current user = %#v; want id %s and role %s", currentUser.User, user.id, user.role)
+			}
 			if user.role == auth.RoleCustomer {
-				response := request(router, http.MethodGet, "/api/v1/operator/services/"+authorizedServiceID.String(), nil, body.SessionToken)
+				response := request(router, http.MethodGet, "/api/v1/operator/services/"+authorizedServiceID, nil, body.SessionToken)
 				if response.Code != http.StatusForbidden {
 					t.Fatalf("customer operator-route status = %d, want %d", response.Code, http.StatusForbidden)
 				}
 			} else {
-				allowed := request(router, http.MethodGet, "/api/v1/operator/services/"+authorizedServiceID.String(), nil, body.SessionToken)
+				allowed := request(router, http.MethodGet, "/api/v1/operator/services/"+authorizedServiceID, nil, body.SessionToken)
 				if allowed.Code != http.StatusNoContent {
 					t.Fatalf("authorized operator route status = %d, want %d", allowed.Code, http.StatusNoContent)
 				}
@@ -165,7 +140,7 @@ func TestAuthFlowWithPostgres(t *testing.T) {
 	}
 
 	badLogin := request(router, http.MethodPost, "/api/v1/auth/login", map[string]string{
-		"identifier": "customer@example.test",
+		"identifier": "customer@quevo.local",
 		"password":   "incorrect",
 	}, "")
 	if badLogin.Code != http.StatusUnauthorized {

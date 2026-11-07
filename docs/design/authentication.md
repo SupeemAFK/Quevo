@@ -1,10 +1,10 @@
 # Authentication Contract
 
-This document records the implementation choices for issue #7. It coordinates the API with the `app_users` and `sessions` migration/seed work in issue #15; it does not add migrations or demo credentials.
+This document records the implementation choices for issue #7. The auth API uses the `app_users` and `sessions` schema and demo identities provided by the merged persistence work in issue #15.
 
 ## Identity and session storage
 
-The API expects the following PostgreSQL tables. Issue #15 owns the versioned migration and idempotent seed that create them.
+The API uses the following PostgreSQL tables, created by the versioned migration and idempotent demo seed.
 
 | Table | Field | Type/meaning |
 | --- | --- | --- |
@@ -40,4 +40,4 @@ Authentication failures use the shared safe error shape `{ "code", "message", "r
 
 ## Local readiness
 
-The login UI and auth API are implemented, but login requires the `app_users`/`sessions` migration and seeded accounts from issue #15. Until those are available, the health check remains usable and authentication endpoints return safe errors when PostgreSQL is unavailable or has no auth schema.
+The login UI and auth API are implemented. For local login, start PostgreSQL, run `make migrate-up`, then `make seed-demo` from `apps/api` with `QUEVO_CUSTOMER_PASSWORD` and `QUEVO_OPERATOR_PASSWORD` set. The health check remains usable when PostgreSQL is unavailable; database-backed auth requests return safe errors.

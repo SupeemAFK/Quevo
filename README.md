@@ -12,6 +12,14 @@ docker compose up --build
 
 Open the web app at [http://localhost:3000](http://localhost:3000). The API health endpoint is [http://localhost:8080/api/v1/health](http://localhost:8080/api/v1/health). API documentation is at [http://localhost:8080/swagger/](http://localhost:8080/swagger/), with the generated spec at [http://localhost:8080/openapi.json](http://localhost:8080/openapi.json). PostgreSQL is exposed on port `5432` with local-only development credentials configured in `compose.yaml`.
 
+Authentication uses the database but does not create its schema or demo accounts automatically. To prepare local demo sign-in, copy `apps/api/.env.example` to `apps/api/.env`, set the two demo passwords, then run these commands from the repository root while Compose is running:
+
+```sh
+cd apps/api
+make migrate-up
+make seed-demo
+```
+
 Stop the foreground stack with `Ctrl+C`, or stop a detached stack with:
 
 ```sh
@@ -60,7 +68,7 @@ The web app calls the API through a TanStack server function, so the API address
 
 ## Product workflows
 
-Quevo supports customer queue joining and operator ticket processing. The user journey and ticket lifecycle are documented in [docs/requirements/workflows.md](docs/requirements/workflows.md). They describe intended behavior, not implemented features. The proposed system architecture and data model are in [docs/design/system-sds.md](docs/design/system-sds.md); the implemented sign-in, session, and browser/API contract is in [docs/design/authentication.md](docs/design/authentication.md). The requirements-to-feature-to-sprint matrix and official Theme 9 / Deliverable 1 crosswalk are in [docs/requirements/traceability.md](docs/requirements/traceability.md). The course milestones and proposed feature allocation are in [docs/sprints/plan.md](docs/sprints/plan.md). Issue effort weights and label conventions are in [docs/sprints/estimation.md](docs/sprints/estimation.md).
+Quevo supports customer queue joining and operator ticket processing. The user journey and ticket lifecycle are documented in [docs/requirements/workflows.md](docs/requirements/workflows.md). The customer and operator queue flows describe intended behavior; those queue workflows are not implemented yet. The proposed system architecture and data model are in [docs/design/system-sds.md](docs/design/system-sds.md); the implemented sign-in, session, and browser/API contract is in [docs/design/authentication.md](docs/design/authentication.md). The requirements-to-feature-to-sprint matrix and official Theme 9 / Deliverable 1 crosswalk are in [docs/requirements/traceability.md](docs/requirements/traceability.md). The course milestones and proposed feature allocation are in [docs/sprints/plan.md](docs/sprints/plan.md). Issue effort weights and label conventions are in [docs/sprints/estimation.md](docs/sprints/estimation.md).
 
 ## Run locally
 
@@ -91,7 +99,7 @@ bun --bun run build
 
 ## Test
 
-The web app uses Bun for dependencies and the dev server. Vitest and Playwright require Node 24 (`.nvmrc`). Web unit and component tests use React Testing Library and MSW. Go unit tests use the standard library. The database integration and Playwright E2E suites start isolated PostgreSQL containers with Testcontainers. E2E starts the real Go API and web app; it does not mock the backend.
+The web app uses Bun for dependencies and the dev server. Vitest and Playwright require Node 24 (`.nvmrc`). Web unit and component tests use React Testing Library and MSW. Go unit tests use the standard library. The database integration and Playwright E2E suites start isolated PostgreSQL containers with Testcontainers. E2E starts the real Go API and web app, applies the real migrations and demo seed, and exercises sign-in/sign-out against PostgreSQL; it does not mock the backend.
 
 Install Playwright's Chromium browser once:
 
@@ -130,7 +138,7 @@ The web check uses Biome through Bun. The Go check uses golangci-lint `v2.15.0` 
 
 ## API and generated types
 
-`GET /api/v1/health` returns `{"status":"healthy"}`. The API also exposes `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, and `POST /api/v1/auth/logout`. Authentication requires the `app_users` and `sessions` migrations and seed data owned by issue #15; see [docs/design/authentication.md](docs/design/authentication.md). Swagger UI is served at `/swagger/`, and the generated OpenAPI 3.1 JSON is served at `/openapi.json`.
+`GET /api/v1/health` returns `{"status":"healthy"}`. The API also exposes `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, and `POST /api/v1/auth/logout`. Authentication requires the `app_users` and `sessions` migrations to be applied and demo accounts to be seeded; see [the local setup steps](apps/api/README.md#database-setup) and [docs/design/authentication.md](docs/design/authentication.md). Swagger UI is served at `/swagger/`, and the generated OpenAPI 3.1 JSON is served at `/openapi.json`.
 
 To regenerate after changing Go endpoint annotations or response types, run from the repository root:
 

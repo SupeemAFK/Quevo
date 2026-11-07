@@ -26,7 +26,7 @@
 
 - Lint: `make lint` (Biome for web; golangci-lint for Go, including gofmt checks).
 - API unit and contract: `cd apps/api && go test ./... && go vet ./...`
-- API PostgreSQL integration: `cd apps/api && go test -tags=integration ./internal/platform/database`
+- API PostgreSQL integration: `cd apps/api && go test -tags=integration ./internal/platform/database ./internal/queue`
 - Web unit and component: `cd apps/web && bun install --frozen-lockfile && bun run test`
 - E2E: install Chromium with `cd tests && bun --bun x playwright install chromium`, then run `bun --bun x playwright test`; Docker is required for Testcontainers PostgreSQL.
 - Full CI suite: `make test` (Docker and a Playwright Chromium installation are required).
