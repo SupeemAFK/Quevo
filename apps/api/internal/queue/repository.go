@@ -83,7 +83,7 @@ func (r *Repository) CallNext(ctx context.Context, input CallNextInput) (Ticket,
 		err := tx.Raw(`SELECT s.branch_id::text, (u.role = 'OPERATOR' AND os.operator_id IS NOT NULL)
 			FROM services s CROSS JOIN app_users u
 			LEFT JOIN operator_services os ON os.service_id = s.id AND os.operator_id = u.id
-			WHERE s.id = ? AND u.id = ? AND s.active`, input.ServiceID, input.OperatorID).Row().Scan(&branchID, &allowed)
+			WHERE s.id = ? AND u.id = ? AND s.active FOR UPDATE OF u`, input.ServiceID, input.OperatorID).Row().Scan(&branchID, &allowed)
 		if errors.Is(err, sql.ErrNoRows) || (err == nil && !allowed) {
 			return ErrQueueUnauthorized
 		}
