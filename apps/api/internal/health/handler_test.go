@@ -12,7 +12,7 @@ import (
 )
 
 func TestHealthRoute(t *testing.T) {
-	router := app.NewRouter(zap.NewNop())
+	router := app.NewRouter(zap.NewNop(), nil)
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/health", nil)
 
@@ -37,7 +37,7 @@ func TestHealthRoute(t *testing.T) {
 }
 
 func TestUnknownRouteReturnsNotFound(t *testing.T) {
-	router := app.NewRouter(zap.NewNop())
+	router := app.NewRouter(zap.NewNop(), nil)
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/unknown", nil)
 

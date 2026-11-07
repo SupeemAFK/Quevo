@@ -1,12 +1,10 @@
 # Quevo API
 
-A Go API scaffold using Gin and GORM, organized as a feature-first modular monolith. The current endpoint is `GET /api/v1/health`; it does not use the database. OpenAPI 3.1 JSON is served at `/openapi.json`, and Swagger UI is served at `/swagger/`.
-
-The `go.mod` module path is a placeholder (`example.com/quevo/apps/api`) because this checkout has no Git remote or established Go import path. Update it and the internal imports when the canonical repository path is known.
+A Go API using Gin and GORM, organized as a feature-first modular monolith. It exposes `GET /api/v1/health` and sign-in, sign-out, and current-user endpoints under `/api/v1/auth`. Health does not use the database. Auth endpoints use the `users` and `sessions` tables from the versioned migrations; see [the authentication contract](../../docs/design/authentication.md). OpenAPI 3.1 JSON is served at `/openapi.json`, and Swagger UI is served at `/swagger/`.
 
 ## Run
 
-Requires Go 1.25 or later. From this directory:
+Requires Go 1.26, as specified in `go.mod`. From this directory:
 
 ```sh
 go run ./cmd/server
@@ -42,6 +40,9 @@ Zap writes structured JSON for application and HTTP request logs. Request logs i
 | `DB_MAX_IDLE_CONNS` | `5` | Maximum idle database connections |
 | `DB_MAX_OPEN_CONNS` | `10` | Maximum open database connections |
 | `DB_CONN_MAX_LIFETIME` | `30m` | Maximum lifetime for a pooled database connection |
+| `SESSION_TTL` | `12h` | Lifetime for newly created sessions |
+| `QUEVO_CUSTOMER_PASSWORD` | unset | Local demo customer password used by `make seed-demo` |
+| `QUEVO_OPERATOR_PASSWORD` | unset | Local demo operator password used by `make seed-demo` |
 
 ## Endpoint
 
@@ -71,7 +72,8 @@ The health handler does not connect to PostgreSQL.
 - `cmd/server` loads configuration and starts the HTTP server.
 - `internal/app` wires optional infrastructure and configures the HTTP server and router.
 - `internal/platform/config` parses and validates environment variables.
-- `internal/platform/database` initializes the reusable GORM PostgreSQL pool.
+- `internal/platform/database` owns the reusable PostgreSQL pool, versioned migrations, and demo seed logic.
+- `internal/auth` verifies credentials, stores opaque server-side sessions, and enforces session and role checks.
 - `internal/health` owns the current HTTP handler and route registration.
 
 Future features should live in their own `internal/<feature>` package. A feature should add handler, service, repository, model, and DTO files only when needed, then expose a route-registration function that `internal/app/router.go` calls with a group under `/api/v1`. Keep cross-feature wiring explicit and avoid placeholder interfaces until a concrete use requires them.

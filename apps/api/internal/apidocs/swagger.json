@@ -1,6 +1,110 @@
 {
     "components": {
         "schemas": {
+            "auth.ErrorResponse": {
+                "properties": {
+                    "code": {
+                        "example": "unauthorized",
+                        "type": "string"
+                    },
+                    "message": {
+                        "example": "Authentication is required",
+                        "type": "string"
+                    },
+                    "requestId": {
+                        "example": "0e85b5d4-fdda-48fd-a026-45128b73afc3",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                ],
+                "type": "object"
+            },
+            "auth.Identity": {
+                "properties": {
+                    "displayName": {
+                        "example": "Demo Customer",
+                        "type": "string"
+                    },
+                    "id": {
+                        "example": "6f8dc23d-01dd-41bc-8a5c-991a77f1c003",
+                        "type": "string"
+                    },
+                    "role": {
+                        "$ref": "#/components/schemas/auth.Role",
+                        "example": "CUSTOMER"
+                    }
+                },
+                "required": [
+                    "displayName",
+                    "id",
+                    "role"
+                ],
+                "type": "object"
+            },
+            "auth.LoginRequest": {
+                "properties": {
+                    "email": {
+                        "example": "customer@example.test",
+                        "type": "string"
+                    },
+                    "password": {
+                        "example": "local-demo-password",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "email",
+                    "password"
+                ],
+                "type": "object"
+            },
+            "auth.LoginResponse": {
+                "properties": {
+                    "expiresAt": {
+                        "example": "2026-11-07T12:00:00Z",
+                        "type": "string"
+                    },
+                    "sessionToken": {
+                        "example": "opaque-session-token",
+                        "type": "string"
+                    },
+                    "user": {
+                        "$ref": "#/components/schemas/auth.Identity"
+                    }
+                },
+                "required": [
+                    "expiresAt",
+                    "sessionToken",
+                    "user"
+                ],
+                "type": "object"
+            },
+            "auth.MeResponse": {
+                "properties": {
+                    "user": {
+                        "$ref": "#/components/schemas/auth.Identity"
+                    }
+                },
+                "required": [
+                    "user"
+                ],
+                "type": "object"
+            },
+            "auth.Role": {
+                "enum": [
+                    "CUSTOMER",
+                    "OPERATOR"
+                ],
+                "type": "string",
+                "x-enum-varnames": [
+                    "RoleCustomer",
+                    "RoleOperator"
+                ]
+            },
             "health.Response": {
                 "properties": {
                     "status": {
@@ -12,6 +116,13 @@
                     "status"
                 ],
                 "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "BearerAuth": {
+                "in": "header",
+                "name": "Authorization",
+                "type": "apiKey"
             }
         }
     },
@@ -25,6 +136,188 @@
         "url": "/swagger/"
     },
     "paths": {
+        "/auth/login": {
+            "post": {
+                "description": "Creates an opaque session for a seeded customer or operator. The token is returned to the web server only and must never be exposed to browser JavaScript.",
+                "operationId": "postAuthLogin",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/auth.LoginRequest",
+                                "summary": "request",
+                                "description": "Login credentials"
+                            }
+                        }
+                    },
+                    "description": "Login credentials",
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.LoginResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "summary": "Sign in",
+                "tags": [
+                    "auth"
+                ]
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "description": "Revokes the current API session.",
+                "operationId": "postAuthLogout",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Sign out",
+                "tags": [
+                    "auth"
+                ]
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "description": "Returns the identity and role derived from the active session.",
+                "operationId": "getAuthMe",
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.MeResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Get current user",
+                "tags": [
+                    "auth"
+                ]
+            }
+        },
         "/health": {
             "get": {
                 "description": "Returns the current health status of the API.",
@@ -50,6 +343,10 @@
     },
     "openapi": "3.1.0",
     "servers": [
+        {
+            "description": "API v1 base path",
+            "url": "/api/v1"
+        },
         {
             "description": "API v1 base path",
             "url": "/api/v1"

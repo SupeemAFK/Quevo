@@ -1,11 +1,11 @@
 # Quevo System Design Specification
 
-**Status:** Draft system-level design cross-checked against the supplied course specifications; proposed implementation choices remain subject to team review.
+**Status:** Draft system-level design cross-checked against the supplied course specifications. Implemented authentication choices are recorded in [authentication.md](authentication.md); remaining design decisions stay marked as proposals.
 **Product:** Quevo walk-in bank branch queue management
 **Related requirements:** docs/requirements/srs.md, docs/requirements/features.md, docs/requirements/workflows.md
-**Repository baseline inspected:** origin/main after merge of PR #3
+**Repository baseline inspected:** origin/staging after merge of PR #25; authentication work is tracked by PR #26.
 
-> This document describes intended architecture, not implemented product behavior. At the inspected repository revision, the API exposes a health endpoint and the web app demonstrates the API connection. Authentication and queue features remain design targets. The supplied group_work_specs_v1 is labeled draft for instructor review; project_deliverable_1_v1 is the supplied D1 v1. docs/requirements/traceability.md distinguishes those source clauses from Quevo design proposals.
+> This document describes intended architecture and remaining product behavior. The auth API and web sign-in/session boundary are implemented in PR #26, using the migrations and seed data delivered by PR #25. Queue repository helpers exist, but queue HTTP endpoints and customer/operator workflows remain future work. The supplied group_work_specs_v1 is labeled draft for instructor review; project_deliverable_1_v1 is the supplied D1 v1. docs/requirements/traceability.md distinguishes those source clauses from Quevo design proposals.
 
 ## 1. Purpose and design goals
 
@@ -25,14 +25,14 @@ Design goals:
 
 | Area | Current repository | Intended product design |
 | --- | --- | --- |
-| API | Go HTTP server using Gin, GORM, Zap, and an API v1 router; health route only. | Feature packages for identity, service discovery, and ticket workflows, wired explicitly through the app router. |
-| Web | React and TypeScript with TanStack Start, TanStack Query, Bun, Tailwind, and shadcn. The home page calls the API health route. | Customer and operator route groups call the Go API through TanStack Start server functions and typed API helpers. |
-| Database | Optional GORM PostgreSQL pool plus explicitly invoked, versioned SQL migrations and a repeatable Sprint 1 seed command. | PostgreSQL owns users, branches, services, operator-service authorization, sessions, queue numbering, and tickets. The API never migrates at startup. |
-| Contract | OpenAPI 3.1 is generated and served; TypeScript types are generated from it. | Every implemented endpoint has an OpenAPI contract; provider, client-type, and E2E checks verify it. |
-| Tests | Starter unit/component, OpenAPI contract, PostgreSQL integration, and Playwright infrastructure. | Add tests with each feature. E2E runs the real web app and API against PostgreSQL. |
+| API | Go HTTP server using Gin, GORM, Zap, and an API v1 router; health and auth routes are implemented. Queue persistence helpers provide transactional join and call-next operations, but those queue operations are not yet exposed as HTTP routes. | Feature packages for identity, service discovery, and ticket workflows, wired explicitly through the app router. |
+| Web | React and TypeScript with TanStack Start, TanStack Query, Bun, Tailwind, and shadcn. The web app has a login screen and server-managed session flow; customer and operator queue journeys remain future work. | Customer and operator route groups call the Go API through TanStack Start server functions and typed API helpers. |
+| Database | PostgreSQL schema is provided by explicit versioned migrations and an idempotent demo seed. It includes users, sessions, branches, services, operator-service authorization, queue sequences, and tickets. | PostgreSQL owns users, branches, services, operator-service authorization, sessions, queue numbering, and tickets. |
+| Contract | OpenAPI 3.1 includes health and auth endpoints; TypeScript types are generated from it. | Every implemented endpoint has an OpenAPI contract; provider, client-type, and E2E checks verify it. |
+| Tests | Auth unit, provider-contract, web component, and PostgreSQL integration tests cover sign-in/session behavior. Queue repository integration tests cover migration/seed repeatability, database invariants, transactional numbering/assignment, FIFO ordering, and concurrency. Full customer/operator flows remain future work. | Add tests with each feature. E2E runs the real web app and API against PostgreSQL. |
 | Deployment | Local Compose network and multi-stage Dockerfiles. | Candidate Cloud Run services with Cloud SQL for PostgreSQL; Artifact Registry, Secret Manager, IAM service accounts, and Cloud Logging. Confirm topology in Lab 5; no cloud deployment is required for D1. |
 
-No application feature is implemented by this design step.
+This design document does not implement application behavior; see the current-repository column for implementation status.
 
 ## 3. System architecture
 
@@ -124,7 +124,7 @@ These are design boundaries. Final package names and file breakdown belong in fe
 
 ### 4.2 Proposed endpoint shapes
 
-These paths are examples for Step 4 contract design; they do not imply implemented routes.
+The auth paths below are implemented. The remaining paths are proposed Step 4 contracts and do not imply that queue or service routes exist.
 
 | Operation | Example path | Authorization and behavior |
 | --- | --- | --- |
@@ -198,7 +198,7 @@ Validate inputs in the browser for quick feedback and repeat every rule in the A
 
 Use an opaque, high-entropy session token. Persist only a cryptographic hash of the token in PostgreSQL with its user, creation, expiry, and revocation timestamps. The token is carried in a web-origin cookie and is never placed in browser JavaScript, URLs, or logs.
 
-The API remains the authority for authentication and authorization. The web server function forwards the opaque token to the Go API in a server-to-server authorization header. The token format, password verifier, session duration, rotation policy, and recovery flows require review before implementation.
+The API remains the authority for authentication and authorization. The web server function forwards the opaque token to the Go API in a server-to-server authorization header. The implemented token, password, role, expiry, cookie, and error choices are recorded in [authentication.md](authentication.md). Registration, recovery, and global session revocation remain out of scope.
 
 ```mermaid
 sequenceDiagram
@@ -233,13 +233,13 @@ sequenceDiagram
 
 ### 6.2 Cookie and request protections
 
-Proposed production cookie settings: HttpOnly, Secure, SameSite=Lax, and Path=/. Use HTTPS in deployed environments. Apply Origin/Referer validation or a CSRF token strategy to state-changing requests; SameSite alone is not the complete authorization policy. Set a bounded server-side session expiry and clear expired/revoked cookies in the web response.
+The web cookie uses HttpOnly, SameSite=Lax, Path=/, and Secure in production. Use HTTPS in deployed environments. TanStack Start's server-function request-origin checks protect state-changing web calls; Go independently validates the API session. Session expiry is bounded and expired/revoked cookies are cleared by the web server function.
 
 Never log raw credentials, cookie values, authorization headers, password hashes, or session-token hashes. Rate limiting and account lockout policy require security review and are not yet specified.
 
 ### 6.3 Lifecycle rules
 
-1. Login verifies the submitted identity and credential, creates a new random session, and invalidates or rotates any prior session according to the final policy.
+1. Login normalizes the email, verifies the bcrypt password hash, and creates a new random session. Multiple sessions may coexist; logout revokes only the current session.
 2. A protected request validates the session against server-side storage and derives the user ID and role from that record.
 3. Logout revokes the current session in the API and clears the browser cookie.
 4. Expired or revoked sessions receive 401 and cannot mutate data.
@@ -293,8 +293,8 @@ erDiagram
     uuid id PK
     string role
     string display_name
-    string login_identifier
-    string credential_hash
+    string email
+    string password_hash
   }
   SESSION {
     uuid id PK
@@ -355,7 +355,7 @@ erDiagram
   USER o|--o{ TICKET : assigned_operator
 ```
 
-This ER diagram is conceptual. Exact PostgreSQL types, identifier format, indexes, and migration SQL belong in Step 4 feature contracts. In particular, login identifier fields and branch-local timezone rules must be agreed before implementation.
+This ER diagram is conceptual. Exact PostgreSQL types, email format, indexes, and migration SQL belong in Step 4 feature contracts. Branch-local timezone rules must also be agreed before implementation.
 
 ## 10. PostgreSQL constraints and transactional design
 
@@ -363,7 +363,7 @@ This ER diagram is conceptual. Exact PostgreSQL types, identifier format, indexe
 
 | Invariant | Database protection |
 | --- | --- |
-| A login identity identifies one user. | Unique normalized login identifier, if email or another identifier is selected. |
+| An email identifies one user. | Unique normalized email address. |
 | A service belongs to one branch. | Foreign key from service to branch; unique service/branch key for composite references. |
 | One operator authorization per service. | Unique operator_id and service_id pair in OperatorService. |
 | One queue-number counter per branch/service/business date. | Primary or unique key across branch_id, service_id, business_date. |
@@ -414,7 +414,7 @@ The repository provides a versioned SQL migration under `apps/api/internal/platf
 
 For local Compose, PostgreSQL 17 uses the existing named volume so database data survives container or application restarts. A clean environment starts the database, applies migrations, then runs the idempotent seed command to create one UTC synthetic branch/service and one Customer and one Operator with operator-service authorization. Seed IDs are stable. The seed command takes local passwords from environment variables, hashes them with bcrypt, and never stores plaintext passwords in Git. Ticket numbers are currently decimal sequence strings; any display prefix/padding remains a product contract decision.
 
-Integration and E2E tests create isolated databases or disposable PostgreSQL containers, apply the same migrations, and seed unique test identities per run. Each test cleans up its own records/container so parallel or repeated runs do not share mutable ticket state. Production uses Cloud SQL durable storage and configured backups; retention and recovery objectives are Lab 5 decisions. These are design plans, not current implemented migrations or seeds.
+Integration and E2E tests use disposable PostgreSQL containers and apply the same versioned migrations. Auth integration tests seed the stable demo identities with test-only password hashes; queue tests use isolated fixtures. Testcontainers removes each database after the run. Production storage and backup choices remain Lab 5 decisions.
 
 ## 11. Configuration and deployment
 
@@ -423,12 +423,12 @@ Integration and E2E tests create isolated databases or disposable PostgreSQL con
 | Setting | Current default or source | Use |
 | --- | --- | --- |
 | PORT | 8080 in API config | Go HTTP listen port. |
-| DATABASE_URL | Unset for standalone API; set by Compose | PostgreSQL connection string. Queue features require a working database. |
+| DATABASE_URL | Unset for standalone API; set by Compose | PostgreSQL connection string. Authentication and queue persistence require a working database. |
 | DB_MAX_IDLE_CONNS | 5 | PostgreSQL pool idle connection limit. |
 | DB_MAX_OPEN_CONNS | 10 | PostgreSQL pool open connection limit. |
 | DB_CONN_MAX_LIFETIME | 30m | Maximum pooled connection lifetime. |
 | API_BASE_URL | http://localhost:8080 in web code; http://api:8080 in Compose | Server-side web-to-API destination. |
-| Session configuration | Not implemented | Select TTL, cookie name, and any signing/encryption settings during the auth contract. |
+| Session configuration | 12-hour default TTL (`SESSION_TTL`), `quevo_session` HttpOnly cookie, Secure in production, SameSite=Lax. | Revisit only if production deployment requirements change. |
 
 Use environment injection for deployed configuration. Keep production credentials and session secrets out of Git. The current Compose credentials are for local development only.
 
@@ -463,20 +463,20 @@ Run explicit versioned migrations as a release/deployment job before the new app
 | Contract | Provider responses conform to generated OpenAPI; web types match generated schema. | kin-openapi, OpenAPI generation, openapi-typescript check. |
 | Full-stack E2E | Customer/operator journeys and persisted state across browser, web server, API, and database. | Playwright with real Go API and Testcontainers PostgreSQL; no mocked backend. |
 
-The API and web still lack the authentication flow and customer/operator UI journeys. PostgreSQL integration coverage now exercises migration and seed repeatability, database uniqueness constraints, transactional ticket numbering and call-next, FIFO ordering, and concurrent queue operations. Authentication/authorization endpoint behavior and full-stack customer/operator flows remain for their feature issues.
+Authentication unit, provider-contract, web component, and PostgreSQL integration tests cover the current sign-in/session behavior and role/ownership policy. Queue repository integration tests cover migration/seed repeatability, database invariants, transactional queue numbering and assignment, FIFO ordering, and concurrent operations. Customer and operator HTTP/UI workflows and the full lifecycle transitions remain future work.
 
 ## 14. Design decisions and open questions
 
 | Decision | Current design position | Needs resolution |
 | --- | --- | --- |
 | Official course specifications | The supplied group_work_specs_v1 is labeled draft for instructor review; project_deliverable_1_v1 is the D1 v1 source. | Keep direct clauses and Quevo proposals distinguished in traceability.md; confirm draft/spec changes with the team. |
-| Authentication | Propose opaque server-side sessions with a web-origin HttpOnly cookie and API-side validation. | Confirm identity fields, credential or SSO mechanism, session lifetime, rotation, CSRF policy, and account provisioning. |
+| Authentication | Opaque server-side sessions, bcrypt local passwords, `CUSTOMER`/`OPERATOR` roles, 12-hour default expiry, and a web-origin HttpOnly cookie with Go-side validation. See [authentication.md](authentication.md). | Issue #15 provides the versioned user/session schema and seeded accounts. Production identity providers and account recovery are out of scope. |
 | Queue key and business date | Branch, service, and business date; calculate date in branch timezone. | Set timezone source, queue open/close rules, and ticket reset policy. |
 | Ticket number | Unique within branch/service/business date; decimal sequence strings allocated transactionally by QueueSequence. | Confirm display prefix/padding and whether gaps are acceptable after errors. |
 | Operator authorization | OperatorService records access to a service; provisioned data is enough for the first vertical slice. | Confirm who creates/revokes assignments and whether counters are required in the baseline. |
 | Customer notification | A notification step follows call-next. | Decide whether it is a staff action, in-app message, SMS, or another channel and define delivery guarantees. |
 | Ticket history | Read-only COMPLETED and SKIPPED tickets for authorized services. | Decide retention, pagination, filters, and whether more audit history is required. |
-| API error contract | One safe JSON error envelope with stable codes. | Set exact field names, codes, status mapping, and OpenAPI schemas in Step 4. |
+| API error contract | Auth endpoints use `{ code, message, requestId }` with safe messages. | Define matching codes and status behavior as queue endpoints are implemented. |
 | Deployment | Candidate Cloud Run web/API services, Cloud SQL PostgreSQL, Artifact Registry, Secret Manager, IAM service accounts, and Cloud Logging. | Confirm network, ingress, backups, IAM, region, and cost in Lab 5; D1 does not require actual cloud deployment. |
 
 ## 15. Requirements trace

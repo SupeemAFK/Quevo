@@ -5,6 +5,16 @@
 // @servers.description API v1 base path
 // @externalDocs.description API documentation in Swagger UI.
 // @externalDocs.url /swagger/
+// @title Quevo API
+// @version 1.0.0
+// @description HTTP API for the Quevo application.
+// @servers.url /api/v1
+// @servers.description API v1 base path
+// @externalDocs.description API documentation in Swagger UI.
+// @externalDocs.url /swagger/
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 package main
 
 import (

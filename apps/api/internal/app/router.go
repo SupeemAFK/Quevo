@@ -3,6 +3,7 @@ package app
 import (
 	"net/http"
 
+	"example.com/quevo/apps/api/internal/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/swaggest/swgui/v5emb"
 	"go.uber.org/zap"
@@ -12,13 +13,15 @@ import (
 	"example.com/quevo/apps/api/internal/middleware"
 )
 
-func NewRouter(logger *zap.Logger) *gin.Engine {
+func NewRouter(logger *zap.Logger, authService *auth.Service) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	router.Use(middleware.ZapRequestLogger(logger), middleware.ZapRecovery(logger))
 
 	api := router.Group("/api/v1")
 	health.RegisterRoutes(api)
+
+	auth.RegisterRoutes(api, authService)
 
 	router.GET("/openapi.json", func(c *gin.Context) {
 		c.Data(http.StatusOK, "application/json; charset=utf-8", apidocs.Spec)

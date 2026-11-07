@@ -27,7 +27,7 @@ func TestCallNextPreventsOperatorClaimingAcrossServices(t *testing.T) {
 		VALUES ($1, $2)`, database.DemoOperatorID, serviceID); err != nil {
 		t.Fatalf("authorize operator for second service: %v", err)
 	}
-	if _, err := db.ExecContext(ctx, `INSERT INTO app_users (id, role, display_name, login_identifier, credential_hash)
+	if _, err := db.ExecContext(ctx, `INSERT INTO users (id, role, display_name, email, password_hash)
 		VALUES ($1, 'CUSTOMER', 'Second Customer', $2, 'test-hash')`, customerID, customerID+"@quevo.local"); err != nil {
 		t.Fatalf("insert second customer: %v", err)
 	}
