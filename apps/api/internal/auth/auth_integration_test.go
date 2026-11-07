@@ -6,8 +6,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -20,6 +23,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 func TestAuthFlowWithPostgres(t *testing.T) {
@@ -71,6 +75,7 @@ func TestAuthFlowWithPostgres(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("seed demo users: %v", err)
 	}
+	assertGORMAuthLogsAreSafe(t, ctx, db)
 	if _, err := sqlDB.ExecContext(ctx, `UPDATE users SET email = ' Customer@Quevo.Local ' WHERE id = $1`, database.DemoCustomerID); err != nil {
 		t.Fatalf("prepare mixed-case email: %v", err)
 	}
@@ -148,6 +153,40 @@ func TestAuthFlowWithPostgres(t *testing.T) {
 	}, "")
 	if badLogin.Code != http.StatusUnauthorized {
 		t.Fatalf("invalid login status = %d, want %d", badLogin.Code, http.StatusUnauthorized)
+	}
+}
+
+func assertGORMAuthLogsAreSafe(t *testing.T, ctx context.Context, db *gorm.DB) {
+	t.Helper()
+
+	previousWriter := log.Writer()
+	var output bytes.Buffer
+	log.SetOutput(&output)
+	defer log.SetOutput(previousWriter)
+
+	repository := auth.NewGORMRepository(db)
+	if _, err := repository.FindUserByEmail(ctx, "missing@example.test"); !errors.Is(err, auth.ErrNotFound) {
+		t.Fatalf("missing email lookup error = %v, want ErrNotFound", err)
+	}
+	if _, err := repository.FindSessionByTokenHash(ctx, strings.Repeat("a", 64)); !errors.Is(err, auth.ErrNotFound) {
+		t.Fatalf("missing session lookup error = %v, want ErrNotFound", err)
+	}
+	if output.Len() != 0 {
+		t.Fatalf("expected record-not-found lookups to be omitted from GORM logs, got %q", output.String())
+	}
+
+	const sensitiveEmail = "do-not-log@example.test"
+	var result struct{ ID string }
+	err := db.WithContext(ctx).Table("users").Select("missing_column").
+		Where("email = ?", sensitiveEmail).Take(&result).Error
+	if err == nil {
+		t.Fatal("query with a missing column unexpectedly succeeded")
+	}
+	if output.Len() == 0 {
+		t.Fatal("expected the failed query to be logged")
+	}
+	if strings.Contains(output.String(), sensitiveEmail) {
+		t.Fatalf("GORM query log exposed a bound email: %q", output.String())
 	}
 }
 

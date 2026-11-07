@@ -5,7 +5,19 @@ import (
 	"errors"
 	"testing"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
+
+func TestDummyPasswordHashUsesDefaultCost(t *testing.T) {
+	cost, err := bcrypt.Cost([]byte(dummyPasswordHash))
+	if err != nil {
+		t.Fatalf("parse dummy password hash: %v", err)
+	}
+	if cost != bcrypt.DefaultCost {
+		t.Fatalf("dummy password hash cost = %d, want %d", cost, bcrypt.DefaultCost)
+	}
+}
 
 func TestLoginCreatesHashedSession(t *testing.T) {
 	repository := newMemoryRepository(t, RoleCustomer)

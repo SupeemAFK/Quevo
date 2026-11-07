@@ -15,7 +15,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const DefaultSessionTTL = 12 * time.Hour
+const (
+	DefaultSessionTTL = 12 * time.Hour
+	// This hash uses bcrypt's default cost to keep unknown-email attempts on the same path.
+	dummyPasswordHash = "$2a$10$4LwaeeCnoKlYhpfVz0UAteTdmNhUGoyrTe0NfpOgX3cnTyOy/Fkmi"
+)
 
 var (
 	ErrNotFound           = errors.New("auth record not found")
@@ -40,6 +44,7 @@ func NewService(repository Repository, sessionTTL time.Duration) *Service {
 func (s *Service) Login(ctx context.Context, email, password string) (LoginResult, error) {
 	user, err := s.repository.FindUserByEmail(ctx, normalizeEmail(email))
 	if errors.Is(err, ErrNotFound) {
+		_ = bcrypt.CompareHashAndPassword([]byte(dummyPasswordHash), []byte(password))
 		return LoginResult{}, ErrInvalidCredentials
 	}
 	if err != nil {

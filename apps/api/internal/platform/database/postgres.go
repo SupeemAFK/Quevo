@@ -2,11 +2,13 @@ package database
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type PoolConfig struct {
@@ -32,6 +34,12 @@ func Open(databaseURL string, pool PoolConfig) (*gorm.DB, error) {
 
 	db, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{
 		DisableAutomaticPing: true,
+		Logger: logger.New(log.Default(), logger.Config{
+			SlowThreshold:             200 * time.Millisecond,
+			LogLevel:                  logger.Warn,
+			IgnoreRecordNotFoundError: true,
+			ParameterizedQueries:      true,
+		}),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("open GORM PostgreSQL connection: %w", err)
