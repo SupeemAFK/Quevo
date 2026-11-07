@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
 import { useState } from 'react'
 import { ApiHealthStatus } from '@/components/api-health-status'
@@ -17,6 +17,7 @@ export const Route = createFileRoute('/')({
 function Home() {
   const { data: health } = useSuspenseQuery(apiHealthOptions)
   const { user } = Route.useLoaderData()
+  const queryClient = useQueryClient()
   const router = useRouter()
   const [signOutError, setSignOutError] = useState('')
 
@@ -24,6 +25,7 @@ function Home() {
     setSignOutError('')
     try {
       await signOut()
+      queryClient.removeQueries({ queryKey: ['customer'] })
       await router.invalidate()
     } catch {
       setSignOutError('Could not sign out. Please try again.')
@@ -45,6 +47,11 @@ function Home() {
           <div className="my-6 rounded-lg border bg-muted/40 p-4">
             <p className="font-medium">Signed in as {user.displayName}</p>
             <p className="mb-3 text-sm text-muted-foreground">Role: {user.role}</p>
+            {user.role === 'CUSTOMER' ? (
+              <Button asChild className="mb-3 w-full">
+                <Link to="/customer">Choose a service</Link>
+              </Button>
+            ) : null}
             <Button onClick={handleSignOut} variant="outline">
               Sign out
             </Button>

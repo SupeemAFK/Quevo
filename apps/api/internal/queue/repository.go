@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -14,28 +15,61 @@ var (
 	ErrActiveTicket            = errors.New("customer already has an active ticket in this queue")
 	ErrOperatorHasActiveTicket = errors.New("operator already has an active ticket")
 	ErrQueueUnauthorized       = errors.New("user is not authorized for this queue action")
+	ErrServiceUnavailable      = errors.New("service is not available")
+	ErrTicketNotFound          = errors.New("customer ticket not found")
 )
 
 type Repository struct{ db *gorm.DB }
 
 func NewRepository(db *gorm.DB) *Repository { return &Repository{db: db} }
 
+func (r *Repository) ListAvailableServices(ctx context.Context, branchID string) ([]AvailableService, error) {
+	var services []AvailableService
+	query := r.db.WithContext(ctx).
+		Table("services AS s").
+		Select("s.id::text AS id, s.branch_id::text AS branch_id, b.name AS branch_name, s.name").
+		Joins("JOIN branches AS b ON b.id = s.branch_id").
+		Where("s.active = ?", true)
+	if branchID != "" {
+		query = query.Where("s.branch_id = ?", branchID)
+	}
+	if err := query.Order("b.name, s.name, s.id").Scan(&services).Error; err != nil {
+		return nil, fmt.Errorf("list available services: %w", err)
+	}
+	if services == nil {
+		services = []AvailableService{}
+	}
+	return services, nil
+}
+
 // JoinQueue creates a waiting ticket and allocates its number in one transaction.
-// BusinessDate is the branch-local calendar date supplied by the caller.
+// If BusinessDate is zero, the repository calculates it using the branch timezone.
 func (r *Repository) JoinQueue(ctx context.Context, input JoinQueueInput) (Ticket, error) {
 	var ticket Ticket
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var branchID, role string
+		var role, branchName, serviceName string
 		var active bool
-		err := tx.Raw(`SELECT s.branch_id::text, u.role, s.active FROM services s CROSS JOIN users u
-			WHERE s.id = ? AND u.id = ?`, input.ServiceID, input.CustomerID).Row().Scan(&branchID, &role, &active)
-		if errors.Is(err, sql.ErrNoRows) || (err == nil && (role != "CUSTOMER" || !active)) {
+		var branchID string
+		var branchBusinessDate time.Time
+		err := tx.Raw(`SELECT s.branch_id::text, u.role, s.active, b.name, s.name,
+			(now() AT TIME ZONE b.timezone)::date
+			FROM services s JOIN branches b ON b.id = s.branch_id CROSS JOIN users u
+			WHERE s.id = ? AND s.branch_id = ? AND u.id = ?`, input.ServiceID, input.BranchID, input.CustomerID).
+			Row().Scan(&branchID, &role, &active, &branchName, &serviceName, &branchBusinessDate)
+		if errors.Is(err, sql.ErrNoRows) || (err == nil && !active) {
+			return ErrServiceUnavailable
+		}
+		if err == nil && role != "CUSTOMER" {
 			return ErrQueueUnauthorized
 		}
 		if err != nil {
 			return fmt.Errorf("validate customer and service: %w", err)
 		}
-		date := input.BusinessDate.Format("2006-01-02")
+		dateValue := input.BusinessDate
+		if dateValue.IsZero() {
+			dateValue = branchBusinessDate
+		}
+		date := dateValue.Format("2006-01-02")
 		last, err := lockSequence(tx, branchID, input.ServiceID, date)
 		if err != nil {
 			return err
@@ -65,12 +99,57 @@ func (r *Repository) JoinQueue(ctx context.Context, input JoinQueueInput) (Ticke
 		if err != nil {
 			return fmt.Errorf("create waiting ticket: %w", err)
 		}
+		ticket.BranchName = branchName
+		ticket.ServiceName = serviceName
 		return nil
 	})
 	if err != nil {
 		return Ticket{}, err
 	}
 	return ticket, nil
+}
+
+func (r *Repository) FindCustomerTicket(ctx context.Context, customerID, ticketID string) (Ticket, error) {
+	var ticket Ticket
+	err := r.db.WithContext(ctx).
+		Table("tickets AS t").
+		Select(`t.id::text AS id, t.branch_id::text AS branch_id, b.name AS branch_name,
+			t.service_id::text AS service_id, s.name AS service_name, t.business_date,
+			t.ticket_number, t.customer_id::text AS customer_id,
+			t.assigned_operator_id::text AS assigned_operator_id, t.status, t.joined_at, t.called_at`).
+		Joins("JOIN branches AS b ON b.id = t.branch_id").
+		Joins("JOIN services AS s ON s.id = t.service_id").
+		Where("t.id = ? AND t.customer_id = ?", ticketID, customerID).
+		Take(&ticket).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return Ticket{}, ErrTicketNotFound
+	}
+	if err != nil {
+		return Ticket{}, fmt.Errorf("find customer ticket: %w", err)
+	}
+	return ticket, nil
+}
+
+func (r *Repository) ListActiveCustomerTickets(ctx context.Context, customerID string) ([]Ticket, error) {
+	var tickets []Ticket
+	err := r.db.WithContext(ctx).
+		Table("tickets AS t").
+		Select(`t.id::text AS id, t.branch_id::text AS branch_id, b.name AS branch_name,
+			t.service_id::text AS service_id, s.name AS service_name, t.business_date,
+			t.ticket_number, t.customer_id::text AS customer_id,
+			t.assigned_operator_id::text AS assigned_operator_id, t.status, t.joined_at, t.called_at`).
+		Joins("JOIN branches AS b ON b.id = t.branch_id").
+		Joins("JOIN services AS s ON s.id = t.service_id").
+		Where("t.customer_id = ? AND t.status IN ('WAITING', 'PENDING', 'OPERATING')", customerID).
+		Order("t.joined_at DESC, t.id").
+		Scan(&tickets).Error
+	if err != nil {
+		return nil, fmt.Errorf("list active customer tickets: %w", err)
+	}
+	if tickets == nil {
+		tickets = []Ticket{}
+	}
+	return tickets, nil
 }
 
 // CallNext locks the queue and claims its oldest waiting ticket atomically.

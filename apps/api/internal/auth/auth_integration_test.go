@@ -83,7 +83,7 @@ func TestAuthFlowWithPostgres(t *testing.T) {
 	authorizedServiceID := database.DemoServiceID
 
 	authService := auth.NewService(auth.NewGORMRepository(db), time.Hour)
-	router := app.NewRouter(zap.NewNop(), authService)
+	router := app.NewRouter(zap.NewNop(), authService, nil)
 	router.Group("/api/v1").GET("/operator/services/:serviceID", auth.RequireSession(authService), auth.RequireOperatorService(authService, "serviceID"), func(c *gin.Context) {
 		c.Status(http.StatusNoContent)
 	})

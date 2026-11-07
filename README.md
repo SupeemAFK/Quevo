@@ -1,6 +1,6 @@
 # Quevo
 
-Quevo is a full-stack starter with a Go API, a Bun-managed TypeScript web app, PostgreSQL, and Playwright E2E tests.
+Quevo is a full-stack prototype with a Go API, a Bun-managed TypeScript web app, PostgreSQL, and Playwright E2E tests.
 
 ## Quick start
 
@@ -68,7 +68,7 @@ The web app calls the API through a TanStack server function, so the API address
 
 ## Product workflows
 
-Quevo supports customer queue joining and operator ticket processing. The user journey and ticket lifecycle are documented in [docs/requirements/workflows.md](docs/requirements/workflows.md). The customer and operator queue flows describe intended behavior; those queue workflows are not implemented yet. The proposed system architecture and data model are in [docs/design/system-sds.md](docs/design/system-sds.md); the implemented sign-in, session, and browser/API contract is in [docs/design/authentication.md](docs/design/authentication.md). The requirements-to-feature-to-sprint matrix and official Theme 9 / Deliverable 1 crosswalk are in [docs/requirements/traceability.md](docs/requirements/traceability.md). The course milestones and proposed feature allocation are in [docs/sprints/plan.md](docs/sprints/plan.md). Issue effort weights and label conventions are in [docs/sprints/estimation.md](docs/sprints/estimation.md).
+The customer can sign in, select an active service, join its queue, recover active tickets, and view their own ticket status. The API enforces customer role and ticket ownership, and PostgreSQL allocates queue numbers transactionally. The user journey and ticket lifecycle are documented in [docs/requirements/workflows.md](docs/requirements/workflows.md); operator queue processing remains planned work. The system architecture and data model are in [docs/design/system-sds.md](docs/design/system-sds.md), and the sign-in/session contract is in [docs/design/authentication.md](docs/design/authentication.md). The requirements-to-feature-to-sprint matrix and official Theme 9 / Deliverable 1 crosswalk are in [docs/requirements/traceability.md](docs/requirements/traceability.md). The course milestones and proposed feature allocation are in [docs/sprints/plan.md](docs/sprints/plan.md). Issue effort weights and label conventions are in [docs/sprints/estimation.md](docs/sprints/estimation.md).
 
 ## Run locally
 
@@ -99,7 +99,7 @@ bun --bun run build
 
 ## Test
 
-The web app uses Bun for dependencies and the dev server. Vitest and Playwright require Node 24 (`.nvmrc`). Web unit and component tests use React Testing Library and MSW. Go unit tests use the standard library. The database integration and Playwright E2E suites start isolated PostgreSQL containers with Testcontainers. E2E starts the real Go API and web app, applies the real migrations and demo seed, and exercises sign-in/sign-out against PostgreSQL; it does not mock the backend.
+The web app uses Bun for dependencies and the dev server. Vitest and Playwright require Node 24 (`.nvmrc`). Web unit and component tests use React Testing Library and MSW. Go unit tests use the standard library. The database integration and Playwright E2E suites start isolated PostgreSQL containers with Testcontainers. E2E starts the real Go API and web app, applies the real migrations and demo seed, and covers sign-in, service selection, queue joining, ticket reload and recovery, and duplicate-join rejection against PostgreSQL; it does not mock the backend.
 
 Install Playwright's Chromium browser once:
 

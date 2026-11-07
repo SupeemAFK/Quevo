@@ -14,7 +14,7 @@ Quevo helps a bank branch organize walk-in customers into service-specific queue
 
 Quevo coordinates queue service only. It does not hold customer financial accounts, move money, approve banking transactions, or schedule appointments.
 
-This SRS records the desired product behavior. It does not claim that these features are implemented. At the inspected repository revision, the API exposes a health endpoint and the web app is a starter; the queue workflows remain planned work.
+This SRS records the desired product behavior and does not imply that every requirement is implemented. The current repository includes sign-in, customer service selection, queue join, active-ticket recovery, and own-ticket status. Operator queue processing and later-sprint features remain planned work.
 
 ## 2. Stakeholders and actors
 
@@ -54,7 +54,7 @@ Only Customer and Operator are confirmed product actors. Administrative identiti
 - PostgreSQL is the source of truth for queue and ticket state.
 - Queue join and ticket claim must be implemented as PostgreSQL transactions with pessimistic locking.
 - The codebase uses a feature-first modular monolith. This SRS does not require new infrastructure or a change of framework.
-- The application is currently a starter. Existing health, test, OpenAPI, container, and development tooling are infrastructure, not evidence that queue requirements are implemented.
+- The implementation is incremental. Existing health, test, OpenAPI, container, and development tooling do not by themselves indicate that a product requirement is complete; use the feature acceptance criteria and tests as evidence.
 
 ## 5. Functional requirements
 

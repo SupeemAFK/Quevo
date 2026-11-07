@@ -116,6 +116,137 @@
                     "status"
                 ],
                 "type": "object"
+            },
+            "queue.CustomerTicketsResponse": {
+                "properties": {
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/queue.TicketResponse"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
+                    }
+                },
+                "required": [
+                    "items"
+                ],
+                "type": "object"
+            },
+            "queue.QueueErrorResponse": {
+                "properties": {
+                    "code": {
+                        "example": "active_ticket_exists",
+                        "type": "string"
+                    },
+                    "message": {
+                        "example": "You already have an active ticket for this service today",
+                        "type": "string"
+                    },
+                    "requestId": {
+                        "example": "0e85b5d4-fdda-48fd-a026-45128b73afc3",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                ],
+                "type": "object"
+            },
+            "queue.ServiceResponse": {
+                "properties": {
+                    "branchId": {
+                        "example": "10000000-0000-4000-8000-000000000001",
+                        "type": "string"
+                    },
+                    "branchName": {
+                        "example": "Quevo Demo Branch",
+                        "type": "string"
+                    },
+                    "id": {
+                        "example": "10000000-0000-4000-8000-000000000002",
+                        "type": "string"
+                    },
+                    "name": {
+                        "example": "General Service",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "branchId",
+                    "branchName",
+                    "id",
+                    "name"
+                ],
+                "type": "object"
+            },
+            "queue.ServicesResponse": {
+                "properties": {
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/queue.ServiceResponse"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
+                    }
+                },
+                "required": [
+                    "items"
+                ],
+                "type": "object"
+            },
+            "queue.TicketResponse": {
+                "properties": {
+                    "branchId": {
+                        "example": "10000000-0000-4000-8000-000000000001",
+                        "type": "string"
+                    },
+                    "branchName": {
+                        "example": "Quevo Demo Branch",
+                        "type": "string"
+                    },
+                    "businessDate": {
+                        "example": "2026-11-07",
+                        "type": "string"
+                    },
+                    "id": {
+                        "example": "d6d26a41-5c50-4ca9-b4f7-e82d7558da79",
+                        "type": "string"
+                    },
+                    "joinedAt": {
+                        "example": "2026-11-07T12:00:00Z",
+                        "type": "string"
+                    },
+                    "serviceId": {
+                        "example": "10000000-0000-4000-8000-000000000002",
+                        "type": "string"
+                    },
+                    "serviceName": {
+                        "example": "General Service",
+                        "type": "string"
+                    },
+                    "status": {
+                        "example": "WAITING",
+                        "type": "string"
+                    },
+                    "ticketNumber": {
+                        "example": "1",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "branchId",
+                    "branchName",
+                    "businessDate",
+                    "id",
+                    "joinedAt",
+                    "serviceId",
+                    "serviceName",
+                    "status",
+                    "ticketNumber"
+                ],
+                "type": "object"
             }
         },
         "securitySchemes": {
@@ -318,6 +449,125 @@
                 ]
             }
         },
+        "/branches/{branchId}/services/{serviceId}/tickets": {
+            "post": {
+                "description": "Creates a WAITING ticket and allocates its number using the branch-local business date.",
+                "operationId": "postCustomerTicket",
+                "parameters": [
+                    {
+                        "description": "Branch ID",
+                        "in": "path",
+                        "name": "branchId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Service ID",
+                        "in": "path",
+                        "name": "serviceId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.TicketResponse"
+                                }
+                            }
+                        },
+                        "description": "Created"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Join a service queue",
+                "tags": [
+                    "tickets"
+                ]
+            }
+        },
         "/health": {
             "get": {
                 "description": "Returns the current health status of the API.",
@@ -337,6 +587,260 @@
                 "summary": "Check API health",
                 "tags": [
                     "health"
+                ]
+            }
+        },
+        "/services": {
+            "get": {
+                "description": "Returns active services. An optional branch ID filters the list.",
+                "operationId": "getServices",
+                "parameters": [
+                    {
+                        "description": "Filter by branch ID",
+                        "in": "query",
+                        "name": "branchId",
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.ServicesResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "List available services",
+                "tags": [
+                    "services"
+                ]
+            }
+        },
+        "/tickets/active": {
+            "get": {
+                "description": "Returns active tickets owned by the authenticated customer so they can recover a ticket without its original URL.",
+                "operationId": "getActiveCustomerTickets",
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.CustomerTicketsResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "List my active tickets",
+                "tags": [
+                    "tickets"
+                ]
+            }
+        },
+        "/tickets/{ticketId}": {
+            "get": {
+                "description": "Returns the current state of the specified ticket when it belongs to the authenticated customer.",
+                "operationId": "getCustomerTicket",
+                "parameters": [
+                    {
+                        "description": "Ticket ID",
+                        "in": "path",
+                        "name": "ticketId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.TicketResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Get my ticket",
+                "tags": [
+                    "tickets"
                 ]
             }
         }

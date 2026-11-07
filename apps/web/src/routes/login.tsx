@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
 import { LoginForm } from '@/components/login-form'
 import { signIn } from '@/lib/auth'
@@ -8,6 +9,12 @@ export const Route = createFileRoute('/login')({
 
 function LoginPage() {
   const router = useRouter()
+  const queryClient = useQueryClient()
+
+  function handleLoginSuccess() {
+    queryClient.removeQueries({ queryKey: ['customer'] })
+    void router.navigate({ to: '/' })
+  }
 
   return (
     <main className="grid min-h-svh place-items-center bg-background p-6">
@@ -20,7 +27,7 @@ function LoginPage() {
           Use your seeded customer or operator account.
         </p>
         <LoginForm
-          onSuccess={() => router.navigate({ to: '/' })}
+          onSuccess={handleLoginSuccess}
           signIn={async (input) => signIn({ data: input })}
         />
         <Link

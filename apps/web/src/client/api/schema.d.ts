@@ -64,6 +64,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/branches/{branchId}/services/{serviceId}/tickets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Join a service queue
+         * @description Creates a WAITING ticket and allocates its number using the branch-local business date.
+         */
+        post: operations["postCustomerTicket"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -76,6 +96,66 @@ export interface paths {
          * @description Returns the current health status of the API.
          */
         get: operations["getHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/services": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List available services
+         * @description Returns active services. An optional branch ID filters the list.
+         */
+        get: operations["getServices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tickets/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List my active tickets
+         * @description Returns active tickets owned by the authenticated customer so they can recover a ticket without its original URL.
+         */
+        get: operations["getActiveCustomerTickets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tickets/{ticketId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get my ticket
+         * @description Returns the current state of the specified ticket when it belongs to the authenticated customer.
+         */
+        get: operations["getCustomerTicket"];
         put?: never;
         post?: never;
         delete?: never;
@@ -125,6 +205,50 @@ export interface components {
         "health.Response": {
             /** @example healthy */
             status: string;
+        };
+        "queue.CustomerTicketsResponse": {
+            items: components["schemas"]["queue.TicketResponse"][];
+        };
+        "queue.QueueErrorResponse": {
+            /** @example active_ticket_exists */
+            code: string;
+            /** @example You already have an active ticket for this service today */
+            message: string;
+            /** @example 0e85b5d4-fdda-48fd-a026-45128b73afc3 */
+            requestId: string;
+        };
+        "queue.ServiceResponse": {
+            /** @example 10000000-0000-4000-8000-000000000001 */
+            branchId: string;
+            /** @example Quevo Demo Branch */
+            branchName: string;
+            /** @example 10000000-0000-4000-8000-000000000002 */
+            id: string;
+            /** @example General Service */
+            name: string;
+        };
+        "queue.ServicesResponse": {
+            items: components["schemas"]["queue.ServiceResponse"][];
+        };
+        "queue.TicketResponse": {
+            /** @example 10000000-0000-4000-8000-000000000001 */
+            branchId: string;
+            /** @example Quevo Demo Branch */
+            branchName: string;
+            /** @example 2026-11-07 */
+            businessDate: string;
+            /** @example d6d26a41-5c50-4ca9-b4f7-e82d7558da79 */
+            id: string;
+            /** @example 2026-11-07T12:00:00Z */
+            joinedAt: string;
+            /** @example 10000000-0000-4000-8000-000000000002 */
+            serviceId: string;
+            /** @example General Service */
+            serviceName: string;
+            /** @example WAITING */
+            status: string;
+            /** @example 1 */
+            ticketNumber: string;
         };
     };
     responses: never;
@@ -288,6 +412,94 @@ export interface operations {
             };
         };
     };
+    postCustomerTicket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Branch ID */
+                branchId: string;
+                /** @description Service ID */
+                serviceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.TicketResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.QueueErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["auth.ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["auth.ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.QueueErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.QueueErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.QueueErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["auth.ErrorResponse"];
+                };
+            };
+        };
+    };
     getHealth: {
         parameters: {
             query?: never;
@@ -304,6 +516,207 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["health.Response"];
+                };
+            };
+        };
+    };
+    getServices: {
+        parameters: {
+            query?: {
+                /** @description Filter by branch ID */
+                branchId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.ServicesResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.QueueErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["auth.ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["auth.ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.QueueErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["auth.ErrorResponse"];
+                };
+            };
+        };
+    };
+    getActiveCustomerTickets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.CustomerTicketsResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["auth.ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["auth.ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.QueueErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["auth.ErrorResponse"];
+                };
+            };
+        };
+    };
+    getCustomerTicket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Ticket ID */
+                ticketId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.TicketResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.QueueErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["auth.ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["auth.ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.QueueErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.QueueErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["auth.ErrorResponse"];
                 };
             };
         };
