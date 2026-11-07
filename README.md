@@ -130,7 +130,7 @@ The web check uses Biome through Bun. The Go check uses golangci-lint `v2.15.0` 
 
 ## API and generated types
 
-`GET /api/v1/health` returns `{"status":"healthy"}`. The API also exposes `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, and `POST /api/v1/auth/logout`. Authentication requires the users and sessions migrations and seed data owned by issue #15; see [docs/design/authentication.md](docs/design/authentication.md). Swagger UI is served at `/swagger/`, and the generated OpenAPI 3.1 JSON is served at `/openapi.json`.
+`GET /api/v1/health` returns `{"status":"healthy"}`. The API also exposes `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, and `POST /api/v1/auth/logout`. Authentication requires the `app_users` and `sessions` migrations and seed data owned by issue #15; see [docs/design/authentication.md](docs/design/authentication.md). Swagger UI is served at `/swagger/`, and the generated OpenAPI 3.1 JSON is served at `/openapi.json`.
 
 To regenerate after changing Go endpoint annotations or response types, run from the repository root:
 

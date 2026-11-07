@@ -60,7 +60,7 @@ To run only the Go PostgreSQL integration test:
 cd apps/api && go test -tags=integration ./...
 ```
 
-The API integration suite uses Testcontainers PostgreSQL for the database and authentication flows. Authentication requires the users and sessions migrations and seeded identities described in [the authentication contract](design/authentication.md); issue #15 owns those migrations and seeds.
+The API integration suite uses Testcontainers PostgreSQL for the database and authentication flows. Authentication requires the `app_users` and `sessions` migrations and seeded identities described in [the authentication contract](design/authentication.md); issue #15 owns those migrations and seeds.
 
 ## Lint
 

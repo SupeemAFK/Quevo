@@ -1,6 +1,6 @@
 # Quevo API
 
-A Go API using Gin and GORM, organized as a feature-first modular monolith. It exposes `GET /api/v1/health` and sign-in, sign-out, and current-user endpoints under `/api/v1/auth`. Health does not use the database. Auth endpoints expect the users and sessions tables described in [the authentication contract](../../docs/design/authentication.md); issue #15 owns their migrations and seed data. OpenAPI 3.1 JSON is served at `/openapi.json`, and Swagger UI is served at `/swagger/`.
+A Go API using Gin and GORM, organized as a feature-first modular monolith. It exposes `GET /api/v1/health` and sign-in, sign-out, and current-user endpoints under `/api/v1/auth`. Health does not use the database. Auth endpoints expect the `app_users` and `sessions` tables described in [the authentication contract](../../docs/design/authentication.md); issue #15 owns their migrations and seed data. OpenAPI 3.1 JSON is served at `/openapi.json`, and Swagger UI is served at `/swagger/`.
 
 The `go.mod` module path is a placeholder (`example.com/quevo/apps/api`) because this checkout has no Git remote or established Go import path. Update it and the internal imports when the canonical repository path is known.
 

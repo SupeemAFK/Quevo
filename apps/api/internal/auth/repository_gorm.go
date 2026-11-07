@@ -102,7 +102,7 @@ type userRecord struct {
 	CredentialHash  string
 }
 
-func (userRecord) TableName() string { return "users" }
+func (userRecord) TableName() string { return "app_users" }
 
 func (record userRecord) user() User {
 	return User{

@@ -1,6 +1,6 @@
 # Authentication Contract
 
-This document records the implementation choices for issue #7. It coordinates the API with the users and sessions migration/seed work in issue #15; it does not add migrations or demo credentials.
+This document records the implementation choices for issue #7. It coordinates the API with the `app_users` and `sessions` migration/seed work in issue #15; it does not add migrations or demo credentials.
 
 ## Identity and session storage
 
@@ -8,13 +8,13 @@ The API expects the following PostgreSQL tables. Issue #15 owns the versioned mi
 
 | Table | Field | Type/meaning |
 | --- | --- | --- |
-| `users` | `id` | UUID primary key |
-| `users` | `role` | `CUSTOMER` or `OPERATOR` |
-| `users` | `display_name` | Name returned by `/auth/me` |
-| `users` | `login_identifier` | Unique identifier stored trimmed and lowercase |
-| `users` | `credential_hash` | bcrypt password hash |
+| `app_users` | `id` | UUID primary key |
+| `app_users` | `role` | `CUSTOMER` or `OPERATOR` |
+| `app_users` | `display_name` | Name returned by `/auth/me` |
+| `app_users` | `login_identifier` | Unique identifier stored trimmed and lowercase |
+| `app_users` | `credential_hash` | bcrypt password hash |
 | `sessions` | `id` | UUID primary key |
-| `sessions` | `user_id` | UUID foreign key to `users.id` |
+| `sessions` | `user_id` | UUID foreign key to `app_users.id` |
 | `sessions` | `token_hash` | Unique SHA-256 hash of the opaque session token |
 | `sessions` | `created_at`, `expires_at` | UTC session timestamps |
 | `sessions` | `revoked_at` | Nullable UTC revocation timestamp |
@@ -40,4 +40,4 @@ Authentication failures use the shared safe error shape `{ "code", "message", "r
 
 ## Local readiness
 
-The login UI and auth API are implemented, but login requires the `users`/`sessions` migration and seeded accounts from issue #15. Until those are available, the health check remains usable and authentication endpoints return safe errors when PostgreSQL is unavailable or has no auth schema.
+The login UI and auth API are implemented, but login requires the `app_users`/`sessions` migration and seeded accounts from issue #15. Until those are available, the health check remains usable and authentication endpoints return safe errors when PostgreSQL is unavailable or has no auth schema.

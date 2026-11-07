@@ -25,9 +25,9 @@ Design goals:
 
 | Area | Current repository | Intended product design |
 | --- | --- | --- |
-| API | Go HTTP server using Gin, GORM, Zap, and an API v1 router; health and auth routes are implemented. Auth persistence expects the users/sessions schema from issue #15. | Feature packages for identity, service discovery, and ticket workflows, wired explicitly through the app router. |
+| API | Go HTTP server using Gin, GORM, Zap, and an API v1 router; health and auth routes are implemented. Auth persistence expects the `app_users`/`sessions` schema from issue #15. | Feature packages for identity, service discovery, and ticket workflows, wired explicitly through the app router. |
 | Web | React and TypeScript with TanStack Start, TanStack Query, Bun, Tailwind, and shadcn. The web app has a login screen and server-managed session flow. | Customer and operator route groups call the Go API through TanStack Start server functions and typed API helpers. |
-| Database | Optional GORM PostgreSQL pool; no application migrations yet. | PostgreSQL owns users, branches, services, operator-service authorization, sessions, queue numbering, and tickets. |
+| Database | Optional GORM PostgreSQL pool; explicit migration and seed commands provide the Sprint 1 schema owned by issue #15. | PostgreSQL owns users, branches, services, operator-service authorization, sessions, queue numbering, and tickets. |
 | Contract | OpenAPI 3.1 includes health and auth endpoints; TypeScript types are generated from it. | Every implemented endpoint has an OpenAPI contract; provider, client-type, and E2E checks verify it. |
 | Tests | Starter unit/component and infrastructure tests, plus auth unit/provider tests and a PostgreSQL auth integration test. Queue behavior remains unimplemented. | Add tests with each feature. E2E runs the real web app and API against PostgreSQL. |
 | Deployment | Local Compose network and multi-stage Dockerfiles. | Candidate Cloud Run services with Cloud SQL for PostgreSQL; Artifact Registry, Secret Manager, IAM service accounts, and Cloud Logging. Confirm topology in Lab 5; no cloud deployment is required for D1. |
@@ -470,7 +470,7 @@ Authentication unit, provider-contract, web component, and PostgreSQL integratio
 | Decision | Current design position | Needs resolution |
 | --- | --- | --- |
 | Official course specifications | The supplied group_work_specs_v1 is labeled draft for instructor review; project_deliverable_1_v1 is the D1 v1 source. | Keep direct clauses and Quevo proposals distinguished in traceability.md; confirm draft/spec changes with the team. |
-| Authentication | Opaque server-side sessions, bcrypt local passwords, `CUSTOMER`/`OPERATOR` roles, 12-hour default expiry, and a web-origin HttpOnly cookie with Go-side validation. See [authentication.md](authentication.md). | Issue #15 must create the agreed users/sessions schema and seeded accounts. Production identity providers and account recovery are out of scope. |
+| Authentication | Opaque server-side sessions, bcrypt local passwords, `CUSTOMER`/`OPERATOR` roles, 12-hour default expiry, and a web-origin HttpOnly cookie with Go-side validation. See [authentication.md](authentication.md). | Issue #15 provides migrations and seeded accounts for the agreed `app_users`/`sessions` schema. Production identity providers and account recovery are out of scope. |
 | Queue key and business date | Branch, service, and business date; calculate date in branch timezone. | Set timezone source, queue open/close rules, and ticket reset policy. |
 | Ticket number | Unique within branch/service/business date. QueueSequence allocates it transactionally. | Confirm prefix, padding, start number, and whether gaps are acceptable after errors. |
 | Operator authorization | OperatorService records access to a service; provisioned data is enough for the first vertical slice. | Confirm who creates/revokes assignments and whether counters are required in the baseline. |

@@ -57,7 +57,7 @@ func TestAuthFlowWithPostgres(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = sqlDB.Close() })
 
-	if err := db.Exec(`CREATE TABLE users (
+	if err := db.Exec(`CREATE TABLE app_users (
 		id uuid PRIMARY KEY,
 		role text NOT NULL,
 		display_name text NOT NULL,
@@ -68,7 +68,7 @@ func TestAuthFlowWithPostgres(t *testing.T) {
 	}
 	if err := db.Exec(`CREATE TABLE sessions (
 		id uuid PRIMARY KEY,
-		user_id uuid NOT NULL REFERENCES users(id),
+		user_id uuid NOT NULL REFERENCES app_users(id),
 		token_hash text NOT NULL UNIQUE,
 		created_at timestamptz NOT NULL,
 		expires_at timestamptz NOT NULL,
@@ -77,7 +77,7 @@ func TestAuthFlowWithPostgres(t *testing.T) {
 		t.Fatalf("create session test schema: %v", err)
 	}
 	if err := db.Exec(`CREATE TABLE operator_services (
-		operator_id uuid NOT NULL REFERENCES users(id),
+		operator_id uuid NOT NULL REFERENCES app_users(id),
 		service_id uuid NOT NULL,
 		PRIMARY KEY (operator_id, service_id)
 	)`).Error; err != nil {
@@ -96,7 +96,7 @@ func TestAuthFlowWithPostgres(t *testing.T) {
 		{customerID.String(), string(auth.RoleCustomer), "Demo Customer", "customer@example.test"},
 		{operatorID.String(), string(auth.RoleOperator), "Demo Operator", "operator@example.test"},
 	} {
-		if err := db.Exec(`INSERT INTO users (id, role, display_name, login_identifier, credential_hash) VALUES (?, ?, ?, ?, ?)`, user.id, user.role, user.name, user.identifier, string(passwordHash)).Error; err != nil {
+		if err := db.Exec(`INSERT INTO app_users (id, role, display_name, login_identifier, credential_hash) VALUES (?, ?, ?, ?, ?)`, user.id, user.role, user.name, user.identifier, string(passwordHash)).Error; err != nil {
 			t.Fatalf("seed test user: %v", err)
 		}
 	}
