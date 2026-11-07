@@ -10,12 +10,14 @@ export const Route = createFileRoute('/tickets/$ticketId')({
     const user = await getCurrentUser()
     if (!user) throw redirect({ to: '/login' })
     if (user.role !== 'CUSTOMER') throw redirect({ to: '/' })
+    return { user }
   },
 })
 
 function CustomerTicketPage() {
+  const { user } = Route.useRouteContext()
   const { ticketId } = Route.useParams()
-  const ticketQuery = useQuery(customerTicketOptions(ticketId))
+  const ticketQuery = useQuery(customerTicketOptions(user.id, ticketId))
 
   return (
     <main className="grid min-h-svh place-items-center bg-background p-6">

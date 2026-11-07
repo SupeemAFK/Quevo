@@ -17,7 +17,13 @@ describe('CustomerServiceSelection', () => {
     ]
 
     render(
-      <CustomerServiceSelection error="" joining={false} onJoin={onJoin} services={services} />,
+      <CustomerServiceSelection
+        activeTickets={[]}
+        error=""
+        joining={false}
+        onJoin={onJoin}
+        services={services}
+      />,
     )
 
     await user.click(screen.getByRole('button', { name: 'Join queue' }))
@@ -33,7 +39,15 @@ describe('CustomerServiceSelection', () => {
   })
 
   it('shows a clear empty state when no active service is available', () => {
-    render(<CustomerServiceSelection error="" joining={false} onJoin={vi.fn()} services={[]} />)
+    render(
+      <CustomerServiceSelection
+        activeTickets={[]}
+        error=""
+        joining={false}
+        onJoin={vi.fn()}
+        services={[]}
+      />,
+    )
 
     expect(screen.getByText('No active services are available right now.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Join queue' })).toBeDisabled()

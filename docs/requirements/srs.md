@@ -14,7 +14,7 @@ Quevo helps a bank branch organize walk-in customers into service-specific queue
 
 Quevo coordinates queue service only. It does not hold customer financial accounts, move money, approve banking transactions, or schedule appointments.
 
-This SRS records the desired product behavior and does not imply that every requirement is implemented. The current repository includes sign-in and the customer service selection, queue join, and own-ticket status flow. Operator queue processing and later-sprint features remain planned work.
+This SRS records the desired product behavior and does not imply that every requirement is implemented. The current repository includes sign-in, customer service selection, queue join, active-ticket recovery, and own-ticket status. Operator queue processing and later-sprint features remain planned work.
 
 ## 2. Stakeholders and actors
 

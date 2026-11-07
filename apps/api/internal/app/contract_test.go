@@ -178,6 +178,7 @@ func TestCustomerQueueProviderMatchesOpenAPI(t *testing.T) {
 	}{
 		{name: "list services", method: http.MethodGet, path: "/api/v1/services?branchId=" + branchID},
 		{name: "join queue", method: http.MethodPost, path: "/api/v1/branches/" + branchID + "/services/" + serviceID + "/tickets"},
+		{name: "list active tickets", method: http.MethodGet, path: "/api/v1/tickets/active"},
 		{name: "read ticket", method: http.MethodGet, path: "/api/v1/tickets/" + ticketID},
 	} {
 		t.Run(test.name, func(t *testing.T) {

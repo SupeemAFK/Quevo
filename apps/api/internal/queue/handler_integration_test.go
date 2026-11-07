@@ -109,6 +109,18 @@ func TestCustomerQueueAPIWithPostgres(t *testing.T) {
 	if len(serviceList.Items) != 1 || serviceList.Items[0].ID != database.DemoServiceID {
 		t.Fatalf("available services = %#v; want only the seeded active service", serviceList.Items)
 	}
+	activeTickets := queueAPIRequest(router, http.MethodGet, "/api/v1/tickets/active", nil, customerSession)
+	if activeTickets.Code != http.StatusOK {
+		t.Fatalf("active-ticket list status = %d, want %d: %s", activeTickets.Code, http.StatusOK, activeTickets.Body.String())
+	}
+	assertContractResponse(http.MethodGet, "/api/v1/tickets/active", activeTickets)
+	var ticketList CustomerTicketsResponse
+	if err := json.Unmarshal(activeTickets.Body.Bytes(), &ticketList); err != nil {
+		t.Fatalf("decode active-ticket list: %v", err)
+	}
+	if len(ticketList.Items) != 0 {
+		t.Fatalf("active tickets before joining = %#v; want empty", ticketList.Items)
+	}
 
 	joinPath := "/api/v1/branches/" + database.DemoBranchID + "/services/" + database.DemoServiceID + "/tickets"
 	joined := queueAPIRequest(router, http.MethodPost, joinPath, nil, customerSession)
@@ -129,6 +141,14 @@ func TestCustomerQueueAPIWithPostgres(t *testing.T) {
 	}
 	if ticket.BusinessDate != expectedBusinessDate {
 		t.Fatalf("ticket business date = %q, want branch-local date %q", ticket.BusinessDate, expectedBusinessDate)
+	}
+	activeTickets = queueAPIRequest(router, http.MethodGet, "/api/v1/tickets/active", nil, customerSession)
+	if activeTickets.Code != http.StatusOK || json.Unmarshal(activeTickets.Body.Bytes(), &ticketList) != nil {
+		t.Fatalf("active-ticket list after joining = %d %s", activeTickets.Code, activeTickets.Body.String())
+	}
+	assertContractResponse(http.MethodGet, "/api/v1/tickets/active", activeTickets)
+	if len(ticketList.Items) != 1 || ticketList.Items[0].ID != ticket.ID {
+		t.Fatalf("active tickets after joining = %#v; want the customer's new ticket", ticketList.Items)
 	}
 
 	duplicate := queueAPIRequest(router, http.MethodPost, joinPath, nil, customerSession)
@@ -164,6 +184,14 @@ func TestCustomerQueueAPIWithPostgres(t *testing.T) {
 	assertContractResponse(http.MethodGet, ticketPath, ownTicket)
 
 	otherCustomerSession := loginQueueAPIUser(t, router, "other-customer@quevo.local")
+	otherActiveTickets := queueAPIRequest(router, http.MethodGet, "/api/v1/tickets/active", nil, otherCustomerSession)
+	if otherActiveTickets.Code != http.StatusOK || json.Unmarshal(otherActiveTickets.Body.Bytes(), &ticketList) != nil {
+		t.Fatalf("other customer's active-ticket list = %d %s", otherActiveTickets.Code, otherActiveTickets.Body.String())
+	}
+	assertContractResponse(http.MethodGet, "/api/v1/tickets/active", otherActiveTickets)
+	if len(ticketList.Items) != 0 {
+		t.Fatalf("other customer's active tickets = %#v; want empty", ticketList.Items)
+	}
 	otherTicket := queueAPIRequest(router, http.MethodGet, ticketPath, nil, otherCustomerSession)
 	if otherTicket.Code != http.StatusNotFound || strings.Contains(otherTicket.Body.String(), ticket.ID) || strings.Contains(otherTicket.Body.String(), "General Service") || strings.Contains(otherTicket.Body.String(), "WAITING") {
 		t.Fatalf("other customer's ticket = %d %s; want safe 404", otherTicket.Code, otherTicket.Body.String())

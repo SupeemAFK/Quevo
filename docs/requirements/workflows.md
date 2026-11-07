@@ -1,6 +1,6 @@
 # User Journeys and Ticket Lifecycle
 
-**Status:** Customer service selection, queue joining, and own-ticket status are implemented. Operator processing and detailed later-sprint policies remain open.
+**Status:** Customer service selection, queue joining, active-ticket recovery, and own-ticket status are implemented. Operator processing and detailed later-sprint policies remain open.
 **Sources:** group_work_specs_v1.pdf §6 Theme 9 and the user-provided diagrams.
 
 A queue is the shared line for a branch service. A ticket is one customer's entry in that queue; it carries the lifecycle state. The diagram shows the complete intended Sprint 1 journey; the customer portion is implemented, while operator actions remain planned.
@@ -12,6 +12,7 @@ flowchart TB
   subgraph Customer
     direction LR
     C1[Authenticate] --> C2[Select a branch service] --> C3[Join service queue] --> C4[Receive WAITING ticket] --> C5[View own ticket status]
+    C5 -->|lose URL or sign in on another device| C6[Find active ticket]
   end
 
   subgraph Operator
@@ -30,6 +31,7 @@ flowchart TB
   DB[(PostgreSQL)]
   C3 -->|create ticket as WAITING| DB
   C5 -->|read own ticket| DB
+  C6 -->|list active tickets owned by customer| DB
   O2 -->|read authorized queues| DB
   OW -->|read waiting tickets| DB
   OH -->|read completed and skipped tickets| DB

@@ -3,25 +3,38 @@ import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-ro
 import { CustomerServiceSelection } from '@/components/customer-service-selection'
 import { Button } from '@/components/ui/button'
 import { getCurrentUser } from '@/lib/auth'
-import { availableServicesOptions, customerTicketOptions, joinQueue } from '@/lib/customer-queue'
+import { customerQueueOptions, customerTicketOptions, joinQueue } from '@/lib/customer-queue'
 
 export const Route = createFileRoute('/customer')({
   beforeLoad: async () => {
     const user = await getCurrentUser()
     if (!user) throw redirect({ to: '/login' })
     if (user.role !== 'CUSTOMER') throw redirect({ to: '/' })
+    return { user }
   },
   component: CustomerServicesPage,
 })
 
 function CustomerServicesPage() {
-  const servicesQuery = useQuery(availableServicesOptions)
+  const { user } = Route.useRouteContext()
+  const queueQuery = useQuery(customerQueueOptions(user.id))
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const joinMutation = useMutation({
     mutationFn: (service: { branchId: string; serviceId: string }) => joinQueue({ data: service }),
     onSuccess: async (ticket) => {
-      queryClient.setQueryData(customerTicketOptions(ticket.id).queryKey, ticket)
+      queryClient.setQueryData(customerTicketOptions(user.id, ticket.id).queryKey, ticket)
+      queryClient.setQueryData(customerQueueOptions(user.id).queryKey, (current) =>
+        current
+          ? {
+              ...current,
+              activeTickets: [
+                ticket,
+                ...current.activeTickets.filter((activeTicket) => activeTicket.id !== ticket.id),
+              ],
+            }
+          : current,
+      )
       await navigate({
         to: '/tickets/$ticketId',
         params: { ticketId: ticket.id },
@@ -40,28 +53,29 @@ function CustomerServicesPage() {
           Choose an active service to receive your ticket number.
         </p>
 
-        {servicesQuery.isPending ? (
+        {queueQuery.isPending ? (
           <p aria-live="polite" className="py-5 text-sm text-muted-foreground" role="status">
-            Loading available services…
+            Loading your queue…
           </p>
-        ) : servicesQuery.isError ? (
+        ) : queueQuery.isError ? (
           <div className="space-y-4">
             <p aria-live="polite" className="text-sm text-destructive" role="alert">
-              {servicesQuery.error.message}
+              {queueQuery.error.message}
             </p>
-            <Button onClick={() => servicesQuery.refetch()} variant="outline">
+            <Button onClick={() => queueQuery.refetch()} variant="outline">
               Try again
             </Button>
           </div>
         ) : (
           <CustomerServiceSelection
             error={joinMutation.error?.message ?? ''}
+            activeTickets={queueQuery.data.activeTickets}
             joining={joinMutation.isPending}
             onJoin={(service) => {
               joinMutation.reset()
               joinMutation.mutate({ branchId: service.branchId, serviceId: service.id })
             }}
-            services={servicesQuery.data}
+            services={queueQuery.data.services}
           />
         )}
 

@@ -29,6 +29,20 @@ export const getAvailableServices = createServerFn({ method: 'GET' }).handler(as
   return data.items
 })
 
+export const getActiveCustomerTickets = createServerFn({ method: 'GET' }).handler(async () => {
+  setResponseHeader('Cache-Control', 'private, no-store')
+  const { data, response } = await createApiClient(`${apiBaseUrl()}/api/v1`).GET(
+    '/tickets/active',
+    {
+      headers: { Authorization: `Bearer ${sessionToken()}` },
+    },
+  )
+
+  if (!response.ok || !data)
+    throw new Error('Could not load your active tickets. Please try again.')
+  return data.items
+})
+
 export const joinQueue = createServerFn({ method: 'POST' })
   .validator((data: JoinQueueInput) => data)
   .handler(async ({ data }) => {
@@ -66,14 +80,21 @@ export const getCustomerTicket = createServerFn({ method: 'GET' })
     return data
   })
 
-export const availableServicesOptions = queryOptions({
-  queryKey: ['customer', 'services'],
-  queryFn: () => getAvailableServices(),
-  staleTime: 30_000,
-})
-
-export const customerTicketOptions = (ticketId: string) =>
+export const customerQueueOptions = (customerID: string) =>
   queryOptions({
-    queryKey: ['customer', 'tickets', ticketId],
+    queryKey: ['customer', customerID, 'queue'],
+    queryFn: async () => {
+      const [services, activeTickets] = await Promise.all([
+        getAvailableServices(),
+        getActiveCustomerTickets(),
+      ])
+      return { services, activeTickets }
+    },
+    staleTime: 30_000,
+  })
+
+export const customerTicketOptions = (customerID: string, ticketId: string) =>
+  queryOptions({
+    queryKey: ['customer', customerID, 'tickets', ticketId],
     queryFn: () => getCustomerTicket({ data: ticketId }),
   })

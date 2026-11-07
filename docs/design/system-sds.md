@@ -5,7 +5,7 @@
 **Related requirements:** docs/requirements/srs.md, docs/requirements/features.md, docs/requirements/workflows.md
 **Repository baseline inspected:** origin/staging after merge of PRs #25 and #26; customer queue journey follows issue #9.
 
-> This document describes intended architecture and remaining product behavior. The auth API, web sign-in/session boundary, customer service discovery, queue join, and owner-scoped ticket reads are implemented using the migrations and seed data delivered by PR #25. Operator queue workflows remain future work. The supplied group_work_specs_v1 is labeled draft for instructor review; project_deliverable_1_v1 is the supplied D1 v1. docs/requirements/traceability.md distinguishes those source clauses from Quevo design proposals.
+> This document describes intended architecture and remaining product behavior. The auth API, web sign-in/session boundary, customer service discovery, queue join, active-ticket recovery, and owner-scoped ticket reads are implemented using the migrations and seed data delivered by PR #25. Operator queue workflows remain future work. The supplied group_work_specs_v1 is labeled draft for instructor review; project_deliverable_1_v1 is the supplied D1 v1. docs/requirements/traceability.md distinguishes those source clauses from Quevo design proposals.
 
 ## 1. Purpose and design goals
 
@@ -25,10 +25,10 @@ Design goals:
 
 | Area | Current repository | Intended product design |
 | --- | --- | --- |
-| API | Go HTTP server using Gin, GORM, Zap, and an API v1 router; health, auth, active service discovery, customer queue join, and owner-scoped ticket reads are implemented. Queue numbering is allocated transactionally in PostgreSQL. | Feature packages for identity, service discovery, and ticket workflows, wired explicitly through the app router. |
-| Web | React and TypeScript with TanStack Start, TanStack Query, Bun, Tailwind, and shadcn. The customer can select a service, join the queue, and reload their ticket status through server-managed sessions. Operator queue journeys remain future work. | Customer and operator route groups call the Go API through TanStack Start server functions and typed API helpers. |
+| API | Go HTTP server using Gin, GORM, Zap, and an API v1 router; health, auth, active service discovery, customer queue join, active-ticket recovery, and owner-scoped ticket reads are implemented. Queue numbering is allocated transactionally in PostgreSQL. | Feature packages for identity, service discovery, and ticket workflows, wired explicitly through the app router. |
+| Web | React and TypeScript with TanStack Start, TanStack Query, Bun, Tailwind, and shadcn. The customer can select a service, join the queue, recover active tickets, and reload ticket status through server-managed sessions. Operator queue journeys remain future work. | Customer and operator route groups call the Go API through TanStack Start server functions and typed API helpers. |
 | Database | PostgreSQL schema is provided by explicit versioned migrations and an idempotent demo seed. It includes users, sessions, branches, services, operator-service authorization, queue sequences, and tickets. | PostgreSQL owns users, branches, services, operator-service authorization, sessions, queue numbering, and tickets. |
-| Contract | OpenAPI 3.1 includes health, auth, customer service discovery, queue join, and ticket read endpoints; TypeScript types are generated from it. | Every implemented endpoint has an OpenAPI contract; provider, client-type, and E2E checks verify it. |
+| Contract | OpenAPI 3.1 includes health, auth, customer service discovery, queue join, active-ticket list, and ticket read endpoints; TypeScript types are generated from it. | Every implemented endpoint has an OpenAPI contract; provider, client-type, and E2E checks verify it. |
 | Tests | Auth unit/provider-contract tests, queue provider-contract tests, web component tests, PostgreSQL integration tests, and a real-backend customer E2E flow cover the customer journey. Queue repository integration tests also cover migration/seed repeatability, database invariants, transactional numbering/assignment, FIFO ordering, and concurrency. Operator flows remain future work. | Add tests with each feature. E2E runs the real web app and API against PostgreSQL. |
 | Deployment | Local Compose network and multi-stage Dockerfiles. | Candidate Cloud Run services with Cloud SQL for PostgreSQL; Artifact Registry, Secret Manager, IAM service accounts, and Cloud Logging. Confirm topology in Lab 5; no cloud deployment is required for D1. |
 
@@ -463,7 +463,7 @@ Run explicit versioned migrations as a release/deployment job before the new app
 | Contract | Provider responses conform to generated OpenAPI; web types match generated schema. | kin-openapi, OpenAPI generation, openapi-typescript check. |
 | Full-stack E2E | Customer/operator journeys and persisted state across browser, web server, API, and database. | Playwright with real Go API and Testcontainers PostgreSQL; no mocked backend. |
 
-Authentication unit/provider-contract tests and PostgreSQL integration tests cover sign-in/session behavior and role enforcement. Queue provider-contract, repository integration, web component, and real-backend E2E tests cover customer service discovery, queue joining, duplicate rejection, persisted numbering, ticket reload, and ownership denial. Operator HTTP/UI workflows and the full lifecycle transitions remain future work.
+Authentication unit/provider-contract tests and PostgreSQL integration tests cover sign-in/session behavior and role enforcement. Queue provider-contract, repository integration, web component, and real-backend E2E tests cover customer service discovery, queue joining, duplicate rejection, persisted numbering, ticket reload and recovery, and ownership denial. Customer ticket query keys include the authenticated customer ID, and customer query data is removed when the browser session changes. Operator HTTP/UI workflows and the full lifecycle transitions remain future work.
 
 ## 14. Design decisions and open questions
 

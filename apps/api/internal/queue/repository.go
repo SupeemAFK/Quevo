@@ -130,6 +130,28 @@ func (r *Repository) FindCustomerTicket(ctx context.Context, customerID, ticketI
 	return ticket, nil
 }
 
+func (r *Repository) ListActiveCustomerTickets(ctx context.Context, customerID string) ([]Ticket, error) {
+	var tickets []Ticket
+	err := r.db.WithContext(ctx).
+		Table("tickets AS t").
+		Select(`t.id::text AS id, t.branch_id::text AS branch_id, b.name AS branch_name,
+			t.service_id::text AS service_id, s.name AS service_name, t.business_date,
+			t.ticket_number, t.customer_id::text AS customer_id,
+			t.assigned_operator_id::text AS assigned_operator_id, t.status, t.joined_at, t.called_at`).
+		Joins("JOIN branches AS b ON b.id = t.branch_id").
+		Joins("JOIN services AS s ON s.id = t.service_id").
+		Where("t.customer_id = ? AND t.status IN ('WAITING', 'PENDING', 'OPERATING')", customerID).
+		Order("t.joined_at DESC, t.id").
+		Scan(&tickets).Error
+	if err != nil {
+		return nil, fmt.Errorf("list active customer tickets: %w", err)
+	}
+	if tickets == nil {
+		tickets = []Ticket{}
+	}
+	return tickets, nil
+}
+
 // CallNext locks the queue and claims its oldest waiting ticket atomically.
 func (r *Repository) CallNext(ctx context.Context, input CallNextInput) (Ticket, bool, error) {
 	var ticket Ticket

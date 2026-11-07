@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 
 const customerPassword = 'quevo-e2e-customer-password'
 
-test('customer selects a service, joins, and reloads their ticket', async ({ page }) => {
+test('customer selects a service, joins, and recovers their active ticket', async ({ browser, page }) => {
   await page.goto('/login')
   await page.waitForLoadState('networkidle')
   await page.getByLabel('Email').fill('customer@quevo.local')
@@ -24,6 +24,22 @@ test('customer selects a service, joins, and reloads their ticket', async ({ pag
   await page.reload()
   await expect(page.getByTestId('ticket-number')).toHaveText('1')
   await expect(page.getByRole('status')).toHaveText('WAITING')
+
+  const secondDevice = await browser.newPage()
+  await secondDevice.goto('/login')
+  await secondDevice.waitForLoadState('networkidle')
+  await secondDevice.getByLabel('Email').fill('customer@quevo.local')
+  await secondDevice.getByLabel('Password').fill(customerPassword)
+  await secondDevice.getByRole('button', { name: 'Sign in' }).click()
+  await expect(secondDevice.getByText('Signed in as Demo Customer')).toBeVisible()
+  await secondDevice.goto('/customer')
+  const activeTicketLink = secondDevice.getByRole('link', {
+    name: 'View ticket 1 (General Service at Quevo Demo Branch)',
+  })
+  await expect(activeTicketLink).toBeVisible()
+  await activeTicketLink.click()
+  await expect(secondDevice.getByTestId('ticket-number')).toHaveText('1')
+  await secondDevice.close()
 
   await page.goto('/customer')
   await page.getByRole('button', { name: 'General Service at Quevo Demo Branch' }).click()

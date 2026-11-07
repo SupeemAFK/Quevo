@@ -22,6 +22,10 @@ type ServicesResponse struct {
 	Items []ServiceResponse `json:"items" binding:"required"`
 }
 
+type CustomerTicketsResponse struct {
+	Items []TicketResponse `json:"items" binding:"required"`
+}
+
 type TicketResponse struct {
 	ID           string    `json:"id" binding:"required" example:"d6d26a41-5c50-4ca9-b4f7-e82d7558da79"`
 	BranchID     string    `json:"branchId" binding:"required" example:"10000000-0000-4000-8000-000000000001"`
@@ -50,6 +54,7 @@ func RegisterRoutes(routes *gin.RouterGroup, authService *auth.Service, reposito
 	customerRoutes.Use(auth.RequireSession(authService), auth.RequireRoles(auth.RoleCustomer))
 	customerRoutes.GET("/services", handler.listServices)
 	customerRoutes.POST("/branches/:branchID/services/:serviceID/tickets", handler.joinQueue)
+	customerRoutes.GET("/tickets/active", handler.listActiveTickets)
 	customerRoutes.GET("/tickets/:ticketID", handler.getTicket)
 }
 
@@ -198,6 +203,43 @@ func (h Handler) getTicket(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, ticketResponse(ticket))
+}
+
+// ListActiveTickets returns the authenticated customer's active tickets.
+//
+// ListActiveTickets godoc
+// @Summary List my active tickets
+// @Description Returns active tickets owned by the authenticated customer so they can recover a ticket without its original URL.
+// @Tags tickets
+// @ID getActiveCustomerTickets
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} CustomerTicketsResponse
+// @Failure 401 {object} auth.ErrorResponse
+// @Failure 403 {object} auth.ErrorResponse
+// @Failure 500 {object} QueueErrorResponse
+// @Failure 503 {object} auth.ErrorResponse
+// @Router /tickets/active [get]
+func (h Handler) listActiveTickets(c *gin.Context) {
+	if h.repository == nil {
+		writeQueueError(c, http.StatusServiceUnavailable, "service_unavailable", "Ticket lookup is temporarily unavailable")
+		return
+	}
+	actor, ok := auth.ActorFromContext(c)
+	if !ok {
+		writeQueueError(c, http.StatusUnauthorized, "unauthorized", "Authentication is required")
+		return
+	}
+	tickets, err := h.repository.ListActiveCustomerTickets(c.Request.Context(), actor.ID)
+	if err != nil {
+		writeQueueError(c, http.StatusInternalServerError, "internal_error", "The request could not be completed")
+		return
+	}
+	response := CustomerTicketsResponse{Items: make([]TicketResponse, 0, len(tickets))}
+	for _, ticket := range tickets {
+		response.Items = append(response.Items, ticketResponse(ticket))
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 func parsePathUUID(c *gin.Context, name string) (string, bool) {
