@@ -22,6 +22,9 @@ function CustomerServicesPage() {
   const navigate = useNavigate()
   const joinMutation = useMutation({
     mutationFn: (service: { branchId: string; serviceId: string }) => joinQueue({ data: service }),
+    onError: async () => {
+      await queryClient.invalidateQueries({ queryKey: customerQueueOptions(user.id).queryKey })
+    },
     onSuccess: async (ticket) => {
       queryClient.setQueryData(customerTicketOptions(user.id, ticket.id).queryKey, ticket)
       queryClient.setQueryData(customerQueueOptions(user.id).queryKey, (current) =>
