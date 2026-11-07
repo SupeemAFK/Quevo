@@ -32,8 +32,8 @@ func TestCallNextPreventsOperatorClaimingAcrossServices(t *testing.T) {
 		t.Fatalf("insert second customer: %v", err)
 	}
 	for _, input := range []JoinQueueInput{
-		{CustomerID: database.DemoCustomerID, ServiceID: database.DemoServiceID, BusinessDate: businessDate},
-		{CustomerID: customerID, ServiceID: serviceID, BusinessDate: businessDate},
+		{CustomerID: database.DemoCustomerID, BranchID: database.DemoBranchID, ServiceID: database.DemoServiceID, BusinessDate: businessDate},
+		{CustomerID: customerID, BranchID: database.DemoBranchID, ServiceID: serviceID, BusinessDate: businessDate},
 	} {
 		if _, err := repo.JoinQueue(ctx, input); err != nil {
 			t.Fatalf("join service %s: %v", input.ServiceID, err)

@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { deleteCookie, getCookie, setCookie, setResponseHeader } from '@tanstack/react-start/server'
 import type { components } from '@/client/api/schema'
 import { createApiClient } from './api-client'
+import { SESSION_COOKIE_NAME } from './session'
 
 export type Identity = components['schemas']['auth.Identity']
 
@@ -9,8 +10,6 @@ export type LoginInput = {
   email: string
   password: string
 }
-
-const sessionCookieName = 'quevo_session'
 
 function apiBaseUrl() {
   return (process.env.API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '')
@@ -44,7 +43,7 @@ export const signIn = createServerFn({ method: 'POST' })
     const maxAge = Math.floor((Date.parse(result.expiresAt) - Date.now()) / 1000)
     if (maxAge <= 0) throw new Error('Sign in failed')
 
-    setCookie(sessionCookieName, result.sessionToken, {
+    setCookie(SESSION_COOKIE_NAME, result.sessionToken, {
       ...cookieOptions(),
       maxAge,
     })
@@ -56,7 +55,7 @@ export const signIn = createServerFn({ method: 'POST' })
 
 export const getCurrentUser = createServerFn({ method: 'GET' }).handler(async () => {
   setResponseHeader('Cache-Control', 'private, no-store')
-  const sessionToken = getCookie(sessionCookieName)
+  const sessionToken = getCookie(SESSION_COOKIE_NAME)
   if (!sessionToken) return null
 
   const { data, response } = await createApiClient(`${apiBaseUrl()}/api/v1`).GET('/auth/me', {
@@ -64,7 +63,7 @@ export const getCurrentUser = createServerFn({ method: 'GET' }).handler(async ()
   })
 
   if (response.status === 401) {
-    deleteCookie(sessionCookieName, cookieOptions())
+    deleteCookie(SESSION_COOKIE_NAME, cookieOptions())
     return null
   }
   if (!response.ok || !data) throw new Error('Could not load the current user')
@@ -74,7 +73,7 @@ export const getCurrentUser = createServerFn({ method: 'GET' }).handler(async ()
 
 export const signOut = createServerFn({ method: 'POST' }).handler(async () => {
   setResponseHeader('Cache-Control', 'private, no-store')
-  const sessionToken = getCookie(sessionCookieName)
+  const sessionToken = getCookie(SESSION_COOKIE_NAME)
 
   if (sessionToken) {
     const { response } = await createApiClient(`${apiBaseUrl()}/api/v1`).POST('/auth/logout', {
@@ -83,5 +82,5 @@ export const signOut = createServerFn({ method: 'POST' }).handler(async () => {
     if (!response.ok && response.status !== 401) throw new Error('Could not sign out')
   }
 
-  deleteCookie(sessionCookieName, cookieOptions())
+  deleteCookie(SESSION_COOKIE_NAME, cookieOptions())
 })

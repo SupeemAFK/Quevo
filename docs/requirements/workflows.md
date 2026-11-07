@@ -1,9 +1,9 @@
 # User Journeys and Ticket Lifecycle
 
-**Status:** Draft workflow aligned to the supplied Theme 9 Sprint 1 example and user-provided journey/lifecycle diagrams; detailed policies remain open.
+**Status:** Customer service selection, queue joining, and own-ticket status are implemented. Operator processing and detailed later-sprint policies remain open.
 **Sources:** group_work_specs_v1.pdf §6 Theme 9 and the user-provided diagrams.
 
-A queue is the shared line for a branch service. A ticket is one customer's entry in that queue; it carries the lifecycle state. These diagrams describe intended behavior and do not claim that the flows are implemented.
+A queue is the shared line for a branch service. A ticket is one customer's entry in that queue; it carries the lifecycle state. The diagram shows the complete intended Sprint 1 journey; the customer portion is implemented, while operator actions remain planned.
 
 ## Customer and operator journey
 

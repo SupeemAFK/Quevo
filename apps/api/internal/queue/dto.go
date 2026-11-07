@@ -4,6 +4,7 @@ import "time"
 
 type JoinQueueInput struct {
 	CustomerID   string
+	BranchID     string
 	ServiceID    string
 	BusinessDate time.Time
 }

@@ -36,21 +36,21 @@ func TestQueueRepositoryPostgres(t *testing.T) {
 			t.Fatalf("authorize test operator: %v", err)
 		}
 	}
-	if _, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: database.DemoOperatorID, ServiceID: database.DemoServiceID, BusinessDate: date}); !errors.Is(err, ErrQueueUnauthorized) {
+	if _, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: database.DemoOperatorID, BranchID: database.DemoBranchID, ServiceID: database.DemoServiceID, BusinessDate: date}); !errors.Is(err, ErrQueueUnauthorized) {
 		t.Fatalf("operator join error = %v; want ErrQueueUnauthorized", err)
 	}
 	if _, _, err := repo.CallNext(ctx, CallNextInput{OperatorID: database.DemoCustomerID, ServiceID: database.DemoServiceID, BusinessDate: date}); !errors.Is(err, ErrQueueUnauthorized) {
 		t.Fatalf("customer call-next error = %v; want ErrQueueUnauthorized", err)
 	}
 
-	first, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: database.DemoCustomerID, ServiceID: database.DemoServiceID, BusinessDate: date})
+	first, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: database.DemoCustomerID, BranchID: database.DemoBranchID, ServiceID: database.DemoServiceID, BusinessDate: date})
 	if err != nil || first.TicketNumber != "1" || first.Status != "WAITING" {
 		t.Fatalf("first join = %#v, err %v", first, err)
 	}
-	if _, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: database.DemoCustomerID, ServiceID: database.DemoServiceID, BusinessDate: date}); !errors.Is(err, ErrActiveTicket) {
+	if _, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: database.DemoCustomerID, BranchID: database.DemoBranchID, ServiceID: database.DemoServiceID, BusinessDate: date}); !errors.Is(err, ErrActiveTicket) {
 		t.Fatalf("duplicate join error = %v; want ErrActiveTicket", err)
 	}
-	second, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: customer2, ServiceID: database.DemoServiceID, BusinessDate: date})
+	second, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: customer2, BranchID: database.DemoBranchID, ServiceID: database.DemoServiceID, BusinessDate: date})
 	if err != nil || second.TicketNumber != "2" {
 		t.Fatalf("second join = %#v, err %v; want ticket 2 (duplicate must not consume sequence)", second, err)
 	}
@@ -86,7 +86,7 @@ func TestQueueRepositoryPostgres(t *testing.T) {
 	joinResults := make(chan joinResult, 2)
 	for _, customer := range []string{customer3, customer4} {
 		go func(customer string) {
-			ticket, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: customer, ServiceID: database.DemoServiceID, BusinessDate: date})
+			ticket, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: customer, BranchID: database.DemoBranchID, ServiceID: database.DemoServiceID, BusinessDate: date})
 			joinResults <- joinResult{ticket: ticket, err: err}
 		}(customer)
 	}
@@ -157,7 +157,7 @@ func assertJoinRollsBackSequence(t *testing.T, ctx context.Context, db *sql.DB, 
 	if _, err := db.ExecContext(ctx, `ALTER TABLE tickets ADD CONSTRAINT reject_test_ticket_43 CHECK (ticket_number <> '43')`); err != nil {
 		t.Fatalf("add ticket rejection constraint: %v", err)
 	}
-	_, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: customerID, ServiceID: database.DemoServiceID, BusinessDate: date})
+	_, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: customerID, BranchID: database.DemoBranchID, ServiceID: database.DemoServiceID, BusinessDate: date})
 	if err == nil {
 		t.Fatal("join succeeded despite the test ticket constraint")
 	}
@@ -172,7 +172,7 @@ func assertJoinRollsBackSequence(t *testing.T, ctx context.Context, db *sql.DB, 
 	if _, err := db.ExecContext(ctx, `ALTER TABLE tickets DROP CONSTRAINT reject_test_ticket_43`); err != nil {
 		t.Fatalf("remove ticket rejection constraint: %v", err)
 	}
-	ticket, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: customerID, ServiceID: database.DemoServiceID, BusinessDate: date})
+	ticket, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: customerID, BranchID: database.DemoBranchID, ServiceID: database.DemoServiceID, BusinessDate: date})
 	if err != nil || ticket.TicketNumber != "43" {
 		t.Fatalf("join after rollback = %#v, err %v; want ticket 43", ticket, err)
 	}

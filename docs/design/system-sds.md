@@ -1,11 +1,11 @@
 # Quevo System Design Specification
 
-**Status:** Draft system-level design cross-checked against the supplied course specifications. Implemented authentication choices are recorded in [authentication.md](authentication.md); remaining design decisions stay marked as proposals.
+**Status:** System-level design cross-checked against the supplied course specifications. Authentication and the customer queue journey are implemented; remaining design decisions stay marked as proposals.
 **Product:** Quevo walk-in bank branch queue management
 **Related requirements:** docs/requirements/srs.md, docs/requirements/features.md, docs/requirements/workflows.md
-**Repository baseline inspected:** origin/staging after merge of PR #25; authentication work is tracked by PR #26.
+**Repository baseline inspected:** origin/staging after merge of PRs #25 and #26; customer queue journey follows issue #9.
 
-> This document describes intended architecture and remaining product behavior. The auth API and web sign-in/session boundary are implemented in PR #26, using the migrations and seed data delivered by PR #25. Queue repository helpers exist, but queue HTTP endpoints and customer/operator workflows remain future work. The supplied group_work_specs_v1 is labeled draft for instructor review; project_deliverable_1_v1 is the supplied D1 v1. docs/requirements/traceability.md distinguishes those source clauses from Quevo design proposals.
+> This document describes intended architecture and remaining product behavior. The auth API, web sign-in/session boundary, customer service discovery, queue join, and owner-scoped ticket reads are implemented using the migrations and seed data delivered by PR #25. Operator queue workflows remain future work. The supplied group_work_specs_v1 is labeled draft for instructor review; project_deliverable_1_v1 is the supplied D1 v1. docs/requirements/traceability.md distinguishes those source clauses from Quevo design proposals.
 
 ## 1. Purpose and design goals
 
@@ -25,11 +25,11 @@ Design goals:
 
 | Area | Current repository | Intended product design |
 | --- | --- | --- |
-| API | Go HTTP server using Gin, GORM, Zap, and an API v1 router; health and auth routes are implemented. Queue persistence helpers provide transactional join and call-next operations, but those queue operations are not yet exposed as HTTP routes. | Feature packages for identity, service discovery, and ticket workflows, wired explicitly through the app router. |
-| Web | React and TypeScript with TanStack Start, TanStack Query, Bun, Tailwind, and shadcn. The web app has a login screen and server-managed session flow; customer and operator queue journeys remain future work. | Customer and operator route groups call the Go API through TanStack Start server functions and typed API helpers. |
+| API | Go HTTP server using Gin, GORM, Zap, and an API v1 router; health, auth, active service discovery, customer queue join, and owner-scoped ticket reads are implemented. Queue numbering is allocated transactionally in PostgreSQL. | Feature packages for identity, service discovery, and ticket workflows, wired explicitly through the app router. |
+| Web | React and TypeScript with TanStack Start, TanStack Query, Bun, Tailwind, and shadcn. The customer can select a service, join the queue, and reload their ticket status through server-managed sessions. Operator queue journeys remain future work. | Customer and operator route groups call the Go API through TanStack Start server functions and typed API helpers. |
 | Database | PostgreSQL schema is provided by explicit versioned migrations and an idempotent demo seed. It includes users, sessions, branches, services, operator-service authorization, queue sequences, and tickets. | PostgreSQL owns users, branches, services, operator-service authorization, sessions, queue numbering, and tickets. |
-| Contract | OpenAPI 3.1 includes health and auth endpoints; TypeScript types are generated from it. | Every implemented endpoint has an OpenAPI contract; provider, client-type, and E2E checks verify it. |
-| Tests | Auth unit, provider-contract, web component, and PostgreSQL integration tests cover sign-in/session behavior. Queue repository integration tests cover migration/seed repeatability, database invariants, transactional numbering/assignment, FIFO ordering, and concurrency. Full customer/operator flows remain future work. | Add tests with each feature. E2E runs the real web app and API against PostgreSQL. |
+| Contract | OpenAPI 3.1 includes health, auth, customer service discovery, queue join, and ticket read endpoints; TypeScript types are generated from it. | Every implemented endpoint has an OpenAPI contract; provider, client-type, and E2E checks verify it. |
+| Tests | Auth unit/provider-contract tests, queue provider-contract tests, web component tests, PostgreSQL integration tests, and a real-backend customer E2E flow cover the customer journey. Queue repository integration tests also cover migration/seed repeatability, database invariants, transactional numbering/assignment, FIFO ordering, and concurrency. Operator flows remain future work. | Add tests with each feature. E2E runs the real web app and API against PostgreSQL. |
 | Deployment | Local Compose network and multi-stage Dockerfiles. | Candidate Cloud Run services with Cloud SQL for PostgreSQL; Artifact Registry, Secret Manager, IAM service accounts, and Cloud Logging. Confirm topology in Lab 5; no cloud deployment is required for D1. |
 
 This design document does not implement application behavior; see the current-repository column for implementation status.
@@ -122,18 +122,18 @@ These are design boundaries. Final package names and file breakdown belong in fe
 - Use stable error codes and avoid returning SQL, stack traces, credentials, or session tokens.
 - All routes that access customer or operator data require authentication unless explicitly designated public, such as health.
 
-### 4.2 Proposed endpoint shapes
+### 4.2 Implemented and planned endpoint shapes
 
-The auth paths below are implemented. The remaining paths are proposed Step 4 contracts and do not imply that queue or service routes exist.
+Auth and customer queue paths are implemented. Operator paths remain planned contracts.
 
 | Operation | Example path | Authorization and behavior |
 | --- | --- | --- |
 | Login | POST /api/v1/auth/login | Public. Verify credentials and create a session. |
 | Logout | POST /api/v1/auth/logout | Authenticated customer or operator. Revoke the current session. |
 | Current identity | GET /api/v1/auth/me | Authenticated customer or operator. Return server-derived identity and role. |
-| List available services | GET /api/v1/services?branchId={id} | Authenticated customer. Return services available at the branch. |
-| Join queue | POST /api/v1/branches/{branchId}/services/{serviceId}/tickets | Authenticated customer. Create one active ticket and return its ticket number and status. |
-| Read own ticket | GET /api/v1/tickets/{ticketId} | Authenticated customer who owns the ticket; enforce ownership on the server. |
+| List available services | GET /api/v1/services?branchId={id} | Implemented. Authenticated customer. Return active services; `branchId` is an optional filter. |
+| Join queue | POST /api/v1/branches/{branchId}/services/{serviceId}/tickets | Implemented. Authenticated customer. Create one WAITING ticket; calculate the business date in the branch timezone and return its generated ID, number, and status. |
+| Read own ticket | GET /api/v1/tickets/{ticketId} | Implemented. Authenticated customer who owns the ticket; ownership is enforced in the database query. Missing and other-customer tickets receive the same 404 response. |
 | Operator queue overview | GET /api/v1/operator/queues | Authenticated operator. Return only authorized queues. |
 | Waiting tickets | GET /api/v1/operator/branches/{branchId}/services/{serviceId}/tickets?status=WAITING | Authenticated operator authorized for that service. |
 | Call next | POST /api/v1/operator/branches/{branchId}/services/{serviceId}/tickets/call-next | Authenticated authorized operator. Atomically assign the oldest eligible ticket and set PENDING. |
@@ -142,7 +142,7 @@ The auth paths below are implemented. The remaining paths are proposed Step 4 co
 | Skip ticket | POST /api/v1/operator/tickets/{ticketId}/skip | Assigned operator; transition PENDING to SKIPPED. |
 | Ticket history | GET /api/v1/operator/branches/{branchId}/services/{serviceId}/history | Authenticated operator authorized for that service; return the agreed COMPLETED and SKIPPED ticket history. |
 
-The product queue is identified by branch, service, and branch-local business date. The exact public path, pagination, filters, ticket-number format, and response fields remain Step 4 decisions.
+The product queue is identified by branch, service, and branch-local business date. Ticket numbers are decimal sequence strings, unique within that scope. The implemented customer service-list endpoint returns all active services by default and accepts an optional branch filter. Collection pagination is not needed for the single seeded service and remains open for future catalog growth.
 
 ### 4.3 HTTP outcomes and error shape
 
@@ -463,7 +463,7 @@ Run explicit versioned migrations as a release/deployment job before the new app
 | Contract | Provider responses conform to generated OpenAPI; web types match generated schema. | kin-openapi, OpenAPI generation, openapi-typescript check. |
 | Full-stack E2E | Customer/operator journeys and persisted state across browser, web server, API, and database. | Playwright with real Go API and Testcontainers PostgreSQL; no mocked backend. |
 
-Authentication unit, provider-contract, web component, and PostgreSQL integration tests cover the current sign-in/session behavior and role/ownership policy. Queue repository integration tests cover migration/seed repeatability, database invariants, transactional queue numbering and assignment, FIFO ordering, and concurrent operations. Customer and operator HTTP/UI workflows and the full lifecycle transitions remain future work.
+Authentication unit/provider-contract tests and PostgreSQL integration tests cover sign-in/session behavior and role enforcement. Queue provider-contract, repository integration, web component, and real-backend E2E tests cover customer service discovery, queue joining, duplicate rejection, persisted numbering, ticket reload, and ownership denial. Operator HTTP/UI workflows and the full lifecycle transitions remain future work.
 
 ## 14. Design decisions and open questions
 

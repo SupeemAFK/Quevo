@@ -11,9 +11,10 @@ import (
 	"example.com/quevo/apps/api/internal/apidocs"
 	"example.com/quevo/apps/api/internal/health"
 	"example.com/quevo/apps/api/internal/middleware"
+	"example.com/quevo/apps/api/internal/queue"
 )
 
-func NewRouter(logger *zap.Logger, authService *auth.Service) *gin.Engine {
+func NewRouter(logger *zap.Logger, authService *auth.Service, queueRepository *queue.Repository) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	router.Use(middleware.ZapRequestLogger(logger), middleware.ZapRecovery(logger))
@@ -22,6 +23,7 @@ func NewRouter(logger *zap.Logger, authService *auth.Service) *gin.Engine {
 	health.RegisterRoutes(api)
 
 	auth.RegisterRoutes(api, authService)
+	queue.RegisterRoutes(api, authService, queueRepository)
 
 	router.GET("/openapi.json", func(c *gin.Context) {
 		c.Data(http.StatusOK, "application/json; charset=utf-8", apidocs.Spec)
