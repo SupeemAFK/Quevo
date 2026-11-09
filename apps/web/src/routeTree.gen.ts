@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CustomerRouteImport } from './routes/customer'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as OperatorRouteImport } from './routes/operator'
 import { Route as HahaHelloRouteImport } from './routes/haha/hello'
 import { Route as TicketsTicketIdRouteImport } from './routes/tickets.$ticketId'
 
@@ -30,6 +31,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OperatorRoute = OperatorRouteImport.update({
+  id: '/operator',
+  path: '/operator',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HahaHelloRoute = HahaHelloRouteImport.update({
   id: '/haha/hello',
   path: '/haha/hello',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/customer': typeof CustomerRoute
   '/login': typeof LoginRoute
+  '/operator': typeof OperatorRoute
   '/haha/hello': typeof HahaHelloRoute
   '/tickets/$ticketId': typeof TicketsTicketIdRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/customer': typeof CustomerRoute
   '/login': typeof LoginRoute
+  '/operator': typeof OperatorRoute
   '/haha/hello': typeof HahaHelloRoute
   '/tickets/$ticketId': typeof TicketsTicketIdRoute
 }
@@ -60,19 +68,33 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/customer': typeof CustomerRoute
   '/login': typeof LoginRoute
+  '/operator': typeof OperatorRoute
   '/haha/hello': typeof HahaHelloRoute
   '/tickets/$ticketId': typeof TicketsTicketIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/customer' | '/login' | '/haha/hello' | '/tickets/$ticketId'
+  fullPaths:
+    | '/'
+    | '/customer'
+    | '/login'
+    | '/operator'
+    | '/haha/hello'
+    | '/tickets/$ticketId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/customer' | '/login' | '/haha/hello' | '/tickets/$ticketId'
+  to:
+    | '/'
+    | '/customer'
+    | '/login'
+    | '/operator'
+    | '/haha/hello'
+    | '/tickets/$ticketId'
   id:
     | '__root__'
     | '/'
     | '/customer'
     | '/login'
+    | '/operator'
     | '/haha/hello'
     | '/tickets/$ticketId'
   fileRoutesById: FileRoutesById
@@ -81,6 +103,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CustomerRoute: typeof CustomerRoute
   LoginRoute: typeof LoginRoute
+  OperatorRoute: typeof OperatorRoute
   HahaHelloRoute: typeof HahaHelloRoute
   TicketsTicketIdRoute: typeof TicketsTicketIdRoute
 }
@@ -108,6 +131,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/operator': {
+      id: '/operator'
+      path: '/operator'
+      fullPath: '/operator'
+      preLoaderRoute: typeof OperatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/haha/hello': {
       id: '/haha/hello'
       path: '/haha/hello'
@@ -129,6 +159,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CustomerRoute: CustomerRoute,
   LoginRoute: LoginRoute,
+  OperatorRoute: OperatorRoute,
   HahaHelloRoute: HahaHelloRoute,
   TicketsTicketIdRoute: TicketsTicketIdRoute,
 }

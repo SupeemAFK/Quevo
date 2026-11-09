@@ -26,6 +26,7 @@ function Home() {
     try {
       await signOut()
       queryClient.removeQueries({ queryKey: ['customer'] })
+      queryClient.removeQueries({ queryKey: ['operator'] })
       await router.invalidate()
     } catch {
       setSignOutError('Could not sign out. Please try again.')
@@ -50,6 +51,11 @@ function Home() {
             {user.role === 'CUSTOMER' ? (
               <Button asChild className="mb-3 w-full">
                 <Link to="/customer">Choose a service</Link>
+              </Button>
+            ) : null}
+            {user.role === 'OPERATOR' ? (
+              <Button asChild className="mb-3 w-full">
+                <Link to="/operator">Open operator queue</Link>
               </Button>
             ) : null}
             <Button onClick={handleSignOut} variant="outline">

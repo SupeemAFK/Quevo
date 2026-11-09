@@ -13,6 +13,7 @@ function LoginPage() {
 
   function handleLoginSuccess() {
     queryClient.removeQueries({ queryKey: ['customer'] })
+    queryClient.removeQueries({ queryKey: ['operator'] })
     void router.navigate({ to: '/' })
   }
 

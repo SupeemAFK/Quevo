@@ -159,17 +159,24 @@ func (r *Repository) CallNext(ctx context.Context, input CallNextInput) (Ticket,
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var branchID string
 		var allowed bool
-		err := tx.Raw(`SELECT s.branch_id::text, (u.role = 'OPERATOR' AND os.operator_id IS NOT NULL)
-			FROM services s CROSS JOIN users u
+		var businessDate time.Time
+		err := tx.Raw(`SELECT s.branch_id::text, (u.role = 'OPERATOR' AND os.operator_id IS NOT NULL),
+			(now() AT TIME ZONE b.timezone)::date
+			FROM services s JOIN branches b ON b.id = s.branch_id CROSS JOIN users u
 			LEFT JOIN operator_services os ON os.service_id = s.id AND os.operator_id = u.id
-			WHERE s.id = ? AND u.id = ? AND s.active FOR UPDATE OF u`, input.ServiceID, input.OperatorID).Row().Scan(&branchID, &allowed)
+			WHERE s.id = ? AND u.id = ? AND s.active AND (? = '' OR s.branch_id::text = ?) FOR UPDATE OF u`,
+			input.ServiceID, input.OperatorID, input.BranchID, input.BranchID).Row().Scan(&branchID, &allowed, &businessDate)
 		if errors.Is(err, sql.ErrNoRows) || (err == nil && !allowed) {
 			return ErrQueueUnauthorized
 		}
 		if err != nil {
 			return fmt.Errorf("validate operator authorization: %w", err)
 		}
-		date := input.BusinessDate.Format("2006-01-02")
+		dateValue := input.BusinessDate
+		if dateValue.IsZero() {
+			dateValue = businessDate
+		}
+		date := dateValue.Format("2006-01-02")
 		if _, err := lockSequence(tx, branchID, input.ServiceID, date); err != nil {
 			return err
 		}

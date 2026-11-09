@@ -56,6 +56,7 @@ func RegisterRoutes(routes *gin.RouterGroup, authService *auth.Service, reposito
 	customerRoutes.POST("/branches/:branchID/services/:serviceID/tickets", handler.joinQueue)
 	customerRoutes.GET("/tickets/active", handler.listActiveTickets)
 	customerRoutes.GET("/tickets/:ticketID", handler.getTicket)
+	registerOperatorRoutes(routes, authService, repository)
 }
 
 // ListServices returns active services available to customers.

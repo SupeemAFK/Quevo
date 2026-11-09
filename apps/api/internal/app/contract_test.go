@@ -216,6 +216,71 @@ func TestCustomerQueueProviderMatchesOpenAPI(t *testing.T) {
 	}
 }
 
+func TestOperatorQueueProviderMatchesOpenAPI(t *testing.T) {
+	doc, err := openapi3.NewLoader().LoadFromData(apidocs.Spec)
+	if err != nil {
+		t.Fatalf("load OpenAPI document: %v", err)
+	}
+	if err := doc.Validate(context.Background()); err != nil {
+		t.Fatalf("validate OpenAPI document: %v", err)
+	}
+	contractRouter, err := gorillamux.NewRouter(doc)
+	if err != nil {
+		t.Fatalf("create OpenAPI router: %v", err)
+	}
+
+	const (
+		branchID  = "10000000-0000-4000-8000-000000000001"
+		serviceID = "10000000-0000-4000-8000-000000000002"
+		ticketID  = "d6d26a41-5c50-4ca9-b4f7-e82d7558da79"
+	)
+	for _, test := range []struct {
+		name   string
+		method string
+		path   string
+	}{
+		{name: "list authorized queues", method: http.MethodGet, path: "/api/v1/operator/queues"},
+		{name: "read queue", method: http.MethodGet, path: "/api/v1/operator/branches/" + branchID + "/services/" + serviceID + "/tickets"},
+		{name: "call next", method: http.MethodPost, path: "/api/v1/operator/branches/" + branchID + "/services/" + serviceID + "/tickets/call-next"},
+		{name: "start ticket", method: http.MethodPost, path: "/api/v1/operator/tickets/" + ticketID + "/start"},
+		{name: "complete ticket", method: http.MethodPost, path: "/api/v1/operator/tickets/" + ticketID + "/complete"},
+		{name: "skip ticket", method: http.MethodPost, path: "/api/v1/operator/tickets/" + ticketID + "/skip"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			contractRequest := httptest.NewRequest(test.method, "http://api.test"+test.path, nil)
+			route, pathParams, err := contractRouter.FindRoute(contractRequest)
+			if err != nil {
+				t.Fatalf("match OpenAPI route: %v", err)
+			}
+			requestInput := &openapi3filter.RequestValidationInput{
+				Request:    contractRequest,
+				PathParams: pathParams,
+				Route:      route,
+				Options:    &openapi3filter.Options{AuthenticationFunc: openapi3filter.NoopAuthenticationFunc},
+			}
+			if err := openapi3filter.ValidateRequest(context.Background(), requestInput); err != nil {
+				t.Fatalf("validate request: %v", err)
+			}
+
+			providerRequest := httptest.NewRequest(test.method, test.path, nil)
+			response := httptest.NewRecorder()
+			app.NewRouter(zap.NewNop(), nil, nil).ServeHTTP(response, providerRequest)
+			if response.Code != http.StatusServiceUnavailable {
+				t.Fatalf("provider status = %d, want %d: %s", response.Code, http.StatusServiceUnavailable, response.Body.String())
+			}
+			responseInput := &openapi3filter.ResponseValidationInput{
+				RequestValidationInput: requestInput,
+				Status:                 response.Code,
+				Header:                 response.Header(),
+			}
+			responseInput.SetBodyBytes(response.Body.Bytes())
+			if err := openapi3filter.ValidateResponse(context.Background(), responseInput); err != nil {
+				t.Fatalf("validate response: %v", err)
+			}
+		})
+	}
+}
+
 type contractAuthRepository struct {
 	user    auth.User
 	session *auth.Session

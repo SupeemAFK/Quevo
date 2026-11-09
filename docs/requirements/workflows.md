@@ -1,9 +1,9 @@
 # User Journeys and Ticket Lifecycle
 
-**Status:** Customer service selection, queue joining, active-ticket recovery, and own-ticket status are implemented. Operator processing and detailed later-sprint policies remain open.
+**Status:** Customer service selection, queue joining, active-ticket recovery, own-ticket status, and the seeded operator queue workflow are implemented. Operator history, real-time updates, and detailed later-sprint policies remain outside the current feature scope.
 **Sources:** group_work_specs_v1.pdf §6 Theme 9 and the user-provided diagrams.
 
-A queue is the shared line for a branch service. A ticket is one customer's entry in that queue; it carries the lifecycle state. The diagram shows the complete intended Sprint 1 journey; the customer portion is implemented, while operator actions remain planned.
+A queue is the shared line for a branch service. A ticket is one customer's entry in that queue; it carries the lifecycle state. The diagram shows the implemented customer and operator ticket-processing journey. The separate completed/skipped history view in the supplied dashboard diagram is deferred from this feature.
 
 ## Customer and operator journey
 
@@ -20,7 +20,6 @@ flowchart TB
     O1[Authenticate] --> O2[Operator dashboard]
     O2 --> OV[Overview: authorized queues]
     O2 --> OW[Queue tickets: WAITING]
-    O2 --> OH[History: COMPLETED or SKIPPED]
     OW --> CALL[Call next ticket]
     CALL --> NOTIFY[Notify customer<br/>actor and channel TBD]
     NOTIFY --> START[Start when customer arrives]
@@ -34,14 +33,13 @@ flowchart TB
   C6 -->|list active tickets owned by customer| DB
   O2 -->|read authorized queues| DB
   OW -->|read waiting tickets| DB
-  OH -->|read completed and skipped tickets| DB
   CALL -->|atomically assign and set PENDING| DB
   START -->|set OPERATING| DB
   FINISH -->|set COMPLETED| DB
   SKIP -->|set SKIPPED| DB
 ```
 
-The dashboard history is a basic ticket view, not the future analytics or extended audit-history feature. Customer notification is a workflow step; whether it is a staff action or automated delivery, and the delivery channel, have not been decided.
+The current operator view covers authorized queues, waiting tickets, and the operator's current ticket. A separate completed/skipped history report is outside this feature. Customer notification is a workflow step; whether it is a staff action or automated delivery, and the delivery channel, have not been decided.
 
 ### Ticket lifecycle
 
@@ -60,8 +58,8 @@ A ticket can be skipped only while PENDING under the current proposal. COMPLETED
 
 ## Interpretation and open decisions
 
-- The operator dashboard has an overview of authorized queues, a WAITING ticket view, and a read-only history of COMPLETED or SKIPPED tickets.
+- The operator dashboard has an overview of authorized queues, a WAITING ticket view, and the operator's current ticket. A completed/skipped history view remains deferred.
 - A successful Call next action atomically assigns the WAITING ticket to the operator and changes it to PENDING.
 - The journey includes notifying the customer after a call. The diagrams leave the actor and delivery channel open; they do not imply SMS, push, or another integration.
 - This diagram shows the Sprint 1 slice. The official Theme 9 brief puts cancellation/no-show handling, multiple queues/counters, priority policy if applicable, and service summaries in later sprints. Exact transition and rejoin rules are not specified there and remain design decisions.
-- The history view is basic ticket history, not analytics or an extended audit trail.
+- FIFO orders tickets by joined time and immutable ticket ID; only the assigned operator can perform the allowed transitions.
