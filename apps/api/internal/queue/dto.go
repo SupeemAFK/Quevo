@@ -11,6 +11,7 @@ type JoinQueueInput struct {
 
 type CallNextInput struct {
 	OperatorID   string
+	BranchID     string
 	ServiceID    string
 	BusinessDate time.Time
 }
