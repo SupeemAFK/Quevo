@@ -2,7 +2,13 @@ name: test
 
 on:
   push:
+    branches: [staging, main]
   pull_request:
+    branches: [staging, main]
+  workflow_call:
+
+permissions:
+  contents: read
 
 jobs:
   test:
@@ -40,3 +46,8 @@ jobs:
 
       - name: Run all tests
         run: make test
+
+      - name: Build production images
+        run: |
+          docker build --target production --tag quevo-api:ci apps/api
+          docker build --target production --tag quevo-web:ci apps/web
