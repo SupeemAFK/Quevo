@@ -19,7 +19,7 @@ RUN go build -trimpath -ldflags="-s -w" -o /out/quevo-api ./cmd/server && \
 FROM alpine:3.22 AS production
 RUN apk add --no-cache ca-certificates && addgroup -S app && adduser -S app -G app
 WORKDIR /app
-COPY --from=build /out/quevo-api ./quevo-api
+COPY --from=build /out/ /app/
 USER app
 EXPOSE 8080
 ENTRYPOINT ["./quevo-api"]
