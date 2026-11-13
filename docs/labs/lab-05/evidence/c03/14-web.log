@@ -1,0 +1,7 @@
+UTC: 2026-11-13T18:33:47.086346+00:00
+Working directory: /tmp/quevo-c03-clean
+COMPOSE_PROJECT_NAME=quevo-c03 POSTGRES_PORT=55433
+$ curl -fsS -o /dev/null -w HTTP %{http_code}\n http://localhost:3000
+HTTP 200
+
+Exit code: 0

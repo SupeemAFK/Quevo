@@ -1,0 +1,13 @@
+UTC: 2026-11-13T18:30:29.381898+00:00
+Working directory: /tmp/quevo-c03-clean
+COMPOSE_PROJECT_NAME=quevo-c03 POSTGRES_PORT=55433
+$ git show -s --format=fuller HEAD
+commit 8397a66621a78e73ddff317fa1fa857feb386f72
+Author:     jarbbie <peeranat.ngam@gmail.com>
+AuthorDate: Sat Nov 14 01:30:04 2026 +0700
+Commit:     jarbbie <peeranat.ngam@gmail.com>
+CommitDate: Sat Nov 14 01:30:04 2026 +0700
+
+    chore: support isolated clean-clone Docker verification
+
+Exit code: 0

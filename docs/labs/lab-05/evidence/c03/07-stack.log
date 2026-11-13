@@ -1,0 +1,92 @@
+UTC: 2026-11-13T18:32:40.508058+00:00
+Working directory: /tmp/quevo-c03-clean
+COMPOSE_PROJECT_NAME=quevo-c03 POSTGRES_PORT=55433
+$ docker compose up --build -d --wait
+time="2026-11-14T01:32:40+07:00" level=warning msg="buildx Docker CLI plugin not found: falling back to the classic builder. BuildKit-only build features (multi-arch, secrets, ssh, additional contexts, ...) will not be available"
+ Image quevo-c03-api Building
+ Image quevo-c03-api Building
+Sending build context to Docker daemon  53.12kB
+
+Step 1/8 : FROM golang:1.26-alpine AS development
+ ---> 2529d034e028
+Step 2/8 : WORKDIR /app
+ ---> Using cache
+ ---> f2939998cf9b
+Step 3/8 : COPY go.mod go.sum ./
+ ---> Using cache
+ ---> 11cd75698866
+Step 4/8 : RUN go mod download
+ ---> Using cache
+ ---> 27babf00aeb9
+Step 5/8 : COPY . .
+ ---> Using cache
+ ---> 2e03e2da36a9
+Step 6/8 : EXPOSE 8080
+ ---> Using cache
+ ---> 5e5a96fa3189
+Step 7/8 : CMD ["go", "run", "./cmd/server"]
+ ---> Using cache
+ ---> 58a48d411ebc
+Step 8/8 : LABEL com.docker.compose.image.builder=classic
+ ---> Using cache
+ ---> 51c28250eeb3
+Successfully built 51c28250eeb3
+Successfully tagged quevo-c03-api:latest
+ Image quevo-c03-api Built
+ Image quevo-c03-api Built
+ Image quevo-c03-web Building
+ Image quevo-c03-web Building
+Sending build context to Docker daemon  78.59kB
+
+Step 1/8 : FROM oven/bun:1 AS development
+ ---> 1d22548f177f
+Step 2/8 : WORKDIR /app
+ ---> Using cache
+ ---> 0bd3f8e2e34d
+Step 3/8 : COPY package.json bun.lock ./
+ ---> Using cache
+ ---> 0bbdbfcb18cb
+Step 4/8 : RUN bun install --frozen-lockfile
+ ---> Using cache
+ ---> 65633550c2d0
+Step 5/8 : COPY . .
+ ---> Using cache
+ ---> 5fbb70ef051a
+Step 6/8 : EXPOSE 3000
+ ---> Using cache
+ ---> 81d8cd5a034b
+Step 7/8 : CMD ["bun", "--bun", "run", "dev"]
+ ---> Using cache
+ ---> 3f08fb292a4a
+Step 8/8 : LABEL com.docker.compose.image.builder=classic
+ ---> Using cache
+ ---> 5063409c4b6d
+Successfully built 5063409c4b6d
+Successfully tagged quevo-c03-web:latest
+ Image quevo-c03-web Built
+ Image quevo-c03-web Built
+ Container quevo-c03-db-1 Running
+ Volume quevo-c03_web-node-modules Creating
+ Volume quevo-c03_web-node-modules Creating
+ Container quevo-c03-api-1 Creating
+ Volume quevo-c03_web-node-modules Created
+ Volume quevo-c03_web-node-modules Created
+ Container quevo-c03-api-1 Created
+ Container quevo-c03-web-1 Creating
+ Container quevo-c03-web-1 Created
+ Container quevo-c03-db-1 Waiting
+ Container quevo-c03-db-1 Healthy
+ Container quevo-c03-api-1 Starting
+ Container quevo-c03-api-1 Started
+ Container quevo-c03-api-1 Waiting
+ Container quevo-c03-api-1 Healthy
+ Container quevo-c03-web-1 Starting
+ Container quevo-c03-web-1 Started
+ Container quevo-c03-db-1 Waiting
+ Container quevo-c03-api-1 Waiting
+ Container quevo-c03-web-1 Waiting
+ Container quevo-c03-db-1 Healthy
+ Container quevo-c03-api-1 Healthy
+ Container quevo-c03-web-1 Healthy
+
+Exit code: 0

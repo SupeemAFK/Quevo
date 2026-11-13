@@ -1,0 +1,10 @@
+UTC: 2026-11-13T18:33:35.363517+00:00
+Working directory: /tmp/quevo-c03-clean
+COMPOSE_PROJECT_NAME=quevo-c03 POSTGRES_PORT=55433
+$ docker compose ps --all
+NAME              IMAGE                COMMAND                  SERVICE   CREATED          STATUS                    PORTS
+quevo-c03-api-1   quevo-c03-api        "go run ./cmd/server"    api       55 seconds ago   Up 50 seconds (healthy)   0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+quevo-c03-db-1    postgres:17-alpine   "docker-entrypoint.s…"   db        2 minutes ago    Up 2 minutes (healthy)    0.0.0.0:55433->5432/tcp, [::]:55433->5432/tcp
+quevo-c03-web-1   quevo-c03-web        "/usr/local/bin/dock…"   web       54 seconds ago   Up 2 seconds              0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp
+
+Exit code: 0

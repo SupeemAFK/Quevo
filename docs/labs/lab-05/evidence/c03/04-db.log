@@ -1,0 +1,20 @@
+UTC: 2026-11-13T18:31:07.695208+00:00
+Working directory: /tmp/quevo-c03-clean
+COMPOSE_PROJECT_NAME=quevo-c03 POSTGRES_PORT=55433
+$ docker compose up -d --wait db
+ Volume quevo-c03_postgres-data Creating
+ Volume quevo-c03_postgres-data Creating
+ Network quevo-c03_quevo Creating
+ Network quevo-c03_quevo Creating
+ Volume quevo-c03_postgres-data Created
+ Volume quevo-c03_postgres-data Created
+ Network quevo-c03_quevo Created
+ Network quevo-c03_quevo Created
+ Container quevo-c03-db-1 Creating
+ Container quevo-c03-db-1 Created
+ Container quevo-c03-db-1 Starting
+ Container quevo-c03-db-1 Started
+ Container quevo-c03-db-1 Waiting
+ Container quevo-c03-db-1 Healthy
+
+Exit code: 0

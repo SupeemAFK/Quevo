@@ -1,0 +1,11 @@
+UTC: 2026-11-13T18:33:52.692370+00:00
+Working directory: /tmp/quevo-c03-clean
+COMPOSE_PROJECT_NAME=quevo-c03 POSTGRES_PORT=55433
+$ node /tmp/quevo-c03-browser.cjs
+Chromium: 156.0.8078.4
+PASS: customer sign-in through web server and real API
+PASS: ticket 1 created in PostgreSQL and recovered after reload; screenshot customer-ticket.png
+PASS: operator sign-in, call, start and complete ticket; screenshot operator-completed.png
+PASS: customer reload observes committed COMPLETED status
+
+Exit code: 0

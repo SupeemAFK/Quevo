@@ -1,0 +1,11 @@
+UTC: 2026-11-13T18:31:49.917291+00:00
+Working directory: /tmp/quevo-c03-clean
+COMPOSE_PROJECT_NAME=quevo-c03 POSTGRES_PORT=55433
+$ sh -c uname -sm; docker compose version; go version; make --version | head -n 1; node --version
+Linux x86_64
+Docker Compose version 5.7.0
+go version go1.27.3-X:nodwarf5 linux/amd64
+GNU Make 4.4.1
+v22.18.0
+
+Exit code: 0

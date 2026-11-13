@@ -1,0 +1,7 @@
+UTC: 2026-11-13T18:32:46.216167+00:00
+Working directory: /tmp/quevo-c03-clean
+COMPOSE_PROJECT_NAME=quevo-c03 POSTGRES_PORT=55433
+$ docker run --rm --entrypoint sh quevo-c03-web -c test ! -e /app/.env && echo PASS: web image contains no local .env
+PASS: web image contains no local .env
+
+Exit code: 0

@@ -61,6 +61,10 @@ make -C apps/api seed-demo
 docker compose up --build
 ```
 
+For a detached verification run, use `docker compose up --build -d --wait` instead. Wait for that command to finish before checking API health. The web service has no container health check, so also verify its HTTP response and sign-in flow. Clean up an isolated test project with `docker compose down -v`; this deletes that project's database and dependency volumes.
+
+The recorded [C-03 clean-clone Docker verification](evidence/c03/README.md) includes the tested commit, commands, logs, browser assertions, and screenshots. This verifies the existing development Compose targets; production deployment and redeploy evidence are tracked separately in #35 and #38.
+
 Open the web app at `http://localhost:3000`. Sign in as `customer@quevo.local` or `operator@quevo.local` using the passwords supplied to the seed command. If running the API outside Compose, start it from `apps/api` and restart it after editing its `.env`. The app reads config on startup. API health alone does not verify database access.
 
 To run the repository's test suite, stop the local stack with `docker compose down` to free the API and web ports, then run `make test` from the root. See the [test prerequisites](../../../README.md#test) for Docker, toolchains, and Playwright Chromium. The PostgreSQL integration and browser suites use isolated test databases.

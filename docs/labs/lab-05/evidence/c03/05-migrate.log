@@ -1,0 +1,10 @@
+UTC: 2026-11-13T18:31:38.730404+00:00
+Working directory: /tmp/quevo-c03-clean
+COMPOSE_PROJECT_NAME=quevo-c03 POSTGRES_PORT=55433
+$ make -C apps/api migrate-up
+make: Entering directory '/tmp/quevo-c03-clean/apps/api'
+go run ./cmd/migrate
+database migrations applied
+make: Leaving directory '/tmp/quevo-c03-clean/apps/api'
+
+Exit code: 0

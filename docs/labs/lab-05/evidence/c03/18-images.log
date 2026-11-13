@@ -1,0 +1,9 @@
+UTC: 2026-11-13T18:34:43.274972+00:00
+Working directory: /tmp/quevo-c03-clean
+COMPOSE_PROJECT_NAME=quevo-c03 POSTGRES_PORT=55433
+$ docker image inspect quevo-c03-api quevo-c03-web postgres:17-alpine --format {{.Id}} {{json .RepoTags}} {{json .RepoDigests}}
+sha256:51c28250eeb319970c5f10e439123c22eef7d4b96411608dd6badd5932618b52 ["quevo-c03-api:latest"] ["quevo-c03-api@sha256:51c28250eeb319970c5f10e439123c22eef7d4b96411608dd6badd5932618b52"]
+sha256:5063409c4b6d49bc0035496330cbeeb7450738d89d513bb0aabbffb9b6abe52d ["quevo-c03-web:latest"] ["quevo-c03-web@sha256:5063409c4b6d49bc0035496330cbeeb7450738d89d513bb0aabbffb9b6abe52d"]
+sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24 ["postgres:17-alpine"] ["postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24"]
+
+Exit code: 0

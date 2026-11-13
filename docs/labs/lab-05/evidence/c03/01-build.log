@@ -1,0 +1,71 @@
+UTC: 2026-11-13T18:30:32.143562+00:00
+Working directory: /tmp/quevo-c03-clean
+COMPOSE_PROJECT_NAME=quevo-c03 POSTGRES_PORT=55433
+$ docker compose build
+time="2026-11-14T01:30:32+07:00" level=warning msg="buildx Docker CLI plugin not found: falling back to the classic builder. BuildKit-only build features (multi-arch, secrets, ssh, additional contexts, ...) will not be available"
+ Image quevo-c03-api Building
+ Image quevo-c03-api Building
+Sending build context to Docker daemon  53.12kB
+
+Step 1/8 : FROM golang:1.26-alpine AS development
+ ---> 2529d034e028
+Step 2/8 : WORKDIR /app
+ ---> Using cache
+ ---> 3f676d94bbd5
+Step 3/8 : COPY go.mod go.sum ./
+ ---> Using cache
+ ---> 85d85b62cbb6
+Step 4/8 : RUN go mod download
+ ---> Using cache
+ ---> 6b4e90908125
+Step 5/8 : COPY . .
+ ---> Using cache
+ ---> 3d2d255b1577
+Step 6/8 : EXPOSE 8080
+ ---> Using cache
+ ---> 194f244ac2e6
+Step 7/8 : CMD ["go", "run", "./cmd/server"]
+ ---> Using cache
+ ---> 8b06346a8214
+Step 8/8 : LABEL com.docker.compose.image.builder=classic
+ ---> Using cache
+ ---> e84e038493db
+Successfully built e84e038493db
+Successfully tagged quevo-c03-api:latest
+ Image quevo-c03-api Built
+ Image quevo-c03-api Built
+ Image quevo-c03-web Building
+ Image quevo-c03-web Building
+Sending build context to Docker daemon  78.59kB
+
+Step 1/8 : FROM oven/bun:1 AS development
+ ---> 1d22548f177f
+Step 2/8 : WORKDIR /app
+ ---> Using cache
+ ---> 81ad9e6b2c15
+Step 3/8 : COPY package.json bun.lock ./
+ ---> Using cache
+ ---> d31556404f6a
+Step 4/8 : RUN bun install --frozen-lockfile
+ ---> Using cache
+ ---> 57552bffb719
+Step 5/8 : COPY . .
+ ---> 8ceb793c033d
+Step 6/8 : EXPOSE 3000
+ ---> Running in 13372ab5cc6c
+ ---> Removed intermediate container 13372ab5cc6c
+ ---> a2b934e2c884
+Step 7/8 : CMD ["bun", "--bun", "run", "dev"]
+ ---> Running in 0a3a99a1bfaa
+ ---> Removed intermediate container 0a3a99a1bfaa
+ ---> 96b3afdc1554
+Step 8/8 : LABEL com.docker.compose.image.builder=classic
+ ---> Running in 75f174879ad7
+ ---> Removed intermediate container 75f174879ad7
+ ---> 76d66aaec64d
+Successfully built 76d66aaec64d
+Successfully tagged quevo-c03-web:latest
+ Image quevo-c03-web Built
+ Image quevo-c03-web Built
+
+Exit code: 0

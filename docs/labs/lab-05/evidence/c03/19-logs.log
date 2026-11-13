@@ -1,0 +1,115 @@
+UTC: 2026-11-13T18:34:46.044197+00:00
+Working directory: /tmp/quevo-c03-clean
+COMPOSE_PROJECT_NAME=quevo-c03 POSTGRES_PORT=55433
+$ docker compose logs --no-color --tail=100 db api web
+web-1  | $ vite dev --port 3000 --host 0.0.0.0
+web-1  |
+web-1  |   VITE v8.3.6  ready in 2007 ms
+web-1  |
+web-1  |   ➜  Local:   http://localhost:3000/
+web-1  |   ➜  Network: http://172.28.0.4:3000/  eth0
+api-1  | {"level":"info","ts":1794594811.6342359,"caller":"server/main.go:56","msg":"HTTP server listening","address":":8080"}
+db-1   | The files belonging to this database system will be owned by user "postgres".
+db-1   | This user must also own the server process.
+db-1   |
+db-1   | The database cluster will be initialized with locale "en_US.utf8".
+db-1   | The default database encoding has accordingly been set to "UTF8".
+db-1   | The default text search configuration will be set to "english".
+db-1   |
+db-1   | Data page checksums are disabled.
+db-1   |
+db-1   | fixing permissions on existing directory /var/lib/postgresql/data ... ok
+db-1   | creating subdirectories ... ok
+db-1   | selecting dynamic shared memory implementation ... posix
+api-1  | {"level":"info","ts":1794594812.2399998,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/health","status":200,"latency":0.00006524}
+api-1  | {"level":"info","ts":1794594817.2771971,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/health","status":200,"latency":0.000032099}
+api-1  | {"level":"info","ts":1794594822.3082886,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/health","status":200,"latency":0.000031408}
+api-1  | {"level":"info","ts":1794594825.383686,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/health","status":200,"latency":0.000056013}
+api-1  | {"level":"info","ts":1794594827.4036164,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/health","status":200,"latency":0.000054223}
+api-1  | {"level":"info","ts":1794594827.7405996,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/health","status":200,"latency":0.000038618}
+db-1   | selecting default "max_connections" ... 100
+db-1   | selecting default "shared_buffers" ... 128MB
+db-1   | selecting default time zone ... UTC
+db-1   | creating configuration files ... ok
+db-1   | running bootstrap script ... ok
+db-1   | sh: locale: not found
+api-1  | {"level":"info","ts":1794594832.4414012,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/health","status":200,"latency":0.000025627}
+db-1   | 2026-11-13 18:31:09.038 UTC [35] WARNING:  no usable system locales were found
+api-1  | {"level":"info","ts":1794594836.431741,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"POST","route":"/api/v1/auth/login","status":200,"latency":0.153565513}
+db-1   | performing post-bootstrap initialization ... ok
+api-1  | {"level":"info","ts":1794594836.4715986,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/health","status":200,"latency":0.000018643}
+db-1   | initdb: warning: enabling "trust" authentication for local connections
+db-1   | initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+db-1   | syncing data to disk ... ok
+db-1   |
+db-1   |
+api-1  | {"level":"info","ts":1794594836.4900098,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/auth/me","status":200,"latency":0.003306091}
+db-1   | Success. You can now start the database server using:
+api-1  | {"level":"info","ts":1794594836.610708,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/auth/me","status":200,"latency":0.001103596}
+api-1  | {"level":"info","ts":1794594837.078109,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/services","status":200,"latency":0.020781267}
+api-1  | {"level":"info","ts":1794594837.1090376,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/tickets/active","status":200,"latency":0.051231529}
+api-1  | {"level":"info","ts":1794594837.4814448,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/health","status":200,"latency":0.000026008}
+api-1  | {"level":"info","ts":1794594837.70458,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"POST","route":"/api/v1/branches/:branchID/services/:serviceID/tickets","status":201,"latency":0.009812333}
+api-1  | {"level":"info","ts":1794594837.7161946,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/auth/me","status":200,"latency":0.000809668}
+api-1  | {"level":"info","ts":1794594837.8015122,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/auth/me","status":200,"latency":0.0012323}
+api-1  | {"level":"info","ts":1794594838.0346835,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/tickets/:ticketID","status":200,"latency":0.003529956}
+api-1  | {"level":"info","ts":1794594839.592789,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"POST","route":"/api/v1/auth/login","status":200,"latency":0.133612279}
+api-1  | {"level":"info","ts":1794594839.6242964,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/health","status":200,"latency":0.00001968}
+api-1  | {"level":"info","ts":1794594839.6346714,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/auth/me","status":200,"latency":0.001001526}
+api-1  | {"level":"info","ts":1794594839.721067,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/auth/me","status":200,"latency":0.001185655}
+api-1  | {"level":"info","ts":1794594839.8291478,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/operator/queues","status":200,"latency":0.007388751}
+api-1  | {"level":"info","ts":1794594839.8488476,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/operator/branches/:branchID/services/:serviceID/tickets","status":200,"latency":0.003148895}
+api-1  | {"level":"info","ts":1794594839.9641306,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"POST","route":"/api/v1/operator/branches/:branchID/services/:serviceID/tickets/call-next","status":200,"latency":0.008340436}
+api-1  | {"level":"info","ts":1794594839.9740002,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/operator/branches/:branchID/services/:serviceID/tickets","status":200,"latency":0.001598218}
+api-1  | {"level":"info","ts":1794594839.9759083,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/operator/queues","status":200,"latency":0.003785253}
+db-1   |
+db-1   |     pg_ctl -D /var/lib/postgresql/data -l logfile start
+db-1   |
+db-1   | waiting for server to start....2026-11-13 18:31:11.105 UTC [41] LOG:  starting PostgreSQL 17.11 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+db-1   | 2026-11-13 18:31:11.125 UTC [41] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+db-1   | 2026-11-13 18:31:11.148 UTC [44] LOG:  database system was shut down at 2026-11-13 18:31:10 UTC
+db-1   | 2026-11-13 18:31:11.188 UTC [41] LOG:  database system is ready to accept connections
+db-1   |  done
+db-1   | server started
+db-1   | CREATE DATABASE
+db-1   |
+db-1   |
+db-1   | /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+api-1  | {"level":"info","ts":1794594840.043103,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"POST","route":"/api/v1/operator/tickets/:ticketID/start","status":200,"latency":0.00347255}
+db-1   |
+db-1   | waiting for server to shut down....2026-11-13 18:31:11.470 UTC [41] LOG:  received fast shutdown request
+api-1  | {"level":"info","ts":1794594840.0561242,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/operator/queues","status":200,"latency":0.001635356}
+api-1  | {"level":"info","ts":1794594840.0578558,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/operator/branches/:branchID/services/:serviceID/tickets","status":200,"latency":0.003122242}
+api-1  | {"level":"info","ts":1794594840.1188595,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"POST","route":"/api/v1/operator/tickets/:ticketID/complete","status":200,"latency":0.004010735}
+api-1  | {"level":"info","ts":1794594840.133387,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/operator/queues","status":200,"latency":0.001852537}
+api-1  | {"level":"info","ts":1794594840.1343508,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/operator/branches/:branchID/services/:serviceID/tickets","status":200,"latency":0.002666883}
+api-1  | {"level":"info","ts":1794594840.2207878,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/auth/me","status":200,"latency":0.000776136}
+api-1  | {"level":"info","ts":1794594840.3556283,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/tickets/:ticketID","status":200,"latency":0.00145703}
+api-1  | {"level":"info","ts":1794594842.5178862,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/health","status":200,"latency":0.000031871}
+db-1   | 2026-11-13 18:31:11.476 UTC [41] LOG:  aborting any active transactions
+api-1  | {"level":"info","ts":1794594847.5557985,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/health","status":200,"latency":0.000028758}
+db-1   | 2026-11-13 18:31:11.491 UTC [41] LOG:  background worker "logical replication launcher" (PID 47) exited with exit code 1
+api-1  | {"level":"info","ts":1794594852.5939486,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/health","status":200,"latency":0.000046096}
+db-1   | 2026-11-13 18:31:11.492 UTC [42] LOG:  shutting down
+api-1  | {"level":"info","ts":1794594857.6334293,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/health","status":200,"latency":0.00002912}
+api-1  | {"level":"info","ts":1794594862.6733487,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/health","status":200,"latency":0.000036225}
+db-1   | 2026-11-13 18:31:11.495 UTC [42] LOG:  checkpoint starting: shutdown immediate
+api-1  | {"level":"info","ts":1794594867.7096202,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/health","status":200,"latency":0.000029273}
+db-1   | 2026-11-13 18:31:11.716 UTC [42] LOG:  checkpoint complete: wrote 926 buffers (5.7%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.044 s, sync=0.163 s, total=0.225 s; sync files=301, longest=0.007 s, average=0.001 s; distance=4266 kB, estimate=4266 kB; lsn=0/191E810, redo lsn=0/191E810
+db-1   | 2026-11-13 18:31:11.732 UTC [41] LOG:  database system is shut down
+db-1   |  done
+db-1   | server stopped
+db-1   |
+db-1   | PostgreSQL init process complete; ready for start up.
+db-1   |
+db-1   | 2026-11-13 18:31:11.833 UTC [1] LOG:  starting PostgreSQL 17.11 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+api-1  | {"level":"info","ts":1794594872.7448292,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/health","status":200,"latency":0.000028883}
+db-1   | 2026-11-13 18:31:11.833 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+api-1  | {"level":"info","ts":1794594877.781571,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/health","status":200,"latency":0.000035851}
+api-1  | {"level":"info","ts":1794594882.819367,"caller":"middleware/zap.go:32","msg":"HTTP request","method":"GET","route":"/api/v1/health","status":200,"latency":0.000029854}
+db-1   | 2026-11-13 18:31:11.833 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+db-1   | 2026-11-13 18:31:11.856 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+db-1   | 2026-11-13 18:31:11.871 UTC [57] LOG:  database system was shut down at 2026-11-13 18:31:11 UTC
+db-1   | 2026-11-13 18:31:11.892 UTC [1] LOG:  database system is ready to accept connections
+
+Exit code: 0

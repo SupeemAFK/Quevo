@@ -1,0 +1,16 @@
+UTC: 2026-11-13T18:34:41.502211+00:00
+Working directory: /tmp/quevo-c03-clean
+COMPOSE_PROJECT_NAME=quevo-c03 POSTGRES_PORT=55433
+$ docker compose exec -T db psql -U quevo -d quevo -c SELECT status, count(*) AS tickets FROM tickets GROUP BY status; SELECT count(*) AS sessions FROM sessions;
+  status   | tickets
+-----------+---------
+ COMPLETED |       1
+(1 row)
+
+ sessions
+----------
+        2
+(1 row)
+
+
+Exit code: 0

@@ -1,0 +1,7 @@
+UTC: 2026-11-13T18:35:30.957604+00:00
+Working directory: /tmp/quevo-c03-clean
+COMPOSE_PROJECT_NAME=quevo-c03 POSTGRES_PORT=55433
+$ docker ps --format {{.Names}} {{.Ports}}
+quevo-db-1 0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+
+Exit code: 0

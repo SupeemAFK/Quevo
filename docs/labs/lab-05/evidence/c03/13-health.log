@@ -1,0 +1,6 @@
+UTC: 2026-11-13T18:33:45.363899+00:00
+Working directory: /tmp/quevo-c03-clean
+COMPOSE_PROJECT_NAME=quevo-c03 POSTGRES_PORT=55433
+$ curl -fsS http://localhost:8080/api/v1/health
+{"status":"healthy"}
+Exit code: 0

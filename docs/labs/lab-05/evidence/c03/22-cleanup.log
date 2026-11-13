@@ -1,0 +1,24 @@
+UTC: 2026-11-13T18:35:00.244223+00:00
+Working directory: /tmp/quevo-c03-clean
+COMPOSE_PROJECT_NAME=quevo-c03 POSTGRES_PORT=55433
+$ docker compose down -v
+ Container quevo-c03-web-1 Stopping
+ Container quevo-c03-web-1 Stopped
+ Container quevo-c03-web-1 Removing
+ Container quevo-c03-web-1 Removed
+ Container quevo-c03-api-1 Stopping
+ Container quevo-c03-api-1 Stopped
+ Container quevo-c03-api-1 Removing
+ Container quevo-c03-api-1 Removed
+ Container quevo-c03-db-1 Stopping
+ Container quevo-c03-db-1 Stopped
+ Container quevo-c03-db-1 Removing
+ Container quevo-c03-db-1 Removed
+ Volume quevo-c03_postgres-data Removing
+ Network quevo-c03_quevo Removing
+ Volume quevo-c03_postgres-data Removed
+ Volume quevo-c03_web-node-modules Removing
+ Network quevo-c03_quevo Removed
+ Volume quevo-c03_web-node-modules Removed
+
+Exit code: 0
