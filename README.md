@@ -12,7 +12,7 @@ docker compose up --build
 
 Open the web app at [http://localhost:3000](http://localhost:3000). The API health endpoint is [http://localhost:8080/api/v1/health](http://localhost:8080/api/v1/health). API documentation is at [http://localhost:8080/swagger/](http://localhost:8080/swagger/), with the generated spec at [http://localhost:8080/openapi.json](http://localhost:8080/openapi.json). PostgreSQL is exposed on port `5432` with local-only development credentials configured in `compose.yaml`.
 
-Authentication uses the database but does not create its schema or demo accounts automatically. To prepare local demo sign-in, copy `apps/api/.env.example` to `apps/api/.env`, set the two demo passwords, then run these commands from the repository root while Compose is running:
+Authentication uses the database but does not create its schema or demo accounts automatically. To prepare local demo sign-in, copy `apps/api/.env.example` to `apps/api/.env`, fill in the local database URL using the credentials in `compose.yaml`, and set the two demo passwords. Then run these commands from the repository root while Compose is running:
 
 ```sh
 cd apps/api
@@ -27,6 +27,8 @@ docker compose down
 ```
 
 To remove the local database volume as well, use `docker compose down -v`.
+
+See the [Lab 5 deployment guide](docs/labs/lab-05/deployment.md) for the environment variable inventory and release setup. Restart a standalone API after changing its `.env` so it picks up the new database URL.
 
 ## Start selected services
 
