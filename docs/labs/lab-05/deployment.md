@@ -32,8 +32,13 @@ Commit example files with placeholders or local endpoints. Keep real values in i
 | `NODE_ENV` | Web server | Enables secure session cookies in production | No | The production web Dockerfile sets `production`. |
 | `POSTGRES_DB`, `POSTGRES_USER` | Local PostgreSQL container | Initial database and username | No | Local defaults in Compose. Create the database and user separately for Cloud SQL. |
 | `POSTGRES_PASSWORD` | Local PostgreSQL container | Initial database user password | Yes outside local development | Compose defines a disposable local value. Cloud SQL credentials are provisioned separately and consumed through `DATABASE_URL`. |
+| `POSTGRES_PORT` | Compose | Published PostgreSQL port on the host | No | Defaults to `5432`. Export another port when a local database already uses it; use the same port in the host-side `DATABASE_URL`. Container-to-container traffic continues to use `db:5432`. |
 
 ## Build, test, and run locally
+
+The commands below require Docker with Compose, Make, and Go 1.26 or later on the host. Migration and seed commands run on the host. The application dependencies are installed inside the Docker images.
+
+Run from a fresh clone. If port `5432` is occupied, first export an available port, for example `export POSTGRES_PORT=55433`, and use that port when filling in the API environment example. To isolate containers and volumes from another Quevo checkout, also export `COMPOSE_PROJECT_NAME=quevo-c03` for the whole session.
 
 From the repository root, build the Compose images and start PostgreSQL:
 
