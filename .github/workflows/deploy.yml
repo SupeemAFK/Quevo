@@ -100,17 +100,35 @@ jobs:
           docker push "${API_IMAGE}:${GITHUB_SHA}"
           docker push "${WEB_IMAGE}:${GITHUB_SHA}"
 
-          api_digest="$(gcloud artifacts docker images describe "${API_IMAGE}:${GITHUB_SHA}" \
-            --project "$GCP_PROJECT_ID" --format='value(image_summary.digest)')"
-          web_digest="$(gcloud artifacts docker images describe "${WEB_IMAGE}:${GITHUB_SHA}" \
-            --project "$GCP_PROJECT_ID" --format='value(image_summary.digest)')"
+          resolve_runtime_digest() {
+            local image="$1"
+            local index_digest manifest digest
+            index_digest="$(gcloud artifacts docker images describe "${image}:${GITHUB_SHA}" \
+              --project "$GCP_PROJECT_ID" --format='value(image_summary.digest)')" || return 1
+            [[ "$index_digest" =~ ^sha256:[a-f0-9]{64}$ ]] || return 1
 
-          [[ "$api_digest" =~ ^sha256:[a-f0-9]{64}$ ]] || {
-            echo "Could not resolve the API image digest" >&2
+            # A pushed image can be an OCI index containing attestations.
+            manifest="$(docker buildx imagetools inspect --raw "${image}@${index_digest}")" || return 1
+            digest="$(jq -er --arg root "$index_digest" '
+              if has("manifests") then
+                [.manifests[] | select(.platform.os == "linux" and .platform.architecture == "amd64")]
+                | if length == 1 then .[0].digest else error("expected one linux/amd64 manifest") end
+              elif has("config") and has("layers") then
+                $root
+              else
+                error("unsupported image manifest")
+              end
+            ' <<< "$manifest")" || return 1
+            [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]] || return 1
+            printf '%s\n' "$digest"
+          }
+
+          api_digest="$(resolve_runtime_digest "$API_IMAGE")" || {
+            echo "Could not resolve the API linux/amd64 image digest" >&2
             exit 1
           }
-          [[ "$web_digest" =~ ^sha256:[a-f0-9]{64}$ ]] || {
-            echo "Could not resolve the web image digest" >&2
+          web_digest="$(resolve_runtime_digest "$WEB_IMAGE")" || {
+            echo "Could not resolve the web linux/amd64 image digest" >&2
             exit 1
           }
 
@@ -198,10 +216,10 @@ jobs:
             --format='value(status.latestReadyRevisionName)')"
           api_revision_image="$(gcloud run revisions describe "$api_revision" \
             --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
-            --format='value(spec.containers[0].image)')"
+            --format='value(status.imageDigest)')"
           web_revision_image="$(gcloud run revisions describe "$web_revision" \
             --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
-            --format='value(spec.containers[0].image)')"
+            --format='value(status.imageDigest)')"
 
           [[ "$api_revision_image" == "$API_IMAGE_DIGEST" ]] || {
             echo "API revision image does not match the released digest" >&2
@@ -223,8 +241,7 @@ jobs:
               [.status.traffic[]? | select((.percent // 0) > 0)] as $active_routes |
               ($active_routes | length == 1) and
               ($active_routes[0].percent == 100) and
-              (($active_routes[0].revisionName == $revision) or
-                ($active_routes[0].latestRevision == true))
+              ($active_routes[0].revisionName == $revision)
             ' <<< "$service_json" >/dev/null || {
               echo "$service is not routing 100% of production traffic to $revision" >&2
               jq -c '.status.traffic' <<< "$service_json" >&2
