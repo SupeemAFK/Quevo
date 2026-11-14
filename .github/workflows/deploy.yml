@@ -1,4 +1,4 @@
-name: deploy
+name: CD
 
 on:
   push:
@@ -9,13 +9,16 @@ permissions:
 
 jobs:
   release_checks:
-    uses: ./.github/workflows/test.yml
+    uses: ./.github/workflows/ci.yml
 
   deploy:
-    name: Deploy main to Cloud Run
+    name: Build and deploy release
     needs: release_checks
     runs-on: ubuntu-latest
     environment: demo
+    concurrency:
+      group: quevo-demo-cloud-run
+      cancel-in-progress: false
     permissions:
       contents: read
       id-token: write
@@ -24,11 +27,35 @@ jobs:
       GCP_REGION: ${{ vars.GCP_REGION }}
       WIF_PROVIDER: ${{ vars.WIF_PROVIDER }}
       WIF_SERVICE_ACCOUNT: ${{ vars.WIF_SERVICE_ACCOUNT }}
-      API_IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/quevo/quevo-api
-      WEB_IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/quevo/quevo-web
+      API_IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/quevo/api
+      WEB_IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/quevo/web
 
     steps:
+      - name: Check out released commit
+        uses: actions/checkout@v4
+
+      - name: Check whether this commit is still latest on main
+        id: freshness
+        shell: bash
+        run: |
+          set -euo pipefail
+          latest_main_sha="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [[ -z "$latest_main_sha" ]]; then
+            echo "Could not read the latest main commit" >&2
+            exit 1
+          fi
+          if [[ "$latest_main_sha" == "$GITHUB_SHA" ]]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "## Deployment skipped"
+              echo "Commit \`$GITHUB_SHA\` was superseded by \`$latest_main_sha\` on main."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Check deployment configuration
+        if: steps.freshness.outputs.deploy == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -39,10 +66,8 @@ jobs:
             fi
           done
 
-      - name: Check out released commit
-        uses: actions/checkout@v4
-
       - name: Authenticate to Google Cloud with WIF
+        if: steps.freshness.outputs.deploy == 'true'
         uses: google-github-actions/auth@v3
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
@@ -50,15 +75,18 @@ jobs:
           service_account: ${{ env.WIF_SERVICE_ACCOUNT }}
 
       - name: Set up Google Cloud SDK
+        if: steps.freshness.outputs.deploy == 'true'
         uses: google-github-actions/setup-gcloud@v3
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
           version: ">= 363.0.0"
 
       - name: Configure Artifact Registry Docker access
+        if: steps.freshness.outputs.deploy == 'true'
         run: gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
 
       - name: Build, push, and resolve immutable image digests
+        if: steps.freshness.outputs.deploy == 'true'
         id: images
         shell: bash
         run: |
@@ -89,7 +117,26 @@ jobs:
           echo "api_image=${API_IMAGE}@${api_digest}" >> "$GITHUB_OUTPUT"
           echo "web_image=${WEB_IMAGE}@${web_digest}" >> "$GITHUB_OUTPUT"
 
+      - name: Recheck main before migrations
+        if: steps.freshness.outputs.deploy == 'true'
+        id: migration_freshness
+        shell: bash
+        run: |
+          set -euo pipefail
+          latest_main_sha="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [[ -z "$latest_main_sha" ]]; then
+            echo "Could not read the latest main commit" >&2
+            exit 1
+          fi
+          if [[ "$latest_main_sha" == "$GITHUB_SHA" ]]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping migrations for superseded commit $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Update and run database migrations
+        if: steps.migration_freshness.outputs.deploy == 'true'
         env:
           API_IMAGE_DIGEST: ${{ steps.images.outputs.api_image }}
         run: |
@@ -104,7 +151,26 @@ jobs:
             --wait \
             --quiet
 
+      - name: Recheck main before service updates
+        if: steps.migration_freshness.outputs.deploy == 'true'
+        id: service_freshness
+        shell: bash
+        run: |
+          set -euo pipefail
+          latest_main_sha="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [[ -z "$latest_main_sha" ]]; then
+            echo "Could not read the latest main commit" >&2
+            exit 1
+          fi
+          if [[ "$latest_main_sha" == "$GITHUB_SHA" ]]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping service updates for superseded commit $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Deploy API and web images
+        if: steps.service_freshness.outputs.deploy == 'true'
         env:
           API_IMAGE_DIGEST: ${{ steps.images.outputs.api_image }}
           WEB_IMAGE_DIGEST: ${{ steps.images.outputs.web_image }}
@@ -126,7 +192,8 @@ jobs:
             --region "$GCP_REGION" \
             --quiet
 
-      - name: Verify public URL and deployed revisions
+      - name: Verify public URL, images, and production traffic
+        if: steps.service_freshness.outputs.deploy == 'true'
         env:
           API_IMAGE_DIGEST: ${{ steps.images.outputs.api_image }}
           WEB_IMAGE_DIGEST: ${{ steps.images.outputs.web_image }}
@@ -163,12 +230,35 @@ jobs:
             exit 1
           }
 
+          verify_full_traffic_to_revision() {
+            local service="$1"
+            local revision="$2"
+            local service_json
+            service_json="$(gcloud run services describe "$service" \
+              --project "$GCP_PROJECT_ID" --region "$GCP_REGION" --format=json)"
+
+            jq -e --arg revision "$revision" '
+              [.status.traffic[]? | select((.percent // 0) > 0)] as $active_routes |
+              ($active_routes | length == 1) and
+              ($active_routes[0].percent == 100) and
+              (($active_routes[0].revisionName == $revision) or
+                ($active_routes[0].latestRevision == true))
+            ' <<< "$service_json" >/dev/null || {
+              echo "$service is not routing 100% of production traffic to $revision" >&2
+              jq -c '.status.traffic' <<< "$service_json" >&2
+              return 1
+            }
+          }
+
+          verify_full_traffic_to_revision quevo-api "$api_revision"
+          verify_full_traffic_to_revision quevo-web "$web_revision"
+
           {
             echo "## Quevo deployment"
             echo "- Commit: \`$GITHUB_SHA\`"
             echo "- Public URL: $web_url"
             echo "- API image: \`$API_IMAGE_DIGEST\`"
-            echo "- API revision: \`$api_revision\`"
+            echo "- API revision: \`$api_revision\` (100% production traffic)"
             echo "- Web image: \`$WEB_IMAGE_DIGEST\`"
-            echo "- Web revision: \`$web_revision\`"
+            echo "- Web revision: \`$web_revision\` (100% production traffic)"
           } >> "$GITHUB_STEP_SUMMARY"
