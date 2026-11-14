@@ -25,8 +25,6 @@ make seed-demo
 
 The seed creates one UTC demo branch, one active service, a customer, an operator, and the operator's service authorization. It generates a random password for each new account and stores the bcrypt hash in PostgreSQL. Run it in a private terminal and save the generated login details when they appear. Rerunning the seed preserves existing passwords.
 
-For noninteractive use, run `go run ./cmd/seed -credentials-file /path/to/new-private-file.json` from this directory. The command writes newly created credentials to a new file with owner-only permissions on Unix and refuses to overwrite an existing file. Keep the file outside the checkout and remove it after saving the credentials.
-
 ## Logging
 
 Zap writes structured JSON for application and HTTP request logs. Request logs include the method, matched route, status, and latency; query strings are omitted. Panic recovery also logs a stack trace.

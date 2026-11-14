@@ -1,5 +1,5 @@
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process'
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -13,7 +13,6 @@ const processErrors = new WeakMap<ChildProcess, Error>()
 export default async function globalSetup() {
   const tempDirectory = await mkdtemp(join(tmpdir(), 'quevo-e2e-'))
   const apiBinary = join(tempDirectory, 'quevo-api')
-  const credentialsFile = join(tempDirectory, 'demo-credentials.json')
   let stopPostgres: (() => Promise<void>) | undefined
   let databaseURL = ''
   let api: ChildProcess | undefined
@@ -46,13 +45,13 @@ export default async function globalSetup() {
       env: apiEnv,
       stdio: 'inherit',
     })
-    execFileSync('go', ['run', './cmd/seed', '-credentials-file', credentialsFile], {
+    const seedOutput = execFileSync('go', ['run', './cmd/seed', '-allow-piped-output'], {
       cwd: apiRoot,
       env: apiEnv,
-      stdio: 'inherit',
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'inherit'],
     })
-    const credentials = JSON.parse(await readFile(credentialsFile, 'utf8'))
-    await rm(credentialsFile)
+    const credentials = JSON.parse(seedOutput)
     const customerPassword = credentials['customer@quevo.local']
     const operatorPassword = credentials['operator@quevo.local']
     if (typeof customerPassword !== 'string' || typeof operatorPassword !== 'string') {

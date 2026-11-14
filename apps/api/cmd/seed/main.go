@@ -16,17 +16,17 @@ import (
 )
 
 func main() {
-	credentialsPath := flag.String("credentials-file", "", "write new login credentials to a new private JSON file")
+	allowPipedOutput := flag.Bool("allow-piped-output", false, "allow trusted automation to capture generated credentials from stdout")
 	flag.Parse()
-	if err := run(*credentialsPath); err != nil {
+	if err := run(*allowPipedOutput); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func run(credentialsPath string) error {
-	if credentialsPath == "" && !term.IsTerminal(int(os.Stdout.Fd())) {
-		return fmt.Errorf("run seed in a private terminal or pass -credentials-file with a new private file path")
+func run(allowPipedOutput bool) error {
+	if !allowPipedOutput && !term.IsTerminal(int(os.Stdout.Fd())) {
+		return fmt.Errorf("run seed in a private terminal or use -allow-piped-output to capture credentials securely")
 	}
 	cfg, err := config.Load()
 	if err != nil {
@@ -57,33 +57,15 @@ func run(credentialsPath string) error {
 	}
 	defer func() { _ = sqlDB.Close() }()
 
-	output := os.Stdout
-	if credentialsPath != "" {
-		output, err = os.OpenFile(credentialsPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
-		if err != nil {
-			return fmt.Errorf("create credentials file: %w", err)
-		}
-		defer func() { _ = output.Close() }()
-	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 	created, err := database.SeedDemo(ctx, db, database.SeedCredentials{
 		CustomerPasswordHash: string(customerHash), OperatorPasswordHash: string(operatorHash),
 	})
 	if err != nil {
-		if credentialsPath != "" {
-			_ = output.Close()
-			_ = os.Remove(credentialsPath)
-		}
 		return err
 	}
 	if !created.Customer && !created.Operator {
-		if credentialsPath != "" {
-			_ = output.Close()
-			if err := os.Remove(credentialsPath); err != nil {
-				return fmt.Errorf("remove empty credentials file: %w", err)
-			}
-		}
 		fmt.Fprintln(os.Stderr, "Demo data seeded. Existing demo passwords are unchanged.")
 		return nil
 	}
@@ -94,13 +76,8 @@ func run(credentialsPath string) error {
 	if created.Operator {
 		credentials[database.DemoOperatorEmail] = operatorPassword
 	}
-	if err := json.NewEncoder(output).Encode(credentials); err != nil {
+	if err := json.NewEncoder(os.Stdout).Encode(credentials); err != nil {
 		return fmt.Errorf("demo accounts were created but writing their credentials failed: %w", err)
-	}
-	if credentialsPath != "" {
-		if err := output.Close(); err != nil {
-			return fmt.Errorf("close credentials file: %w", err)
-		}
 	}
 	return nil
 }
