@@ -9,10 +9,12 @@ import (
 )
 
 const (
-	DemoBranchID   = "10000000-0000-4000-8000-000000000001"
-	DemoServiceID  = "10000000-0000-4000-8000-000000000002"
-	DemoCustomerID = "10000000-0000-4000-8000-000000000003"
-	DemoOperatorID = "10000000-0000-4000-8000-000000000004"
+	DemoBranchID      = "10000000-0000-4000-8000-000000000001"
+	DemoServiceID     = "10000000-0000-4000-8000-000000000002"
+	DemoCustomerID    = "10000000-0000-4000-8000-000000000003"
+	DemoOperatorID    = "10000000-0000-4000-8000-000000000004"
+	DemoCustomerEmail = "customer@quevo.local"
+	DemoOperatorEmail = "operator@quevo.local"
 )
 
 type SeedCredentials struct {
@@ -20,39 +22,49 @@ type SeedCredentials struct {
 	OperatorPasswordHash string
 }
 
-// SeedDemo inserts stable synthetic Sprint 1 records and is safe to rerun.
-func SeedDemo(ctx context.Context, db *gorm.DB, credentials SeedCredentials) error {
+type SeededAccounts struct {
+	Customer bool
+	Operator bool
+}
+
+// SeedDemo inserts synthetic records and reports which users were created.
+// Existing credentials are preserved.
+func SeedDemo(ctx context.Context, db *gorm.DB, credentials SeedCredentials) (SeededAccounts, error) {
 	if credentials.CustomerPasswordHash == "" || credentials.OperatorPasswordHash == "" {
-		return fmt.Errorf("both seeded account password hashes are required")
+		return SeededAccounts{}, fmt.Errorf("both seeded account password hashes are required")
 	}
+	var accounts SeededAccounts
 	statements := []struct {
-		query string
-		args  []any
+		query   string
+		args    []any
+		created *bool
 	}{
 		{`INSERT INTO branches (id, name, timezone) VALUES (?, 'Quevo Demo Branch', 'UTC')
-			ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, timezone = EXCLUDED.timezone`, []any{DemoBranchID}},
+			ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, timezone = EXCLUDED.timezone`, []any{DemoBranchID}, nil},
 		{`INSERT INTO services (id, branch_id, name, active) VALUES (?, ?, 'General Service', true)
-			ON CONFLICT (id) DO UPDATE SET branch_id = EXCLUDED.branch_id, name = EXCLUDED.name, active = EXCLUDED.active`, []any{DemoServiceID, DemoBranchID}},
+			ON CONFLICT (id) DO UPDATE SET branch_id = EXCLUDED.branch_id, name = EXCLUDED.name, active = EXCLUDED.active`, []any{DemoServiceID, DemoBranchID}, nil},
 		{`INSERT INTO users (id, role, display_name, email, password_hash)
-			VALUES (?, 'CUSTOMER', 'Demo Customer', 'customer@quevo.local', ?)
-			ON CONFLICT (id) DO UPDATE SET role = EXCLUDED.role, display_name = EXCLUDED.display_name,
-			email = EXCLUDED.email, password_hash = EXCLUDED.password_hash`, []any{DemoCustomerID, credentials.CustomerPasswordHash}},
+			VALUES (?, 'CUSTOMER', 'Demo Customer', ?, ?)
+			ON CONFLICT (id) DO NOTHING`, []any{DemoCustomerID, DemoCustomerEmail, credentials.CustomerPasswordHash}, &accounts.Customer},
 		{`INSERT INTO users (id, role, display_name, email, password_hash)
-			VALUES (?, 'OPERATOR', 'Demo Operator', 'operator@quevo.local', ?)
-			ON CONFLICT (id) DO UPDATE SET role = EXCLUDED.role, display_name = EXCLUDED.display_name,
-			email = EXCLUDED.email, password_hash = EXCLUDED.password_hash`, []any{DemoOperatorID, credentials.OperatorPasswordHash}},
-		{`INSERT INTO operator_services (operator_id, service_id) VALUES (?, ?) ON CONFLICT DO NOTHING`, []any{DemoOperatorID, DemoServiceID}},
+			VALUES (?, 'OPERATOR', 'Demo Operator', ?, ?)
+			ON CONFLICT (id) DO NOTHING`, []any{DemoOperatorID, DemoOperatorEmail, credentials.OperatorPasswordHash}, &accounts.Operator},
+		{`INSERT INTO operator_services (operator_id, service_id) VALUES (?, ?) ON CONFLICT DO NOTHING`, []any{DemoOperatorID, DemoServiceID}, nil},
 	}
 	// Never print the seed SQL: its parameters include credential hashes.
 	if err := db.Session(&gorm.Session{Logger: logger.Discard}).WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		for _, statement := range statements {
-			if err := tx.Exec(statement.query, statement.args...).Error; err != nil {
-				return fmt.Errorf("seed demo records: %w", err)
+			result := tx.Exec(statement.query, statement.args...)
+			if result.Error != nil {
+				return fmt.Errorf("seed demo records: %w", result.Error)
+			}
+			if statement.created != nil {
+				*statement.created = result.RowsAffected == 1
 			}
 		}
 		return nil
 	}); err != nil {
-		return fmt.Errorf("seed transaction: %w", err)
+		return SeededAccounts{}, fmt.Errorf("seed transaction: %w", err)
 	}
-	return nil
+	return accounts, nil
 }

@@ -40,4 +40,4 @@ Authentication failures use the shared safe error shape `{ "code", "message", "r
 
 ## Local readiness
 
-The login UI and auth API are implemented. For local login, start PostgreSQL, run `make migrate-up`, then `make seed-demo` from `apps/api` with `QUEVO_CUSTOMER_PASSWORD` and `QUEVO_OPERATOR_PASSWORD` set. The health check remains usable when PostgreSQL is unavailable; database-backed auth requests return safe errors.
+The login UI and auth API are implemented. For local login, start PostgreSQL, run `make migrate-up`, then `make seed-demo` from `apps/api` and save the generated passwords from your private terminal. The health check remains usable when PostgreSQL is unavailable; database-backed auth requests return safe errors.

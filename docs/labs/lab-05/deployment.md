@@ -26,8 +26,6 @@ Commit example files with placeholders or local endpoints. Keep real values in i
 | `DB_MAX_OPEN_CONNS` | API, migrate, seed | Maximum open connections in the database pool | No | API default `10` or an environment override. |
 | `DB_CONN_MAX_LIFETIME` | API, migrate, seed | Maximum time a pooled connection can be reused | No | API default `30m` or an environment override. |
 | `SESSION_TTL` | API | Lifetime of a newly created sign-in session | No | API default `12h` or an environment override. |
-| `QUEVO_CUSTOMER_PASSWORD` | Seed command | Password for the demo customer | Yes | Supply locally through the shell or an ignored API `.env`. For a lab seed run on GCP, supply it through Secret Manager. |
-| `QUEVO_OPERATOR_PASSWORD` | Seed command | Password for the demo operator | Yes | Supply locally through the shell or an ignored API `.env`. For a lab seed run on GCP, supply it through Secret Manager. |
 | `API_BASE_URL` | Web server | Base URL the web server uses to call the Go API | No | Defaults to `http://localhost:8080` for standalone development. Compose supplies `http://api:8080`. Set the deployed API endpoint in the Cloud Run web service environment. |
 | `NODE_ENV` | Web server | Enables secure session cookies in production | No | The production web Dockerfile sets `production`. |
 | `POSTGRES_DB`, `POSTGRES_USER` | Local PostgreSQL container | Initial database and username | No | Local defaults in Compose. Create the database and user separately for Cloud SQL. |
@@ -42,7 +40,7 @@ docker compose build
 docker compose up -d --wait db
 ```
 
-From the root, copy the API environment example. Fill in the database URL using the local database name, username, password, and published port in Compose. Choose both demo passwords before running the seed.
+From the root, copy the API environment example. Fill in the database URL using the local database name, username, password, and published port in Compose. Use a private terminal for the seed so you can save the generated passwords.
 
 ```sh
 cp apps/api/.env.example apps/api/.env
@@ -56,7 +54,7 @@ make -C apps/api seed-demo
 docker compose up --build
 ```
 
-Open the web app at `http://localhost:3000`. Sign in as `customer@quevo.local` or `operator@quevo.local` using the passwords supplied to the seed command. If running the API outside Compose, start it from `apps/api` and restart it after editing its `.env`. The app reads config on startup. API health alone does not verify database access.
+Open the web app at `http://localhost:3000`. Sign in as `customer@quevo.local` or `operator@quevo.local` using the passwords shown when the seed created those accounts. If running the API outside Compose, start it from `apps/api` and restart it after editing its `.env`. The app reads config on startup. API health alone does not verify database access.
 
 To run the repository's test suite, stop the local stack with `docker compose down` to free the API and web ports, then run `make test` from the root. See the [test prerequisites](../../../README.md#test) for Docker, toolchains, and Playwright Chromium. The PostgreSQL integration and browser suites use isolated test databases.
 
@@ -64,7 +62,7 @@ To run the repository's test suite, stop the local stack with `docker compose do
 
 Versioned migrations define the users, sessions, branches, services, operator assignments, queue counters, and tickets in PostgreSQL. The web cookie carries the opaque session token. The API validates it against the session record stored in PostgreSQL. Local Compose keeps database files in its `postgres-data` volume. The GCP deployment will use Cloud SQL so replacing an app container leaves those records in place. The live restart and redeploy check is tracked in [#38](https://github.com/SupeemAFK/Quevo/issues/38).
 
-Run migrations as a separate release step before updating the API. Seed the lab database explicitly after migration when demo accounts are needed. The seed can be rerun and updates the demo credentials, so it is a setup operation separate from routine releases.
+Run migrations as a separate release step before updating the API. Seed the lab database from a private terminal through the Cloud SQL Auth Proxy when demo accounts are needed. Use a local proxy endpoint in `DATABASE_URL` for that command. The seed generates and displays each new account’s password once. Reruns preserve existing passwords. Keep seeding separate from routine releases.
 
 ## Release procedure
 

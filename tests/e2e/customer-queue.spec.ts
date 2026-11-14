@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-const customerPassword = 'quevo-e2e-customer-password'
+const customerPassword = process.env.QUEVO_E2E_CUSTOMER_PASSWORD!
 
 test('customer joins and recovers a ticket; operator serves and skips tickets', async ({ browser, page }) => {
   await page.goto('/login')
@@ -55,7 +55,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await operator.goto('/login')
   await operator.waitForLoadState('networkidle')
   await operator.getByLabel('Email').fill('operator@quevo.local')
-  await operator.getByLabel('Password').fill('quevo-e2e-operator-password')
+  await operator.getByLabel('Password').fill(process.env.QUEVO_E2E_OPERATOR_PASSWORD!)
   await operator.getByRole('button', { name: 'Sign in' }).click()
   await expect(operator.getByText('Signed in as Demo Operator')).toBeVisible()
   await operator.getByRole('link', { name: 'Open operator queue' }).click()

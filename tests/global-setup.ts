@@ -1,5 +1,5 @@
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -9,11 +9,11 @@ const repoRoot = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const apiRoot = resolve(repoRoot, 'apps/api')
 const webRoot = resolve(repoRoot, 'apps/web')
 const processErrors = new WeakMap<ChildProcess, Error>()
-const e2eCustomerPassword = 'quevo-e2e-customer-password'
 
 export default async function globalSetup() {
   const tempDirectory = await mkdtemp(join(tmpdir(), 'quevo-e2e-'))
   const apiBinary = join(tempDirectory, 'quevo-api')
+  const credentialsFile = join(tempDirectory, 'demo-credentials.json')
   let stopPostgres: (() => Promise<void>) | undefined
   let databaseURL = ''
   let api: ChildProcess | undefined
@@ -39,8 +39,6 @@ export default async function globalSetup() {
       ...process.env,
       PORT: '8080',
       DATABASE_URL: databaseURL,
-      QUEVO_CUSTOMER_PASSWORD: e2eCustomerPassword,
-      QUEVO_OPERATOR_PASSWORD: 'quevo-e2e-operator-password',
     }
 
     execFileSync('go', ['run', './cmd/migrate'], {
@@ -48,11 +46,19 @@ export default async function globalSetup() {
       env: apiEnv,
       stdio: 'inherit',
     })
-    execFileSync('go', ['run', './cmd/seed'], {
+    execFileSync('go', ['run', './cmd/seed', '-credentials-file', credentialsFile], {
       cwd: apiRoot,
       env: apiEnv,
       stdio: 'inherit',
     })
+    const credentials = JSON.parse(await readFile(credentialsFile, 'utf8'))
+    await rm(credentialsFile)
+    const customerPassword = credentials['customer@quevo.local']
+    const operatorPassword = credentials['operator@quevo.local']
+    if (typeof customerPassword !== 'string' || typeof operatorPassword !== 'string') {
+      throw new Error('Seed did not create both demo accounts')
+    }
+
     execFileSync('go', ['build', '-o', apiBinary, './cmd/server'], {
       cwd: apiRoot,
       stdio: 'inherit',
@@ -71,6 +77,8 @@ export default async function globalSetup() {
       webRoot,
     )
     await waitFor('http://127.0.0.1:3000', web, 'web app')
+    process.env.QUEVO_E2E_CUSTOMER_PASSWORD = customerPassword
+    process.env.QUEVO_E2E_OPERATOR_PASSWORD = operatorPassword
   } catch (error) {
     await cleanup()
     throw error
