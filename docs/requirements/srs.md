@@ -14,7 +14,7 @@ Quevo helps a bank branch organize walk-in customers into service-specific queue
 
 Quevo coordinates queue service only. It does not hold customer financial accounts, move money, approve banking transactions, or schedule appointments.
 
-This SRS records the desired product behavior. It does not claim that these features are implemented. At the inspected repository revision, the API exposes a health endpoint and the web app is a starter; the queue workflows remain planned work.
+This SRS records the desired product behavior and does not imply that every requirement is implemented. The current repository includes sign-in, customer service selection, queue join, active-ticket recovery, and own-ticket status. Operator queue processing and later-sprint features remain planned work.
 
 ## 2. Stakeholders and actors
 
@@ -54,7 +54,7 @@ Only Customer and Operator are confirmed product actors. Administrative identiti
 - PostgreSQL is the source of truth for queue and ticket state.
 - Queue join and ticket claim must be implemented as PostgreSQL transactions with pessimistic locking.
 - The codebase uses a feature-first modular monolith. This SRS does not require new infrastructure or a change of framework.
-- The application is currently a starter. Existing health, test, OpenAPI, container, and development tooling are infrastructure, not evidence that queue requirements are implemented.
+- The implementation is incremental. Existing health, test, OpenAPI, container, and development tooling do not by themselves indicate that a product requirement is complete; use the feature acceptance criteria and tests as evidence.
 
 ## 5. Functional requirements
 
@@ -78,7 +78,7 @@ These are Quevo requirement statements, not verbatim rubric clauses. Their sourc
 | FR-014 | The system shall reject invalid ticket state transitions, a customer's duplicate active ticket for the same service queue, and an operator action that would give that operator more than one active ticket. |
 | FR-015 | The system shall persist the timestamps for queue join, ticket call, service start, and completion or skip. |
 | FR-016 | The system shall persist queue and ticket state in PostgreSQL and return committed state on subsequent reads. |
-| FR-017 | The system shall provide operators an overview of their authorized queues, a view of WAITING tickets in those queues, and a history view of tickets in COMPLETED or SKIPPED states for those queues. |
+| FR-017 | The system shall provide operators an overview of their authorized queues and a view of WAITING tickets in those queues. A separate COMPLETED/SKIPPED history view is deferred by the scope of issue #12. |
 | FR-018 | Authorized branch staff shall be able to create, update, enable, and disable services offered by a branch. |
 | FR-019 | Authorized branch staff shall be able to manage service queues, counters, and operator-to-service assignments. |
 | FR-020 | A customer shall be able to cancel their own ticket while it is WAITING; the ticket shall then be CANCELLED. |
@@ -135,7 +135,7 @@ Cancellation is deferred.
 ### 8.2 Operator
 
 1. Authenticate.
-2. Open the operator dashboard: overview of authorized queues, WAITING queue tickets, and history of COMPLETED or SKIPPED tickets for authorized queues.
+2. Open the operator dashboard: overview of authorized queues, WAITING queue tickets, and the operator's current ticket.
 3. Call the next eligible waiting ticket. The system assigns it to the operator and moves it to PENDING atomically. The customer is notified after the call; whether this is a staff action or automated delivery, and via which channel, is undecided.
 4. When the customer arrives, start service; the ticket becomes OPERATING.
 5. Complete service; the ticket becomes COMPLETED. Alternatively, skip a called customer while the ticket is PENDING; the ticket becomes SKIPPED.
@@ -146,7 +146,7 @@ An operator must not process another operator's assigned ticket or hold two acti
 
 ### Sprint 1 baseline (proposed from the supplied Theme 9 example)
 
-The vertical slice covers authentication, logout, current identity and RBAC; customer service selection, queue join, and ticket view; operator overview, authorized waiting-ticket and history views, call-next, customer-notification step, start, complete, and skip; validation and PostgreSQL persistence; duplicate prevention, safe concurrent joins and claims; and lifecycle timestamps.
+The vertical slice covers authentication, logout, current identity and RBAC; customer service selection, queue join, and ticket view; operator overview, authorized waiting-ticket and current-ticket views, call-next, customer-notification step, start, complete, and skip; validation and PostgreSQL persistence; duplicate prevention, safe concurrent joins and claims; and lifecycle timestamps. A separate completed/skipped history report is deferred.
 
 ### Future sprints
 
@@ -168,7 +168,7 @@ Theme 9 identifies cancellation/no-show handling, multiple queues/counters, prio
 | D-010 | Performance, usability, and accessibility targets in NFR-003–005 are proposed. | Validate targets, test conditions, and any required standard with the team and official spec. | Requirements review. |
 | D-011 | Data retention, personal data fields, audit access, and deployment security policy are unspecified. | Minimize collected customer data and avoid claiming a compliance posture until requirements are known. | System design and team review. |
 | D-012 | The supplied journey diagram includes “Notify customer” after Call next but does not define whether this is a staff action or an automated message, nor a delivery channel. | Document it as a workflow step; do not assume a staff announcement or automated delivery channel. | Product/course review before feature contracts. |
-| D-013 | The supplied operator dashboard diagram includes a History view for COMPLETED and SKIPPED tickets. Its retention, filters, and pagination are unspecified. | Include a basic read-only history view in Sprint 1; keep analytics and extended audit history in future scope. | Feature-level design. |
+| D-013 | The supplied operator dashboard diagram includes a History view for COMPLETED and SKIPPED tickets. Its retention, filters, and pagination are unspecified; issue #12 excludes a separate history report. | Defer the history view to a later feature decision; keep analytics and extended audit history in future scope. | Feature-level design. |
 | D-014 | The group specification assigns themes by the final digit of a team member's student ID; the project request identifies Quevo as Theme 9. | Treat Theme 9 as the selected context for this baseline; the team must confirm its assignment eligibility before submission. | Team requirements review. |
 | D-015 | Theme 9 permits a public queue display with limited non-private status but does not require one. | No public display is in the Sprint 1 scope. If added later, show only approved non-private queue/ticket status and never customer identity or contact data. | Product/privacy review. |
 | D-016 | Theme 9 mentions a priority policy “if applicable.” | FIFO is selected in BR-001; no priority feature is planned unless the team approves a scope change. | Product review. |

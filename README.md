@@ -1,6 +1,6 @@
 # Quevo
 
-Quevo is a full-stack starter with a Go API, a Bun-managed TypeScript web app, PostgreSQL, and Playwright E2E tests.
+Quevo is a full-stack prototype with a Go API, a Bun-managed TypeScript web app, PostgreSQL, and Playwright E2E tests.
 
 ## Quick start
 
@@ -12,6 +12,16 @@ docker compose up --build
 
 Open the web app at [http://localhost:3000](http://localhost:3000). The API health endpoint is [http://localhost:8080/api/v1/health](http://localhost:8080/api/v1/health). API documentation is at [http://localhost:8080/swagger/](http://localhost:8080/swagger/), with the generated spec at [http://localhost:8080/openapi.json](http://localhost:8080/openapi.json). PostgreSQL is exposed on port `5432` with local-only development credentials configured in `compose.yaml`.
 
+Authentication uses the database but does not create its schema or demo accounts automatically. To prepare local demo sign-in, copy `apps/api/.env.example` to `apps/api/.env`, fill in the local database URL using the credentials in `compose.yaml`. Then run these commands from the repository root while Compose is running:
+
+```sh
+cd apps/api
+make migrate-up
+make seed-demo
+```
+
+Save the generated demo passwords from the private terminal. Rerunning the seed preserves existing passwords.
+
 Stop the foreground stack with `Ctrl+C`, or stop a detached stack with:
 
 ```sh
@@ -19,6 +29,8 @@ docker compose down
 ```
 
 To remove the local database volume as well, use `docker compose down -v`.
+
+See the [Lab 5 deployment guide](docs/labs/lab-05/deployment.md) for the environment variable inventory and release setup. Restart a standalone API after changing its `.env` so it picks up the new database URL.
 
 ## Start selected services
 
@@ -60,7 +72,7 @@ The web app calls the API through a TanStack server function, so the API address
 
 ## Product workflows
 
-Quevo supports customer queue joining and operator ticket processing. The user journey and ticket lifecycle are documented in [docs/requirements/workflows.md](docs/requirements/workflows.md). They describe intended behavior, not implemented features. The proposed system architecture, data model, API/UI conventions, session lifecycle, and deployment strategy are in [docs/design/system-sds.md](docs/design/system-sds.md). The requirements-to-feature-to-sprint matrix and official Theme 9 / Deliverable 1 crosswalk are in [docs/requirements/traceability.md](docs/requirements/traceability.md). The course milestones and proposed feature allocation are in [docs/sprints/plan.md](docs/sprints/plan.md). Issue effort weights and label conventions are in [docs/sprints/estimation.md](docs/sprints/estimation.md).
+Customers can sign in, select an active service, join its queue, recover active tickets, and view their own ticket status. Authorized operators can see assigned queues, call the next ticket, and start, complete, or skip tickets through the persisted queue workflow. The API enforces roles, queue access, ticket assignment, and valid transitions; PostgreSQL allocates queue numbers and records state changes transactionally. The user journey and ticket lifecycle are documented in [docs/requirements/workflows.md](docs/requirements/workflows.md); the system architecture and data model are in [docs/design/system-sds.md](docs/design/system-sds.md), and the sign-in/session contract is in [docs/design/authentication.md](docs/design/authentication.md). The requirements-to-feature-to-sprint matrix and official Theme 9 / Deliverable 1 crosswalk are in [docs/requirements/traceability.md](docs/requirements/traceability.md). The course milestones and proposed feature allocation are in [docs/sprints/plan.md](docs/sprints/plan.md). Issue effort weights and label conventions are in [docs/sprints/estimation.md](docs/sprints/estimation.md).
 
 ## Run locally
 
@@ -91,7 +103,7 @@ bun --bun run build
 
 ## Test
 
-The web app uses Bun for dependencies and the dev server. Vitest and Playwright require Node 24 (`.nvmrc`). Web unit and component tests use React Testing Library and MSW. Go unit tests use the standard library. The database integration and Playwright E2E suites start isolated PostgreSQL containers with Testcontainers. E2E starts the real Go API and web app; it does not mock the backend.
+The web app uses Bun for dependencies and the dev server. Vitest and Playwright require Node 24 (`.nvmrc`). Web unit and component tests use React Testing Library and MSW. Go unit tests use the standard library. The database integration and Playwright E2E suites start isolated PostgreSQL containers with Testcontainers. E2E starts the real Go API and web app, applies the real migrations and demo seed, and covers sign-in, service selection, queue joining, ticket reload and recovery, and duplicate-join rejection against PostgreSQL; it does not mock the backend.
 
 Install Playwright's Chromium browser once:
 
@@ -112,7 +124,7 @@ Run individual suites:
 ```sh
 cd apps/web && bun run test
 cd apps/api && go test ./...                 # unit and OpenAPI provider contract
-cd apps/api && go test -tags=integration ./internal/platform/database
+cd apps/api && go test -tags=integration ./...
 cd tests && bunx playwright test             # full stack with real PostgreSQL
 ```
 
@@ -130,7 +142,7 @@ The web check uses Biome through Bun. The Go check uses golangci-lint `v2.15.0` 
 
 ## API and generated types
 
-`GET /api/v1/health` returns `{"status":"healthy"}`. Swagger UI is served at `/swagger/`, and the generated OpenAPI 3.1 JSON is served at `/openapi.json`.
+`GET /api/v1/health` returns `{"status":"healthy"}`. The API also exposes `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, and `POST /api/v1/auth/logout`. Authentication requires the `users` and `sessions` migrations to be applied and demo accounts to be seeded; see [the local setup steps](apps/api/README.md#database-setup) and [docs/design/authentication.md](docs/design/authentication.md). Swagger UI is served at `/swagger/`, and the generated OpenAPI 3.1 JSON is served at `/openapi.json`.
 
 To regenerate after changing Go endpoint annotations or response types, run from the repository root:
 
@@ -139,4 +151,4 @@ cd apps/api && make generate-openapi
 cd ../web && bun install --frozen-lockfile && bun run generate:api
 ```
 
-`openapi-typescript` generates `apps/web/src/client/api/schema.d.ts`; `openapi-fetch` uses it for typed requests, and TanStack Query calls those requests through a TanStack Start server function. `kin-openapi` validates the generated API document and a real health response in Go tests. `DATABASE_URL` is optional for standalone API development; Compose sets it for the local stack.
+`openapi-typescript` generates `apps/web/src/client/api/schema.d.ts`; `openapi-fetch` uses it for typed requests, and TanStack Start server functions call the health and auth endpoints. `kin-openapi` validates the generated API document and health/auth provider responses in Go tests. `DATABASE_URL` is optional for standalone API development; Compose sets it for the local stack.

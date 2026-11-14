@@ -25,10 +25,10 @@ test-api:
 	cd apps/api && go test ./... && go vet ./...
 
 test-api-integration:
-	cd apps/api && go test -tags=integration ./internal/platform/database
+	cd apps/api && go test -tags=integration ./...
 
 test-contract:
-	cd apps/api && go test ./internal/app -run '^TestHealthProviderMatchesOpenAPI$$'
+	cd apps/api && go test ./internal/app -run '^Test(Health|Auth)ProviderMatchesOpenAPI$$'
 	cd apps/web && bun run check:api && bun run typecheck
 
 test-e2e:

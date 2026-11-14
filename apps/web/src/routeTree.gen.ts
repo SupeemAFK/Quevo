@@ -10,11 +10,30 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CustomerRouteImport } from './routes/customer'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as OperatorRouteImport } from './routes/operator'
 import { Route as HahaHelloRouteImport } from './routes/haha/hello'
+import { Route as TicketsTicketIdRouteImport } from './routes/tickets.$ticketId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomerRoute = CustomerRouteImport.update({
+  id: '/customer',
+  path: '/customer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OperatorRoute = OperatorRouteImport.update({
+  id: '/operator',
+  path: '/operator',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HahaHelloRoute = HahaHelloRouteImport.update({
@@ -22,31 +41,71 @@ const HahaHelloRoute = HahaHelloRouteImport.update({
   path: '/haha/hello',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TicketsTicketIdRoute = TicketsTicketIdRouteImport.update({
+  id: '/tickets/$ticketId',
+  path: '/tickets/$ticketId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/customer': typeof CustomerRoute
+  '/login': typeof LoginRoute
+  '/operator': typeof OperatorRoute
   '/haha/hello': typeof HahaHelloRoute
+  '/tickets/$ticketId': typeof TicketsTicketIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/customer': typeof CustomerRoute
+  '/login': typeof LoginRoute
+  '/operator': typeof OperatorRoute
   '/haha/hello': typeof HahaHelloRoute
+  '/tickets/$ticketId': typeof TicketsTicketIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/customer': typeof CustomerRoute
+  '/login': typeof LoginRoute
+  '/operator': typeof OperatorRoute
   '/haha/hello': typeof HahaHelloRoute
+  '/tickets/$ticketId': typeof TicketsTicketIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/haha/hello'
+  fullPaths:
+    | '/'
+    | '/customer'
+    | '/login'
+    | '/operator'
+    | '/haha/hello'
+    | '/tickets/$ticketId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/haha/hello'
-  id: '__root__' | '/' | '/haha/hello'
+  to:
+    | '/'
+    | '/customer'
+    | '/login'
+    | '/operator'
+    | '/haha/hello'
+    | '/tickets/$ticketId'
+  id:
+    | '__root__'
+    | '/'
+    | '/customer'
+    | '/login'
+    | '/operator'
+    | '/haha/hello'
+    | '/tickets/$ticketId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CustomerRoute: typeof CustomerRoute
+  LoginRoute: typeof LoginRoute
+  OperatorRoute: typeof OperatorRoute
   HahaHelloRoute: typeof HahaHelloRoute
+  TicketsTicketIdRoute: typeof TicketsTicketIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -58,6 +117,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/customer': {
+      id: '/customer'
+      path: '/customer'
+      fullPath: '/customer'
+      preLoaderRoute: typeof CustomerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/operator': {
+      id: '/operator'
+      path: '/operator'
+      fullPath: '/operator'
+      preLoaderRoute: typeof OperatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/haha/hello': {
       id: '/haha/hello'
       path: '/haha/hello'
@@ -65,12 +145,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HahaHelloRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tickets/$ticketId': {
+      id: '/tickets/$ticketId'
+      path: '/tickets/$ticketId'
+      fullPath: '/tickets/$ticketId'
+      preLoaderRoute: typeof TicketsTicketIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CustomerRoute: CustomerRoute,
+  LoginRoute: LoginRoute,
+  OperatorRoute: OperatorRoute,
   HahaHelloRoute: HahaHelloRoute,
+  TicketsTicketIdRoute: TicketsTicketIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

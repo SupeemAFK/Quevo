@@ -34,16 +34,36 @@ export default async function globalSetup() {
     stopPostgres = () => postgres.stop()
     databaseURL = postgres.getConnectionUri()
 
+    const apiEnv = {
+      ...process.env,
+      PORT: '8080',
+      DATABASE_URL: databaseURL,
+    }
+
+    execFileSync('go', ['run', './cmd/migrate'], {
+      cwd: apiRoot,
+      env: apiEnv,
+      stdio: 'inherit',
+    })
+    const seedOutput = execFileSync('go', ['run', './cmd/seed', '-allow-piped-output'], {
+      cwd: apiRoot,
+      env: apiEnv,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'inherit'],
+    })
+    const credentials = JSON.parse(seedOutput)
+    const customerPassword = credentials['customer@quevo.local']
+    const operatorPassword = credentials['operator@quevo.local']
+    if (typeof customerPassword !== 'string' || typeof operatorPassword !== 'string') {
+      throw new Error('Seed did not create both demo accounts')
+    }
+
     execFileSync('go', ['build', '-o', apiBinary, './cmd/server'], {
       cwd: apiRoot,
       stdio: 'inherit',
     })
 
-    api = startProcess(apiBinary, [], {
-      ...process.env,
-      PORT: '8080',
-      DATABASE_URL: databaseURL,
-    }, apiRoot)
+    api = startProcess(apiBinary, [], apiEnv, apiRoot)
     await waitFor('http://127.0.0.1:8080/api/v1/health', api, 'Go API')
 
     web = startProcess(
@@ -56,6 +76,8 @@ export default async function globalSetup() {
       webRoot,
     )
     await waitFor('http://127.0.0.1:3000', web, 'web app')
+    process.env.QUEVO_E2E_CUSTOMER_PASSWORD = customerPassword
+    process.env.QUEVO_E2E_OPERATOR_PASSWORD = operatorPassword
   } catch (error) {
     await cleanup()
     throw error
