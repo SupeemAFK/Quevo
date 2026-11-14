@@ -61,23 +61,24 @@ func run(allowPipedOutput bool) error {
 	defer cancel()
 	created, err := database.SeedDemo(ctx, db, database.SeedCredentials{
 		CustomerPasswordHash: string(customerHash), OperatorPasswordHash: string(operatorHash),
+	}, func(created database.SeededAccounts) error {
+		credentials := make(map[string]string, 2)
+		if created.Customer {
+			credentials[database.DemoCustomerEmail] = customerPassword
+		}
+		if created.Operator {
+			credentials[database.DemoOperatorEmail] = operatorPassword
+		}
+		if err := json.NewEncoder(os.Stdout).Encode(credentials); err != nil {
+			return fmt.Errorf("write generated credentials: %w", err)
+		}
+		return nil
 	})
 	if err != nil {
 		return err
 	}
 	if !created.Customer && !created.Operator {
 		fmt.Fprintln(os.Stderr, "Demo data seeded. Existing demo passwords are unchanged.")
-		return nil
-	}
-	credentials := make(map[string]string, 2)
-	if created.Customer {
-		credentials[database.DemoCustomerEmail] = customerPassword
-	}
-	if created.Operator {
-		credentials[database.DemoOperatorEmail] = operatorPassword
-	}
-	if err := json.NewEncoder(os.Stdout).Encode(credentials); err != nil {
-		return fmt.Errorf("demo accounts were created but writing their credentials failed: %w", err)
 	}
 	return nil
 }

@@ -28,8 +28,9 @@ type SeededAccounts struct {
 }
 
 // SeedDemo inserts synthetic records and reports which users were created.
-// Existing credentials are preserved.
-func SeedDemo(ctx context.Context, db *gorm.DB, credentials SeedCredentials) (SeededAccounts, error) {
+// Existing credentials are preserved. If provided, deliver runs before commit
+// so a delivery error rolls back newly created accounts.
+func SeedDemo(ctx context.Context, db *gorm.DB, credentials SeedCredentials, deliver func(SeededAccounts) error) (SeededAccounts, error) {
 	if credentials.CustomerPasswordHash == "" || credentials.OperatorPasswordHash == "" {
 		return SeededAccounts{}, fmt.Errorf("both seeded account password hashes are required")
 	}
@@ -61,6 +62,9 @@ func SeedDemo(ctx context.Context, db *gorm.DB, credentials SeedCredentials) (Se
 			if statement.created != nil {
 				*statement.created = result.RowsAffected == 1
 			}
+		}
+		if deliver != nil && (accounts.Customer || accounts.Operator) {
+			return deliver(accounts)
 		}
 		return nil
 	}); err != nil {

@@ -3,6 +3,8 @@
 package queue
 
 import (
+	"errors"
+	"io"
 	"os"
 	"strings"
 	"sync"
@@ -34,10 +36,23 @@ func TestMigrationsAndSeedAreIdempotent(t *testing.T) {
 	if repeatedMigrationCount != migrationCount {
 		t.Fatalf("migration records after repeat = %d, want %d", repeatedMigrationCount, migrationCount)
 	}
+	_, err := database.SeedDemo(ctx, gormDB, database.SeedCredentials{
+		CustomerPasswordHash: "undelivered-customer-hash",
+		OperatorPasswordHash: "undelivered-operator-hash",
+	}, func(created database.SeededAccounts) error {
+		if !created.Customer || !created.Operator {
+			t.Error("credential delivery did not receive both new demo accounts")
+		}
+		return io.ErrClosedPipe
+	})
+	if !errors.Is(err, io.ErrClosedPipe) {
+		t.Fatalf("seed with failed delivery = %v, want closed pipe", err)
+	}
+
 	created, err := database.SeedDemo(ctx, gormDB, database.SeedCredentials{
 		CustomerPasswordHash: "test-customer-hash",
 		OperatorPasswordHash: "test-operator-hash",
-	})
+	}, nil)
 	if err != nil {
 		t.Fatalf("seed demo data: %v", err)
 	}
@@ -47,7 +62,7 @@ func TestMigrationsAndSeedAreIdempotent(t *testing.T) {
 	created, err = database.SeedDemo(ctx, gormDB, database.SeedCredentials{
 		CustomerPasswordHash: "new-customer-hash",
 		OperatorPasswordHash: "new-operator-hash",
-	})
+	}, nil)
 	if err != nil {
 		t.Fatalf("seed demo data a second time: %v", err)
 	}

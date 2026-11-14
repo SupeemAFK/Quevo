@@ -73,7 +73,7 @@ func newSeededPostgresDB(t *testing.T) (context.Context, *gorm.DB, *sql.DB) {
 	if _, err := database.SeedDemo(ctx, gormDB, database.SeedCredentials{
 		CustomerPasswordHash: "test-customer-hash",
 		OperatorPasswordHash: "test-operator-hash",
-	}); err != nil {
+	}, nil); err != nil {
 		t.Fatalf("seed PostgreSQL fixtures: %v", err)
 	}
 	return ctx, gormDB, db
