@@ -23,6 +23,5 @@ func RegisterRoutes(routes gin.IRoutes) {
 // @Success 200 {object} Response
 // @Router /health [get]
 func health(c *gin.Context) {
-	c.Header("X-Quevo-Service", "quevo-api")
-	c.JSON(http.StatusOK, Response{Status: "healthy"})
+	c.JSON(http.StatusOK, Response{Status: "healthy!"})
 }
