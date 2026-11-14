@@ -8,9 +8,9 @@ The Student Guide packages its web app and API together. Quevo already has separ
 
 | GCP resource | Value |
 | --- | --- |
-| Project ID and region | Record the shared project ID and chosen region before first deployment. |
-| Cloud Run web and API services | Record names and service URLs at first deployment. |
-| Artifact Registry repository | Record the repository name and region at first deployment. |
+| Project ID and region | `cpe334-student-project`, `asia-southeast1` |
+| Cloud Run web, API, and migration job | `quevo-web`, `quevo-api`, `quevo-migrate`; the workflow records the web URL and deployed revisions in its run summary. |
+| Artifact Registry repository | `asia-southeast1-docker.pkg.dev/cpe334-student-project/quevo` |
 | Cloud SQL instance and database | Record resource names at first deployment. |
 | Runtime secrets | Record Secret Manager resource names and consumers. |
 
@@ -66,4 +66,19 @@ Run migrations as a separate release step before updating the API. Seed the lab 
 
 ## Release procedure
 
-Feature and fix branches enter `staging` through teammate-reviewed PRs. A release PR promotes `staging` to `main` after the required CI checks pass. The planned deploy workflow releases the accepted commit from `main`. Record the pipeline run, image identifier, and serving Cloud Run revisions alongside the commit SHA. Fill in the workflow name and exact revision lookup when the pipeline is implemented in [#37](https://github.com/SupeemAFK/Quevo/issues/37).
+Feature and fix branches enter `staging` through teammate-reviewed PRs. A release PR promotes `staging` to `main` after the required CI checks pass. Merging that release PR pushes a commit to `main` and triggers `.github/workflows/deploy.yml`; changes pushed to feature branches or merged only into `staging` do not deploy.
+
+The workflow runs the reusable test workflow first. It then builds the API and web production images, pushes them to Artifact Registry tagged with the full commit SHA, resolves their immutable digests, updates and executes the `quevo-migrate` Cloud Run job, and updates `quevo-api` and `quevo-web` to those digests. It waits for the migration job and verifies that the latest ready revisions use the expected images and that the public web URL responds.
+
+For each release, open the `deploy` workflow run for the merge commit in GitHub Actions. Its run summary records the commit SHA, public URL, image digests, and Cloud Run revision names. To check the running revision independently, run these commands with `GCP_PROJECT_ID` and `GCP_REGION` set to the values in the GitHub `demo` environment:
+
+```sh
+gcloud run services describe quevo-api \
+  --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
+  --format='value(status.latestReadyRevisionName)'
+gcloud run services describe quevo-web \
+  --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
+  --format='value(status.latestReadyRevisionName)'
+```
+
+Record the release PR, `deploy` run, deployed commit SHA, image digests, and revisions in the Lab 5 evidence index. Keep issue [#37](https://github.com/SupeemAFK/Quevo/issues/37) open until a visible change has gone through the complete `staging` to `main` release flow and the live deployment evidence is recorded.
