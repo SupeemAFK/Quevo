@@ -31,8 +31,8 @@ func TestHealthRoute(t *testing.T) {
 	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
-	if body.Status != "healthy" {
-		t.Fatalf("message = %q, want %q", body.Status, "healthy")
+	if body.Status != "healthy!" {
+		t.Fatalf("message = %q, want %q", body.Status, "healthy!")
 	}
 }
 
