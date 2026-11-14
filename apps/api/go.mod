@@ -12,6 +12,7 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.45.0
 	go.uber.org/zap v1.28.0
 	golang.org/x/crypto v0.58.0
+	golang.org/x/term v0.47.0
 	gorm.io/driver/postgres v1.6.3
 	gorm.io/gorm v1.31.2
 )

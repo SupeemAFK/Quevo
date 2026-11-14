@@ -17,8 +17,6 @@ type Config struct {
 	DBMaxOpenConns    int
 	DBConnMaxLifetime time.Duration
 	SessionTTL        time.Duration
-	CustomerPassword  string
-	OperatorPassword  string
 }
 
 func Load() (Config, error) {
@@ -39,8 +37,6 @@ func Load() (Config, error) {
 		DBConnMaxLifetime: 30 * time.Minute,
 		SessionTTL:        12 * time.Hour,
 		DatabaseURL:       strings.TrimSpace(get("DATABASE_URL")),
-		CustomerPassword:  get("QUEVO_CUSTOMER_PASSWORD"),
-		OperatorPassword:  get("QUEVO_OPERATOR_PASSWORD"),
 	}
 
 	if cfg.Port, err = intFromEnv(get, "PORT", cfg.Port); err != nil {

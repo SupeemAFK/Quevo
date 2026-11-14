@@ -12,13 +12,15 @@ docker compose up --build
 
 Open the web app at [http://localhost:3000](http://localhost:3000). The API health endpoint is [http://localhost:8080/api/v1/health](http://localhost:8080/api/v1/health). API documentation is at [http://localhost:8080/swagger/](http://localhost:8080/swagger/), with the generated spec at [http://localhost:8080/openapi.json](http://localhost:8080/openapi.json). PostgreSQL is exposed on port `5432` with local-only development credentials configured in `compose.yaml`.
 
-Authentication uses the database but does not create its schema or demo accounts automatically. To prepare local demo sign-in, copy `apps/api/.env.example` to `apps/api/.env`, fill in the local database URL using the credentials in `compose.yaml`, and set the two demo passwords. Then run these commands from the repository root while Compose is running:
+Authentication uses the database but does not create its schema or demo accounts automatically. To prepare local demo sign-in, copy `apps/api/.env.example` to `apps/api/.env`, fill in the local database URL using the credentials in `compose.yaml`. Then run these commands from the repository root while Compose is running:
 
 ```sh
 cd apps/api
 make migrate-up
 make seed-demo
 ```
+
+Save the generated demo passwords from the private terminal. Rerunning the seed preserves existing passwords.
 
 Stop the foreground stack with `Ctrl+C`, or stop a detached stack with:
 

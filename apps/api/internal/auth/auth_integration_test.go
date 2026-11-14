@@ -69,10 +69,10 @@ func TestAuthFlowWithPostgres(t *testing.T) {
 	if err != nil {
 		t.Fatalf("hash test password: %v", err)
 	}
-	if err := database.SeedDemo(ctx, db, database.SeedCredentials{
+	if _, err := database.SeedDemo(ctx, db, database.SeedCredentials{
 		CustomerPasswordHash: string(passwordHash),
 		OperatorPasswordHash: string(passwordHash),
-	}); err != nil {
+	}, nil); err != nil {
 		t.Fatalf("seed demo users: %v", err)
 	}
 	assertGORMAuthLogsAreSafe(t, ctx, db)

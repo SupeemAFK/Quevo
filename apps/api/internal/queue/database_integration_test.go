@@ -3,6 +3,8 @@
 package queue
 
 import (
+	"errors"
+	"io"
 	"os"
 	"strings"
 	"sync"
@@ -34,17 +36,48 @@ func TestMigrationsAndSeedAreIdempotent(t *testing.T) {
 	if repeatedMigrationCount != migrationCount {
 		t.Fatalf("migration records after repeat = %d, want %d", repeatedMigrationCount, migrationCount)
 	}
-	if err := database.SeedDemo(ctx, gormDB, database.SeedCredentials{
+	_, err := database.SeedDemo(ctx, gormDB, database.SeedCredentials{
+		CustomerPasswordHash: "undelivered-customer-hash",
+		OperatorPasswordHash: "undelivered-operator-hash",
+	}, func(created database.SeededAccounts) error {
+		if !created.Customer || !created.Operator {
+			t.Error("credential delivery did not receive both new demo accounts")
+		}
+		return io.ErrClosedPipe
+	})
+	if !errors.Is(err, io.ErrClosedPipe) {
+		t.Fatalf("seed with failed delivery = %v, want closed pipe", err)
+	}
+
+	created, err := database.SeedDemo(ctx, gormDB, database.SeedCredentials{
 		CustomerPasswordHash: "test-customer-hash",
 		OperatorPasswordHash: "test-operator-hash",
-	}); err != nil {
+	}, nil)
+	if err != nil {
 		t.Fatalf("seed demo data: %v", err)
 	}
-	if err := database.SeedDemo(ctx, gormDB, database.SeedCredentials{
-		CustomerPasswordHash: "test-customer-hash",
-		OperatorPasswordHash: "test-operator-hash",
-	}); err != nil {
+	if !created.Customer || !created.Operator {
+		t.Fatal("first seed did not report both new demo accounts")
+	}
+	created, err = database.SeedDemo(ctx, gormDB, database.SeedCredentials{
+		CustomerPasswordHash: "new-customer-hash",
+		OperatorPasswordHash: "new-operator-hash",
+	}, nil)
+	if err != nil {
 		t.Fatalf("seed demo data a second time: %v", err)
+	}
+	if created.Customer || created.Operator {
+		t.Fatal("second seed reported an existing demo account as new")
+	}
+	var unchangedPasswords int
+	if err := db.QueryRowContext(ctx, `SELECT count(*) FROM users WHERE
+		(id = $1 AND password_hash = 'test-customer-hash') OR
+		(id = $2 AND password_hash = 'test-operator-hash')`,
+		database.DemoCustomerID, database.DemoOperatorID).Scan(&unchangedPasswords); err != nil {
+		t.Fatalf("check preserved demo passwords: %v", err)
+	}
+	if unchangedPasswords != 2 {
+		t.Fatal("repeated seed changed a demo password")
 	}
 
 	for _, table := range []struct {

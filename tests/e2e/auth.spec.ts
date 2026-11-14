@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-const customerPassword = 'quevo-e2e-customer-password'
+const customerPassword = process.env.QUEVO_E2E_CUSTOMER_PASSWORD!
 
 test('customer can sign in and sign out through an HttpOnly session', async ({ context, page }) => {
   await page.goto('/login')

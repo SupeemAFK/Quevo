@@ -20,12 +20,10 @@ Apply versioned migrations explicitly, then seed synthetic demo accounts. Run fr
 
 ```sh
 make migrate-up
-export QUEVO_CUSTOMER_PASSWORD='choose-a-local-demo-password'
-export QUEVO_OPERATOR_PASSWORD='choose-another-local-demo-password'
 make seed-demo
 ```
 
-The seed creates one UTC demo branch, one active service, a Customer, an Operator, and the operator's service authorization. It is safe to rerun. Passwords are supplied through `.env` or the environment, hashed with bcrypt, and never printed or committed. Demo logins are `customer@quevo.local` and `operator@quevo.local`. Do not use these local accounts in a deployed environment.
+The seed creates one UTC demo branch, one active service, a customer, an operator, and the operator's service authorization. It generates a random password for each new account and stores the bcrypt hash in PostgreSQL. Run it in a private terminal and save the generated login details when they appear. Rerunning the seed preserves existing passwords.
 
 ## Logging
 
@@ -41,8 +39,6 @@ Zap writes structured JSON for application and HTTP request logs. Request logs i
 | `DB_MAX_OPEN_CONNS` | `10` | Maximum open database connections |
 | `DB_CONN_MAX_LIFETIME` | `30m` | Maximum lifetime for a pooled database connection |
 | `SESSION_TTL` | `12h` | Lifetime for newly created sessions |
-| `QUEVO_CUSTOMER_PASSWORD` | unset | Local demo customer password used by `make seed-demo` |
-| `QUEVO_OPERATOR_PASSWORD` | unset | Local demo operator password used by `make seed-demo` |
 
 ## Endpoint
 
