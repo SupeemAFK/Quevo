@@ -305,8 +305,6 @@ export interface components {
         /** @enum {string} */
         "auth.Role": "CUSTOMER" | "OPERATOR";
         "health.Response": {
-            /** @example quevo-api */
-            service: string;
             /** @example healthy */
             status: string;
         };

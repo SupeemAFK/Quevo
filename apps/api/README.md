@@ -50,7 +50,7 @@ curl http://localhost:8080/openapi.json
 Response:
 
 ```json
-{"status":"healthy","service":"quevo-api"}
+{"status":"healthy"}
 ```
 
 ## Check and build

@@ -26,17 +26,13 @@ func TestHealthRoute(t *testing.T) {
 	}
 
 	var body struct {
-		Status  string `json:"status"`
-		Service string `json:"service"`
+		Status string `json:"status"`
 	}
 	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
 	if body.Status != "healthy" {
-		t.Fatalf("status = %q, want %q", body.Status, "healthy")
-	}
-	if body.Service != "quevo-api" {
-		t.Fatalf("service = %q, want %q", body.Service, "quevo-api")
+		t.Fatalf("message = %q, want %q", body.Status, "healthy")
 	}
 }
 

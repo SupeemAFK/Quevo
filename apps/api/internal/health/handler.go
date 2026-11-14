@@ -7,8 +7,7 @@ import (
 )
 
 type Response struct {
-	Status  string `json:"status" binding:"required" example:"healthy"`
-	Service string `json:"service" binding:"required" example:"quevo-api"`
+	Status string `json:"status" binding:"required" example:"healthy"`
 }
 
 func RegisterRoutes(routes gin.IRoutes) {
@@ -24,5 +23,6 @@ func RegisterRoutes(routes gin.IRoutes) {
 // @Success 200 {object} Response
 // @Router /health [get]
 func health(c *gin.Context) {
-	c.JSON(http.StatusOK, Response{Status: "healthy", Service: "quevo-api"})
+	c.Header("X-Quevo-Service", "quevo-api")
+	c.JSON(http.StatusOK, Response{Status: "healthy"})
 }

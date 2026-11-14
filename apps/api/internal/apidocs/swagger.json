@@ -107,17 +107,12 @@
             },
             "health.Response": {
                 "properties": {
-                    "service": {
-                        "example": "quevo-api",
-                        "type": "string"
-                    },
                     "status": {
                         "example": "healthy",
                         "type": "string"
                     }
                 },
                 "required": [
-                    "service",
                     "status"
                 ],
                 "type": "object"
