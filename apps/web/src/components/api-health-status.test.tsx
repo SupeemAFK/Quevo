@@ -4,7 +4,7 @@ import { ApiHealthStatus } from './api-health-status'
 
 describe('ApiHealthStatus', () => {
   it('shows the API status', () => {
-    render(<ApiHealthStatus health={{ status: 'healthy' }} />)
+    render(<ApiHealthStatus health={{ status: 'healthy', service: 'quevo-api' }} />)
 
     expect(screen.getByRole('status')).toHaveTextContent('API status: healthy')
   })
