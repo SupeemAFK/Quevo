@@ -151,26 +151,8 @@ jobs:
             --wait \
             --quiet
 
-      - name: Recheck main before service updates
-        if: steps.migration_freshness.outputs.deploy == 'true'
-        id: service_freshness
-        shell: bash
-        run: |
-          set -euo pipefail
-          latest_main_sha="$(git ls-remote origin refs/heads/main | cut -f1)"
-          if [[ -z "$latest_main_sha" ]]; then
-            echo "Could not read the latest main commit" >&2
-            exit 1
-          fi
-          if [[ "$latest_main_sha" == "$GITHUB_SHA" ]]; then
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "deploy=false" >> "$GITHUB_OUTPUT"
-            echo "Skipping service updates for superseded commit $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
-          fi
-
       - name: Deploy API and web images
-        if: steps.service_freshness.outputs.deploy == 'true'
+        if: steps.migration_freshness.outputs.deploy == 'true'
         env:
           API_IMAGE_DIGEST: ${{ steps.images.outputs.api_image }}
           WEB_IMAGE_DIGEST: ${{ steps.images.outputs.web_image }}
@@ -193,7 +175,7 @@ jobs:
             --quiet
 
       - name: Verify public URL, images, and production traffic
-        if: steps.service_freshness.outputs.deploy == 'true'
+        if: steps.migration_freshness.outputs.deploy == 'true'
         env:
           API_IMAGE_DIGEST: ${{ steps.images.outputs.api_image }}
           WEB_IMAGE_DIGEST: ${{ steps.images.outputs.web_image }}
