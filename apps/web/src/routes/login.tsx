@@ -23,7 +23,7 @@ function LoginPage() {
         <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Quevo account
         </p>
-        <h1 className="text-3xl font-semibold tracking-tight">Sign in</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Sign in to Quevo</h1>
         <p className="mb-7 mt-2 text-sm text-muted-foreground">
           Use your seeded customer or operator account.
         </p>
