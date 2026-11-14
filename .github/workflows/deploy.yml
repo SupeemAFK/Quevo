@@ -1,0 +1,246 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  release_checks:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: Build and deploy release
+    needs: release_checks
+    runs-on: ubuntu-latest
+    environment: demo
+    concurrency:
+      group: quevo-demo-cloud-run
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      WIF_PROVIDER: ${{ vars.WIF_PROVIDER }}
+      WIF_SERVICE_ACCOUNT: ${{ vars.WIF_SERVICE_ACCOUNT }}
+      API_IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/quevo/api
+      WEB_IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/quevo/web
+
+    steps:
+      - name: Check out released commit
+        uses: actions/checkout@v4
+
+      - name: Check whether this commit is still latest on main
+        id: freshness
+        shell: bash
+        run: |
+          set -euo pipefail
+          latest_main_sha="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [[ -z "$latest_main_sha" ]]; then
+            echo "Could not read the latest main commit" >&2
+            exit 1
+          fi
+          if [[ "$latest_main_sha" == "$GITHUB_SHA" ]]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "## Deployment skipped"
+              echo "Commit \`$GITHUB_SHA\` was superseded by \`$latest_main_sha\` on main."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Check deployment configuration
+        if: steps.freshness.outputs.deploy == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION WIF_PROVIDER WIF_SERVICE_ACCOUNT; do
+            if [[ -z "${!name}" ]]; then
+              echo "Missing GitHub environment variable: $name" >&2
+              exit 1
+            fi
+          done
+
+      - name: Authenticate to Google Cloud with WIF
+        if: steps.freshness.outputs.deploy == 'true'
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Google Cloud SDK
+        if: steps.freshness.outputs.deploy == 'true'
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          version: ">= 363.0.0"
+
+      - name: Configure Artifact Registry Docker access
+        if: steps.freshness.outputs.deploy == 'true'
+        run: gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+
+      - name: Build, push, and resolve immutable image digests
+        if: steps.freshness.outputs.deploy == 'true'
+        id: images
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          docker build --platform linux/amd64 --target production \
+            --tag "${API_IMAGE}:${GITHUB_SHA}" apps/api
+          docker build --platform linux/amd64 --target production \
+            --tag "${WEB_IMAGE}:${GITHUB_SHA}" apps/web
+
+          docker push "${API_IMAGE}:${GITHUB_SHA}"
+          docker push "${WEB_IMAGE}:${GITHUB_SHA}"
+
+          api_digest="$(gcloud artifacts docker images describe "${API_IMAGE}:${GITHUB_SHA}" \
+            --project "$GCP_PROJECT_ID" --format='value(image_summary.digest)')"
+          web_digest="$(gcloud artifacts docker images describe "${WEB_IMAGE}:${GITHUB_SHA}" \
+            --project "$GCP_PROJECT_ID" --format='value(image_summary.digest)')"
+
+          [[ "$api_digest" =~ ^sha256:[a-f0-9]{64}$ ]] || {
+            echo "Could not resolve the API image digest" >&2
+            exit 1
+          }
+          [[ "$web_digest" =~ ^sha256:[a-f0-9]{64}$ ]] || {
+            echo "Could not resolve the web image digest" >&2
+            exit 1
+          }
+
+          echo "api_image=${API_IMAGE}@${api_digest}" >> "$GITHUB_OUTPUT"
+          echo "web_image=${WEB_IMAGE}@${web_digest}" >> "$GITHUB_OUTPUT"
+
+      - name: Recheck main before migrations
+        if: steps.freshness.outputs.deploy == 'true'
+        id: migration_freshness
+        shell: bash
+        run: |
+          set -euo pipefail
+          latest_main_sha="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [[ -z "$latest_main_sha" ]]; then
+            echo "Could not read the latest main commit" >&2
+            exit 1
+          fi
+          if [[ "$latest_main_sha" == "$GITHUB_SHA" ]]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping migrations for superseded commit $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Update and run database migrations
+        if: steps.migration_freshness.outputs.deploy == 'true'
+        env:
+          API_IMAGE_DIGEST: ${{ steps.images.outputs.api_image }}
+        run: |
+          gcloud run jobs update quevo-migrate \
+            --image "$API_IMAGE_DIGEST" \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --quiet
+          gcloud run jobs execute quevo-migrate \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --wait \
+            --quiet
+
+      - name: Deploy API and web images
+        if: steps.migration_freshness.outputs.deploy == 'true'
+        env:
+          API_IMAGE_DIGEST: ${{ steps.images.outputs.api_image }}
+          WEB_IMAGE_DIGEST: ${{ steps.images.outputs.web_image }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          revision_suffix="sha-${GITHUB_SHA:0:12}-a${GITHUB_RUN_ATTEMPT}"
+
+          gcloud run services update quevo-api \
+            --image "$API_IMAGE_DIGEST" \
+            --revision-suffix "$revision_suffix" \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --quiet
+          gcloud run services update quevo-web \
+            --image "$WEB_IMAGE_DIGEST" \
+            --revision-suffix "$revision_suffix" \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --quiet
+
+      - name: Verify public URL, images, and production traffic
+        if: steps.migration_freshness.outputs.deploy == 'true'
+        env:
+          API_IMAGE_DIGEST: ${{ steps.images.outputs.api_image }}
+          WEB_IMAGE_DIGEST: ${{ steps.images.outputs.web_image }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          web_url="$(gcloud run services describe quevo-web \
+            --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
+            --format='value(status.url)')"
+          test -n "$web_url"
+          curl --fail --silent --show-error --retry 10 --retry-all-errors \
+            --retry-delay 5 --output /dev/null "$web_url"
+
+          api_revision="$(gcloud run services describe quevo-api \
+            --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
+            --format='value(status.latestReadyRevisionName)')"
+          web_revision="$(gcloud run services describe quevo-web \
+            --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
+            --format='value(status.latestReadyRevisionName)')"
+          api_revision_image="$(gcloud run revisions describe "$api_revision" \
+            --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
+            --format='value(spec.containers[0].image)')"
+          web_revision_image="$(gcloud run revisions describe "$web_revision" \
+            --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
+            --format='value(spec.containers[0].image)')"
+
+          [[ "$api_revision_image" == "$API_IMAGE_DIGEST" ]] || {
+            echo "API revision image does not match the released digest" >&2
+            exit 1
+          }
+          [[ "$web_revision_image" == "$WEB_IMAGE_DIGEST" ]] || {
+            echo "Web revision image does not match the released digest" >&2
+            exit 1
+          }
+
+          verify_full_traffic_to_revision() {
+            local service="$1"
+            local revision="$2"
+            local service_json
+            service_json="$(gcloud run services describe "$service" \
+              --project "$GCP_PROJECT_ID" --region "$GCP_REGION" --format=json)"
+
+            jq -e --arg revision "$revision" '
+              [.status.traffic[]? | select((.percent // 0) > 0)] as $active_routes |
+              ($active_routes | length == 1) and
+              ($active_routes[0].percent == 100) and
+              (($active_routes[0].revisionName == $revision) or
+                ($active_routes[0].latestRevision == true))
+            ' <<< "$service_json" >/dev/null || {
+              echo "$service is not routing 100% of production traffic to $revision" >&2
+              jq -c '.status.traffic' <<< "$service_json" >&2
+              return 1
+            }
+          }
+
+          verify_full_traffic_to_revision quevo-api "$api_revision"
+          verify_full_traffic_to_revision quevo-web "$web_revision"
+
+          {
+            echo "## Quevo deployment"
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Public URL: $web_url"
+            echo "- API image: \`$API_IMAGE_DIGEST\`"
+            echo "- API revision: \`$api_revision\` (100% production traffic)"
+            echo "- Web image: \`$WEB_IMAGE_DIGEST\`"
+            echo "- Web revision: \`$web_revision\` (100% production traffic)"
+          } >> "$GITHUB_STEP_SUMMARY"
