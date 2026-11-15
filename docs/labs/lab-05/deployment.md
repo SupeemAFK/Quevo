@@ -1,5 +1,7 @@
 # Lab 5 deployment guide
 
+See the [Lab 5 evidence index](evidence.md) for the verified release, linked checks, and handoff.
+
 ## Stack
 
 Quevo uses TanStack Start with a Node.js production runtime for the web app, a Go/Gin API, and PostgreSQL. The web server calls the API through TanStack server functions. The browser connects to the web app.

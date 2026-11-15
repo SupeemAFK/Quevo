@@ -12,15 +12,14 @@ docker compose up --build
 
 Open the web app at [http://localhost:3000](http://localhost:3000). The API health endpoint is [http://localhost:8080/api/v1/health](http://localhost:8080/api/v1/health). API documentation is at [http://localhost:8080/swagger/](http://localhost:8080/swagger/), with the generated spec at [http://localhost:8080/openapi.json](http://localhost:8080/openapi.json). PostgreSQL is exposed on port `5432` with local-only development credentials configured in `compose.yaml`.
 
-Authentication uses the database but does not create its schema or demo accounts automatically. To prepare local demo sign-in, copy `apps/api/.env.example` to `apps/api/.env`, fill in the local database URL using the credentials in `compose.yaml`. Then run these commands from the repository root while Compose is running:
+The API uses explicit migrations and a separate demo seed. With Compose running, open another terminal at the repository root:
 
 ```sh
-cd apps/api
-make migrate-up
-make seed-demo
+docker compose exec api go run ./cmd/migrate
+docker compose exec api go run ./cmd/seed
 ```
 
-Save the generated demo passwords from the private terminal. Rerunning the seed preserves existing passwords.
+Sign in with `customer@quevo.local` or `operator@quevo.local` and use the generated passwords shown in your terminal. Rerunning the seed preserves existing passwords. For standalone API setup, use the [development guide](docs/development.md).
 
 Stop the foreground stack with `Ctrl+C`, or stop a detached stack with:
 
@@ -73,6 +72,16 @@ The web app calls the API through a TanStack server function, so the API address
 ## Product workflows
 
 Customers can sign in, select an active service, join its queue, recover active tickets, and view their own ticket status. Authorized operators can see assigned queues, call the next ticket, and start, complete, or skip tickets through the persisted queue workflow. The API enforces roles, queue access, ticket assignment, and valid transitions; PostgreSQL allocates queue numbers and records state changes transactionally. The user journey and ticket lifecycle are documented in [docs/requirements/workflows.md](docs/requirements/workflows.md); the system architecture and data model are in [docs/design/system-sds.md](docs/design/system-sds.md), and the sign-in/session contract is in [docs/design/authentication.md](docs/design/authentication.md). The requirements-to-feature-to-sprint matrix and official Theme 9 / Deliverable 1 crosswalk are in [docs/requirements/traceability.md](docs/requirements/traceability.md). The course milestones and proposed feature allocation are in [docs/sprints/plan.md](docs/sprints/plan.md). Issue effort weights and label conventions are in [docs/sprints/estimation.md](docs/sprints/estimation.md).
+
+## Documentation and delivery evidence
+
+| Topic | Reference |
+| --- | --- |
+| Requirements and MVP | [SRS](docs/requirements/srs.md), [feature inventory](docs/requirements/features.md), [traceability](docs/requirements/traceability.md), and [user journeys](docs/requirements/workflows.md) |
+| Architecture and data | [System design and ER diagram](docs/design/system-sds.md), [Sprint 1 UML sequences](docs/design/sprint-1-sequences.md), and [authentication design](docs/design/authentication.md) |
+| Sprint 1 | [Release, acceptance tests, and PR evidence](docs/sprints/sprint-1.md), [three-sprint plan](docs/sprints/plan.md), and [workflow labels and effort weights](docs/sprints/estimation.md) |
+| Lab 5 | [Deployment guide](docs/labs/lab-05/deployment.md) and [evidence index](docs/labs/lab-05/evidence.md) |
+| Team workflow | [Quevo board](https://github.com/users/SupeemAFK/projects/14/views/1) and [documentation release PR #53](https://github.com/SupeemAFK/Quevo/pull/53) |
 
 ## Run locally
 
@@ -142,7 +151,7 @@ The web check uses Biome through Bun. The Go check uses golangci-lint `v2.15.0` 
 
 ## API and generated types
 
-`GET /api/v1/health` returns `{"status":"healthy"}`. The API also exposes `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, and `POST /api/v1/auth/logout`. Authentication requires the `users` and `sessions` migrations to be applied and demo accounts to be seeded; see [the local setup steps](apps/api/README.md#database-setup) and [docs/design/authentication.md](docs/design/authentication.md). Swagger UI is served at `/swagger/`, and the generated OpenAPI 3.1 JSON is served at `/openapi.json`.
+`GET /api/v1/health` returns `{"status":"healthy!"}`. The API also exposes `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, and `POST /api/v1/auth/logout`. Authentication requires the `users` and `sessions` migrations to be applied and demo accounts to be seeded; see [the local setup steps](apps/api/README.md#database-setup) and [docs/design/authentication.md](docs/design/authentication.md). Swagger UI is served at `/swagger/`, and the generated OpenAPI 3.1 JSON is served at `/openapi.json`.
 
 To regenerate after changing Go endpoint annotations or response types, run from the repository root:
 
