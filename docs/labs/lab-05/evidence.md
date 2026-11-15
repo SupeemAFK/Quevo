@@ -16,6 +16,8 @@ The application evidence is pinned to [`82cd9c9693ea4e73f514929a09960647d56ef0ca
 On November 15, 2026, a fresh archive of commit `82cd9c9693ea4e73f514929a09960647d56ef0ca` was run with a separate Compose project and an empty PostgreSQL volume. From a local clone containing that commit, run:
 
 ```sh
+set -e
+
 revision=82cd9c9693ea4e73f514929a09960647d56ef0ca
 run_dir=$(mktemp -d)
 git archive "$revision" | tar -x -C "$run_dir"
@@ -40,7 +42,7 @@ docker compose down --volumes
 | API health | HTTP 200 with `{"status":"healthy!"}`. |
 | Web root | HTTP 200 with the response body discarded. |
 
-Run on a machine with the Compose ports 3000, 5432, and 8080 free. The final command removes the rehearsal's containers and database volume.
+Run on a machine with the Compose ports 3000, 5432, and 8080 free. The final command removes the rehearsal's containers and database volume. If a step fails and the script stops early, run `COMPOSE_PROJECT_NAME=quevo_final_evidence docker compose down --volumes` from the archive directory to clean up.
 
 ## Setup and team evidence
 
