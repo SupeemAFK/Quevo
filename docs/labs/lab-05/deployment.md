@@ -84,3 +84,9 @@ gcloud run services describe quevo-web \
 ```
 
 Record the release PR, **CD** run, deployed commit SHA, image digests, and revisions in the Lab 5 evidence index. See [release PR #51](https://github.com/SupeemAFK/Quevo/pull/51), its [deployment run](https://github.com/SupeemAFK/Quevo/actions/runs/43636901594), and the [live release screenshots](https://github.com/SupeemAFK/Quevo/issues/38#issuecomment-6883767597) for the Lab 5 example.
+
+## Inspect the deployed services
+
+In Cloud Run, open `quevo-api` or `quevo-web` and select **Observability**. Use **Metrics** to inspect request counts, latency, instance counts, CPU, and memory. Use **Logs** to inspect HTTP status codes and container lifecycle events. For the API, relevant request logs include the method, route, status, and latency. For the frontend, check the page and asset requests along with startup and shutdown events.
+
+Use the timestamps and revision filters to correlate requests with the CD run. The [captured Metrics and Logs views](evidence.md#documentation-release-and-observability) illustrate both services.

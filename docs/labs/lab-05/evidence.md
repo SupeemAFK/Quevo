@@ -11,6 +11,12 @@ The application evidence is pinned to [`82cd9c9693ea4e73f514929a09960647d56ef0ca
 | C-05 · Persistence | [Issue #38](https://github.com/SupeemAFK/Quevo/issues/38#issuecomment-6884088932) records ticket 6 after the pipeline redeploy. The earlier comment shows both Cloud Run service updates and repeats the original ticket image. A separate local run read the same PostgreSQL ticket before restart, after restart, and after forced API container recreation. |
 | C-06 · Repeatable release | [PR #46](https://github.com/SupeemAFK/Quevo/pull/46#pullrequestreview-5906255781) and [PR #48](https://github.com/SupeemAFK/Quevo/pull/48#pullrequestreview-5906542114) have teammate review and went to staging. [PR #49](https://github.com/SupeemAFK/Quevo/pull/49#pullrequestreview-5906557341) promoted them to main, and the [pipeline ran successfully](https://github.com/SupeemAFK/Quevo/actions/runs/43629504437). PRs #50 and #51 delivered the visible change without recorded approving reviews. Their [successful deployment](https://github.com/SupeemAFK/Quevo/actions/runs/43636901594) verified that both Cloud Run revisions served `82cd9c9`. |
 
+## Documentation release and observability
+
+[PR #53](https://github.com/SupeemAFK/Quevo/pull/53) published the completed documentation to main. Its [successful deployment](https://github.com/SupeemAFK/Quevo/actions/runs/43716410018) verified Cloud Run revisions `quevo-api-sha-8f848bc5d1b3-a1` and `quevo-web-sha-8f848bc5d1b3-a1`, each serving 100% of its service's traffic. The application evidence above is tied to the earlier tested commit `82cd9c9`.
+
+[Issue #36 observability captures](https://github.com/SupeemAFK/Quevo/issues/36#issuecomment-6894691200) show the API and frontend Metrics and Logs views. The API logs show successful health requests and structured method, route, status, and latency fields. The frontend logs show successful login and asset requests, redirects, and container startup and shutdown events. The charts show request activity, latency, scaling, and resource utilization in the captured window. The captures were posted before the #53 rollout completed, and the deployment run identifies its actual revisions.
+
 ## C-03 clean-archive replay
 
 On November 15, 2026, a fresh archive of commit `82cd9c9693ea4e73f514929a09960647d56ef0ca` was run with a separate Compose project and an empty PostgreSQL volume. From a local clone containing that commit, run:
