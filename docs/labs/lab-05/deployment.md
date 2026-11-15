@@ -4,15 +4,15 @@
 
 Quevo uses TanStack Start with a Node.js production runtime for the web app, a Go/Gin API, and PostgreSQL. The web server calls the API through TanStack server functions. The browser connects to the web app.
 
-The Student Guide packages its web app and API together. Quevo already has separate Dockerfiles for its web and API services, so the planned GCP setup keeps them separate. It uses Cloud Run for the two services, Artifact Registry for their images, Cloud SQL for PostgreSQL, Secret Manager for runtime secrets, and GitHub Actions for CI and deployment. Keep the public entry point on the web service and configure the web server to reach the API.
+The Student Guide packages its web app and API together. Quevo already has separate Dockerfiles for its web and API services, so Quevo deploys them separately. It uses Cloud Run for the two services, Artifact Registry for their images, Cloud SQL for PostgreSQL, Secret Manager for runtime secrets, and GitHub Actions for CI and deployment. Keep the public entry point on the web service and configure the web server to reach the API.
 
 | GCP resource | Value |
 | --- | --- |
 | Project ID and region | `cpe334-student-project`, `asia-southeast1` |
 | Cloud Run web, API, and migration job | `quevo-web`, `quevo-api`, `quevo-migrate`; the workflow records the web URL and deployed revisions in its run summary. |
 | Artifact Registry repository and images | `asia-southeast1-docker.pkg.dev/cpe334-student-project/quevo` with images `api` and `web` |
-| Cloud SQL instance and database | Record resource names at first deployment. |
-| Runtime secrets | Record Secret Manager resource names and consumers. |
+| Cloud SQL instance and database | PostgreSQL 17 instance `quevo-pg`, database `quevo`, connection name `cpe334-student-project:asia-southeast1:quevo-pg`. |
+| Runtime secrets | `quevo-database-url` supplies `DATABASE_URL` to `quevo-api` and `quevo-migrate`. |
 
 ## Environment variables
 
@@ -60,7 +60,7 @@ To run the repository's test suite, stop the local stack with `docker compose do
 
 ## Persistent data
 
-Versioned migrations define the users, sessions, branches, services, operator assignments, queue counters, and tickets in PostgreSQL. The web cookie carries the opaque session token. The API validates it against the session record stored in PostgreSQL. Local Compose keeps database files in its `postgres-data` volume. The GCP deployment will use Cloud SQL so replacing an app container leaves those records in place. The live restart and redeploy check is tracked in [#38](https://github.com/SupeemAFK/Quevo/issues/38).
+Versioned migrations define the users, sessions, branches, services, operator assignments, queue counters, and tickets in PostgreSQL. The web cookie carries the opaque session token. The API validates it against the session record stored in PostgreSQL. Local Compose keeps database files in its `postgres-data` volume. The GCP deployment uses Cloud SQL so replacing an app container leaves those records in place. The live restart and redeploy check is tracked in [#38](https://github.com/SupeemAFK/Quevo/issues/38).
 
 Run migrations as a separate release step before updating the API. Seed the lab database from a private terminal through the Cloud SQL Auth Proxy when demo accounts are needed. Use a local proxy endpoint in `DATABASE_URL` for that command. The seed generates and displays each new account’s password once. Reruns preserve existing passwords. Keep seeding separate from routine releases.
 
@@ -81,4 +81,4 @@ gcloud run services describe quevo-web \
   --format='value(status.latestReadyRevisionName)'
 ```
 
-Record the release PR, **CD** run, deployed commit SHA, image digests, and revisions in the Lab 5 evidence index. Keep issue [#37](https://github.com/SupeemAFK/Quevo/issues/37) open until a visible change has gone through the complete `staging` to `main` release flow and the live deployment evidence is recorded.
+Record the release PR, **CD** run, deployed commit SHA, image digests, and revisions in the Lab 5 evidence index. See [release PR #51](https://github.com/SupeemAFK/Quevo/pull/51), its [deployment run](https://github.com/SupeemAFK/Quevo/actions/runs/43636901594), and the [live release screenshots](https://github.com/SupeemAFK/Quevo/issues/38#issuecomment-6883767597) for the Lab 5 example.
