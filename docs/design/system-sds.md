@@ -283,6 +283,10 @@ WAITING, PENDING, and OPERATING are the proposed active states for duplicate-cus
 
 ## 9. Conceptual data model
 
+![Quevo PostgreSQL ER diagram](assets/quevo-postgresql-erd.png)
+
+The diagram shows the service ID relationships individually for readability. PostgreSQL enforces composite foreign keys on `(branch_id, service_id)` in `tickets` and `queue_sequences`, ensuring the service belongs to the specified branch. See [the migrations](../../apps/api/internal/platform/database/migrations) for the physical constraints and [the UML sequence diagrams](sprint-1-sequences.md) for request flow.
+
 For the Sprint 1 slice, the service queue is a logical scope keyed by branch, service, and business date; it does not need to be a separate domain table. QueueSequence is a coordination record used to allocate ticket numbers and serialize queue mutations. Theme 9 lists multiple queues/counters as later-sprint work. If F-011 is retained, add and review explicit Queue, Counter, and operator-assignment entities in that feature contract; their relationship and ownership rules are not defined by the supplied brief, so this initial ERD does not choose them.
 
 ```mermaid
