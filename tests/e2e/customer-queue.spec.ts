@@ -163,7 +163,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await expect(operator.getByTestId('operator-current-ticket')).toHaveText('2')
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Skip ticket' }))
   await expect(operator.getByText('Ticket skipped.')).toBeVisible()
-  await expect(operator.getByRole('button', { name: 'Call next' })).toBeFocused()
+  await expect(operator.getByText('You have no current ticket.')).toBeFocused()
 
   await operator.emulateMedia({ reducedMotion: 'reduce' })
   expect(
@@ -213,6 +213,6 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await expect(operator.getByTestId('operator-current-ticket')).toHaveText('4')
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Skip ticket' }))
   await expect(operator.getByText('Ticket skipped.')).toBeVisible()
-  await expect(operator.getByRole('button', { name: 'Call next' })).toBeFocused()
+  await expect(operator.getByText('You have no current ticket.')).toBeFocused()
   await operator.close()
 })

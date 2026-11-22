@@ -34,9 +34,11 @@ test('landing page explains Quevo and its sample queue stays local', async ({ pa
   await page.getByRole('link', { name: 'Try the queue demo' }).first().click()
   await expect(page).toHaveURL(/#queue-demo$/)
   await expect(page.locator('#queue-demo')).toBeFocused()
-  await page.getByRole('button', { name: 'Call next' }).click()
+  await page.getByRole('button', { name: 'Call next' }).focus()
+  await page.keyboard.press('Enter')
   await expect(page.getByRole('status')).toHaveText('Ticket A101 is now called.')
-  await page.getByRole('button', { name: 'Mark served' }).click()
+  await page.getByRole('button', { name: 'Mark served' }).focus()
+  await page.keyboard.press('Enter')
   await expect(page.getByRole('status')).toHaveText('Ticket A101 is marked served.')
 
   expect(apiRequests).toEqual([])
@@ -75,7 +77,9 @@ test('mobile navigation is keyboard operable and the page fits required widths',
   }
 
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await page.getByRole('button', { name: 'Reset demo' }).click()
-  await page.getByRole('button', { name: 'Call next' }).click()
+  await page.getByRole('button', { name: 'Reset demo' }).focus()
+  await page.keyboard.press('Enter')
+  await page.getByRole('button', { name: 'Call next' }).focus()
+  await page.keyboard.press('Enter')
   await expect(page.getByRole('status')).toHaveText('Ticket A101 is now called.')
 })
