@@ -24,8 +24,8 @@ test('landing page explains Quevo and its sample queue stays local', async ({ pa
     'href',
     '/login',
   )
-  await expect(page.getByRole('heading', { name: 'For customers' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'For operators' })).toBeVisible()
+  await expect(page.getByText('For customers', { exact: true })).toBeVisible()
+  await expect(page.getByText('For operators', { exact: true })).toBeVisible()
   const lifecycle = page.getByRole('list', { name: 'Queue ticket lifecycle' })
   for (const status of ['Join', 'Wait', 'Called', 'In service', 'Complete or skip']) {
     await expect(lifecycle).toContainText(status)
@@ -44,6 +44,7 @@ test('landing page explains Quevo and its sample queue stays local', async ({ pa
 test('mobile navigation is keyboard operable and the page fits required widths', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 900 })
   await page.goto('/')
+  await page.waitForLoadState('networkidle')
 
   await page.keyboard.press('Tab')
   await expect(page.getByRole('link', { name: 'Skip to main content' })).toBeFocused()

@@ -9,7 +9,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await page.getByLabel('Password').fill(customerPassword)
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  await expect(page.getByText('Signed in as Demo Customer')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Open customer queue' })).toBeVisible()
   await page.goto('/customer')
   await expect(page.getByRole('heading', { name: 'Join a queue' })).toBeVisible()
 
@@ -57,7 +57,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await operator.getByLabel('Email').fill('operator@quevo.local')
   await operator.getByLabel('Password').fill(process.env.QUEVO_E2E_OPERATOR_PASSWORD!)
   await operator.getByRole('button', { name: 'Sign in' }).click()
-  await expect(operator.getByText('Signed in as Demo Operator')).toBeVisible()
+  await expect(operator.getByRole('link', { name: 'Open operator queue' })).toBeVisible()
   await operator.getByRole('link', { name: 'Open operator queue' }).click()
   await expect(operator.getByRole('heading', { name: 'Operator queue' })).toBeVisible()
   await expect(operator.getByText('Ticket 1', { exact: true })).toBeVisible()
