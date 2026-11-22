@@ -37,7 +37,7 @@ export function AuthenticatedShell({ user, currentSection, children }: Props) {
   return (
     <div className="min-h-svh bg-background text-foreground">
       <a
-        className="sr-only fixed left-4 top-4 z-50 rounded-md bg-background px-4 py-3 text-foreground shadow-md focus:not-sr-only focus:ring-2 focus:ring-ring"
+        className="sr-only fixed left-4 top-4 z-50 rounded-md border bg-card px-4 py-3 text-foreground focus:not-sr-only focus:ring-2 focus:ring-ring"
         href="#app-main"
       >
         Skip to main content
@@ -50,7 +50,9 @@ export function AuthenticatedShell({ user, currentSection, children }: Props) {
               className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-md text-lg font-semibold tracking-tight focus-visible:outline"
               to="/"
             >
-              <span aria-hidden="true" className="size-2.5 rounded-full bg-primary" />
+              <span aria-hidden="true" className="font-bold text-brand-accent">
+                Q
+              </span>
               Quevo
             </Link>
             <nav aria-label="Application" className="flex items-center">
@@ -58,7 +60,7 @@ export function AuthenticatedShell({ user, currentSection, children }: Props) {
                 aria-current={
                   currentSection === (isCustomer ? 'customer' : 'operator') ? 'page' : undefined
                 }
-                className="inline-flex min-h-11 items-center rounded-md px-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline"
+                className="inline-flex min-h-11 items-center rounded-md px-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline aria-[current=page]:text-foreground"
                 to={queuePath}
               >
                 {queueLabel}

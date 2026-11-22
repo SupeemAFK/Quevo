@@ -44,9 +44,9 @@ function CustomerTicketPage() {
 
   return (
     <AuthenticatedShell currentSection="customer" user={user}>
-      <section className="mx-auto max-w-3xl rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
+      <section className="mx-auto max-w-3xl p-0 sm:p-2">
         <header className="mb-7">
-          <p className="text-sm font-semibold uppercase tracking-[0.12em] text-primary">
+          <p className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             Customer ticket
           </p>
           <PageHeading className="mt-2 text-3xl font-semibold tracking-tight">

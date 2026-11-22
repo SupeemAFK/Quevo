@@ -8,8 +8,8 @@ type FeedbackProps = {
 }
 
 const feedbackStyles = {
-  success: 'border-status-success/30 bg-status-success-surface text-status-success',
-  error: 'border-status-danger/30 bg-status-danger-surface text-status-danger',
+  success: 'border-status-success/50 bg-card text-status-success',
+  error: 'border-status-danger/50 bg-card text-status-danger',
 } satisfies Record<FeedbackKind, string>
 
 export function FeedbackMessage({ kind, children }: FeedbackProps) {
@@ -25,10 +25,7 @@ export function FeedbackMessage({ kind, children }: FeedbackProps) {
 
 export function LoadingMessage({ children }: { children: ReactNode }) {
   return (
-    <p
-      className="rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground"
-      role="status"
-    >
+    <p className="rounded-md border bg-card px-4 py-3 text-sm text-muted-foreground" role="status">
       {children}
     </p>
   )

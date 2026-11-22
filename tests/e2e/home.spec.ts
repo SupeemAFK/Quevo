@@ -88,7 +88,7 @@ test('mobile navigation is keyboard operable and the page fits required widths',
   }
 
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await expect(page.locator('.landing-callout-bubble')).toHaveCSS('animation-name', 'none')
+  await expect(page.locator('#queue-demo button').first()).toHaveCSS('transition-duration', '0s')
   await page.getByRole('button', { name: 'Reset demo' }).focus()
   await page.keyboard.press('Enter')
   await page.getByRole('button', { name: 'Call next' }).focus()

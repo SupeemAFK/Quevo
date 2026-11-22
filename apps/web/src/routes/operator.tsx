@@ -110,7 +110,7 @@ function OperatorPage() {
             </Button>
           </div>
         ) : queues.data.length === 0 ? (
-          <section className="rounded-xl border border-dashed bg-muted/30 p-5">
+          <section className="rounded-lg border bg-card p-5">
             <h2 className="font-medium">No assigned queues</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               No queues are assigned to you. Contact your branch administrator for access.
@@ -118,7 +118,7 @@ function OperatorPage() {
           </section>
         ) : (
           <div className="grid items-start gap-5 lg:grid-cols-[minmax(15rem,18rem)_minmax(0,1fr)] lg:gap-7">
-            <nav aria-label="Assigned queues" className="rounded-2xl border bg-card p-4 sm:p-5">
+            <nav aria-label="Assigned queues" className="p-0">
               <div className="mb-4">
                 <h2 className="text-base font-semibold">Your queues</h2>
                 <p className="mt-1 text-sm text-muted-foreground">Choose a service to manage.</p>
@@ -134,7 +134,7 @@ function OperatorPage() {
                         setMessage('')
                         command.reset()
                       }}
-                      className={`min-h-28 w-full rounded-xl border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${selected?.serviceId === item.serviceId ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'bg-background hover:bg-muted/50'}`}
+                      className={`min-h-28 w-full rounded-lg border p-4 text-left transition-colors duration-200 hover:border-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${selected?.serviceId === item.serviceId ? 'border-brand-accent bg-background' : 'bg-background'}`}
                     >
                       <span className="flex items-start justify-between gap-2">
                         <span className="min-w-0">
@@ -144,7 +144,7 @@ function OperatorPage() {
                           </span>
                         </span>
                         {selected?.serviceId === item.serviceId ? (
-                          <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">
+                          <span className="shrink-0 text-xs font-medium text-foreground">
                             Selected
                           </span>
                         ) : null}

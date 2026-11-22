@@ -42,10 +42,7 @@ export function CustomerServiceSelection({
   return (
     <div className="space-y-8">
       {activeTickets.length > 0 ? (
-        <section
-          aria-labelledby="active-tickets-heading"
-          className="rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:p-6"
-        >
+        <section aria-labelledby="active-tickets-heading" className="p-0">
           <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-lg font-semibold tracking-tight" id="active-tickets-heading">
               Your active tickets
@@ -57,7 +54,7 @@ export function CustomerServiceSelection({
               <li key={ticket.id}>
                 <Link
                   aria-label={`View ticket ${ticket.ticketNumber} (${ticket.serviceName} at ${ticket.branchName}). Status: ${ticketStatusLabel(ticket.status)}`}
-                  className="group flex min-h-28 flex-col rounded-xl border bg-card p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-background hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="group flex min-h-28 flex-col rounded-lg border bg-card p-4 text-left transition-colors duration-200 hover:border-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   params={{ ticketId: ticket.id }}
                   to="/tickets/$ticketId"
                 >
@@ -66,7 +63,7 @@ export function CustomerServiceSelection({
                     <TicketStatus status={ticket.status} />
                   </span>
                   <span className="mt-2 text-2xl font-semibold tabular-nums tracking-tight">
-                    {ticket.ticketNumber}
+                    <span className="font-mono">{ticket.ticketNumber}</span>
                   </span>
                   <span className="mt-1 flex items-center justify-between gap-2 text-sm text-muted-foreground">
                     <span className="min-w-0 truncate">
@@ -74,7 +71,7 @@ export function CustomerServiceSelection({
                     </span>
                     <ChevronRight
                       aria-hidden="true"
-                      className="shrink-0 text-primary transition-transform group-hover:translate-x-0.5"
+                      className="shrink-0 text-brand-accent transition-transform group-hover:translate-x-0.5"
                       size={18}
                     />
                   </span>
@@ -89,7 +86,7 @@ export function CustomerServiceSelection({
         {services.length === 0 ? (
           <section
             aria-labelledby="services-empty-heading"
-            className="rounded-xl border border-dashed bg-muted/30 p-5"
+            className="rounded-lg border bg-card p-5"
           >
             <h2 className="font-medium" id="services-empty-heading">
               No active services
@@ -107,7 +104,7 @@ export function CustomerServiceSelection({
                 <button
                   aria-pressed={selected}
                   aria-label={`${service.name} at ${service.branchName}`}
-                  className={`flex min-h-20 w-full items-center justify-between gap-4 rounded-xl border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${selected ? 'border-primary bg-primary/5 ring-1 ring-primary/30' : 'bg-card hover:bg-muted/60'}`}
+                  className={`flex min-h-20 w-full items-center justify-between gap-4 rounded-lg border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${selected ? 'border-brand-accent bg-card' : 'bg-card hover:border-foreground/40'}`}
                   key={service.id}
                   onClick={() => {
                     setSelectedServiceID(service.id)
@@ -122,7 +119,7 @@ export function CustomerServiceSelection({
                     </span>
                   </span>
                   <span
-                    className={`inline-flex min-h-7 shrink-0 items-center gap-1 rounded-full px-3 text-sm font-medium ${selected ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground'}`}
+                    className={`inline-flex min-h-7 shrink-0 items-center gap-1 text-sm font-medium ${selected ? 'text-foreground' : 'text-muted-foreground'}`}
                   >
                     {selected ? 'Selected' : 'Choose'}
                     {selected ? <ArrowRight aria-hidden="true" size={15} /> : null}

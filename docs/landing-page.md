@@ -11,9 +11,9 @@ The `/` route introduces Quevo to visitors and keeps the existing `/login` conve
 
 ## Visual design and motion
 
-The hero uses a queue overview built from interface elements rather than stock imagery: a sample ticket, a short queue path, and small service-status cards. The preview is labeled as sample data and does not represent a live branch. The interactive demo remains the source of truth for trying the queue transitions.
+The page follows the Ink & Vermilion system documented in [the visual system](design/visual-system.md). The hero uses editorial typography and a flat queue overview built from interface elements: a sample ticket, a short queue path, and queue details. The preview is labeled as sample data and does not represent a live branch. The interactive demo remains the source of truth for trying the queue transitions.
 
-Motion is used to make the page feel responsive without delaying its content: the hero enters in a short sequence, sections and workflow cards reveal once as they enter view, queue items animate when the local demo changes, and controls lift slightly on hover or press. Route content uses a brief entrance transition. These effects use the existing Motion dependency and follow the operating system's reduced-motion preference; the decorative CSS animation is disabled in reduced-motion mode. Keep animation short and remove it when it does not clarify a state change or hierarchy.
+Motion is used to make the page feel responsive without delaying its content: the hero enters in a short sequence, sections reveal once as they enter view, and queue items animate when the local demo changes. Route content uses a brief entrance transition. These effects use the existing Motion dependency and follow the operating system's reduced-motion preference. Keep animation short and remove it when it does not clarify a state change or hierarchy.
 
 The mobile navigation button exposes its expanded state and controls the same section links as the desktop header. A skip link takes keyboard users directly to the main content. Use native anchors for sections and TanStack links for application routes.
 

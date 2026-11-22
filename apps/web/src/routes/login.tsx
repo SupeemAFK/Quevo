@@ -20,7 +20,7 @@ function LoginPage() {
 
   return (
     <main className="grid min-h-svh place-items-center bg-background p-6">
-      <section className="w-full max-w-md rounded-xl border bg-card p-8 text-card-foreground shadow-sm">
+      <section className="w-full max-w-md rounded-lg border bg-card p-7 text-card-foreground sm:p-8">
         <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Quevo account
         </p>
@@ -35,7 +35,7 @@ function LoginPage() {
           signIn={async (input) => signIn({ data: input })}
         />
         <Link
-          className="mt-6 inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline focus-visible:outline"
+          className="mt-6 inline-flex min-h-11 items-center text-sm text-foreground underline-offset-4 hover:underline focus-visible:outline"
           to="/"
         >
           Back to Quevo

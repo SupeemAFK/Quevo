@@ -1,5 +1,6 @@
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { useState } from 'react'
+import { TicketStatus } from './ticket-status'
 import { Button } from './ui/button'
 
 type DemoTicket = {
@@ -49,7 +50,7 @@ export function QueueDemo() {
     <MotionConfig reducedMotion="user">
       <section
         aria-labelledby="queue-demo-heading"
-        className="landing-demo-section scroll-mt-24 border-y bg-muted/50"
+        className="landing-demo-section scroll-mt-24 border-y"
         id="queue-demo"
         tabIndex={-1}
       >
@@ -60,7 +61,7 @@ export function QueueDemo() {
             initial={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
-            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-primary">
+            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               A safe, sample queue
             </p>
             <h2 className="mt-3 text-section font-semibold tracking-tight" id="queue-demo-heading">
@@ -77,13 +78,13 @@ export function QueueDemo() {
             initial={{ opacity: 0, y: 18 }}
             transition={{ delay: 0.1, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="landing-demo-card rounded-2xl border bg-card p-5 shadow-sm sm:p-7">
+            <div className="landing-demo-card rounded-lg border p-5 sm:p-7">
               <div className="flex flex-wrap items-start justify-between gap-4 border-b pb-5">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Queue walkthrough</p>
                   <p className="mt-1 text-lg font-semibold">General service</p>
                 </div>
-                <span className="rounded-full bg-status-info-surface px-3 py-1 text-sm font-medium text-status-info">
+                <span className="pt-0.5 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
                   Sample data
                 </span>
               </div>
@@ -99,19 +100,19 @@ export function QueueDemo() {
                   {current ? (
                     <motion.div
                       animate={{ opacity: 1, y: 0 }}
-                      className="mt-3 rounded-xl border border-primary/30 bg-primary/5 p-4"
+                      className="mt-3 rounded-md border bg-background p-4"
                       initial={{ opacity: 0, y: 8 }}
                       transition={{ duration: 0.18 }}
                     >
-                      <p className="text-3xl font-semibold tabular-nums tracking-tight">
+                      <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight">
                         {current.number}
                       </p>
-                      <p className="mt-2 inline-flex rounded-full bg-status-info-surface px-2.5 py-1 text-sm font-medium text-status-info">
-                        Called
-                      </p>
+                      <div className="mt-3">
+                        <TicketStatus status="PENDING" />
+                      </div>
                     </motion.div>
                   ) : (
-                    <p className="mt-3 rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
+                    <p className="mt-3 rounded-md border p-4 text-sm text-muted-foreground">
                       No ticket is being called.
                     </p>
                   )}
@@ -141,8 +142,10 @@ export function QueueDemo() {
                           layout
                           transition={{ duration: 0.18 }}
                         >
-                          <span className="font-medium tabular-nums">{ticket.number}</span>
-                          <span className="text-sm text-muted-foreground">Waiting</span>
+                          <span className="font-mono font-medium tabular-nums">
+                            {ticket.number}
+                          </span>
+                          <TicketStatus status="WAITING" />
                         </motion.li>
                       ))}
                     </AnimatePresence>
@@ -190,11 +193,12 @@ export function QueueDemo() {
                   </h3>
                   <ul className="mt-2 flex flex-wrap gap-2">
                     {served.map((ticket) => (
-                      <li
-                        className="rounded-full bg-status-success-surface px-3 py-1 text-sm font-medium text-status-success"
-                        key={ticket.id}
-                      >
-                        {ticket.number} · Served
+                      <li className="inline-flex items-center gap-2 text-sm" key={ticket.id}>
+                        <span className="font-mono font-medium tabular-nums">{ticket.number}</span>
+                        <span aria-hidden="true" className="text-muted-foreground">
+                          ·
+                        </span>
+                        <span className="text-muted-foreground">Served</span>
                       </li>
                     ))}
                   </ul>

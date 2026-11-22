@@ -42,13 +42,13 @@ export function CustomerTicketDetails({ ticket, refreshing, feedback, onRefresh 
 
       <section
         aria-labelledby="ticket-number-heading"
-        className="rounded-2xl border bg-muted/30 p-5 sm:p-8"
+        className="rounded-lg border bg-card p-5 sm:p-8"
       >
         <p className="text-sm font-medium text-muted-foreground" id="ticket-number-heading">
           Ticket number
         </p>
         <p
-          className="mt-1 break-words text-5xl font-semibold tabular-nums tracking-tight sm:text-6xl"
+          className="mt-1 break-words font-mono text-5xl font-semibold tabular-nums tracking-tight sm:text-6xl"
           data-testid="ticket-number"
         >
           {ticket.ticketNumber}

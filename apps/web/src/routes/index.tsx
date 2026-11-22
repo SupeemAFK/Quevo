@@ -47,7 +47,7 @@ function Home() {
     <MotionConfig reducedMotion="user">
       <div className="min-h-svh overflow-hidden bg-background text-foreground">
         <a
-          className="sr-only fixed left-4 top-4 z-50 rounded-md bg-background px-4 py-3 text-foreground shadow-md focus:not-sr-only focus:ring-2 focus:ring-ring"
+          className="sr-only fixed left-4 top-4 z-50 rounded-md border bg-card px-4 py-3 text-foreground focus:not-sr-only focus:ring-2 focus:ring-ring"
           href="#main-content"
         >
           Skip to main content
@@ -68,11 +68,9 @@ function Home() {
             aria-labelledby="closing-heading"
             className="landing-closing relative isolate overflow-hidden bg-primary text-primary-foreground"
           >
-            <div aria-hidden="true" className="landing-closing-orbit" />
             <LandingReveal className="relative mx-auto flex max-w-content flex-col items-start justify-between gap-6 px-page py-section sm:flex-row sm:items-center">
               <div className="max-w-2xl">
                 <p className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.14em]">
-                  <span aria-hidden="true" className="landing-closing-dot" />
                   Ready for your next visit?
                 </p>
                 <h2 className="mt-3 text-section font-semibold tracking-tight" id="closing-heading">

@@ -68,7 +68,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 function NotFound() {
   return (
     <main className="grid min-h-svh place-items-center bg-background p-6">
-      <section className="w-full max-w-lg rounded-xl border bg-card p-10 text-card-foreground shadow-sm">
+      <section className="w-full max-w-lg rounded-lg border bg-card p-8 text-card-foreground sm:p-10">
         <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           404
         </p>
@@ -76,7 +76,7 @@ function NotFound() {
           Page not found
         </h1>
         <p className="mb-7 mt-3 text-muted-foreground">The page you requested does not exist.</p>
-        <Link className="text-primary underline-offset-4 hover:underline" to="/">
+        <Link className="text-foreground underline-offset-4 hover:underline" to="/">
           Back to Quevo
         </Link>
       </section>

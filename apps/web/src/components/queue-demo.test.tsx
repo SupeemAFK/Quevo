@@ -26,7 +26,9 @@ describe('QueueDemo', () => {
     expect(screen.getByRole('button', { name: 'Call next' })).toBeDisabled()
 
     await user.click(screen.getByRole('button', { name: 'Mark served' }))
-    expect(screen.getByText('A101 · Served')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Served in this demo' })).toHaveTextContent(
+      'A101·Served',
+    )
     expect(screen.getByRole('status')).toHaveTextContent('Ticket A101 is marked served.')
     await user.click(screen.getByRole('button', { name: 'Call next' }))
     expect(within(current).getByText('A102')).toBeInTheDocument()

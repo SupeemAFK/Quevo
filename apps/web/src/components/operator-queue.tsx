@@ -78,9 +78,9 @@ export function OperatorQueue({
         <div className="space-y-5">
           <section
             aria-labelledby="current-ticket"
-            className="overflow-hidden rounded-2xl border bg-card"
+            className="overflow-hidden rounded-lg border bg-card"
           >
-            <header className="flex flex-wrap items-center justify-between gap-4 border-b bg-muted/30 p-5 sm:p-6">
+            <header className="flex flex-wrap items-center justify-between gap-4 border-b bg-card p-5 sm:p-6">
               <div>
                 <h2 className="text-lg font-semibold tracking-tight" id="current-ticket">
                   Current ticket
@@ -124,7 +124,7 @@ export function OperatorQueue({
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Now serving</p>
                       <p
-                        className="mt-1 text-6xl font-semibold tabular-nums tracking-tight sm:text-7xl"
+                        className="mt-1 font-mono text-6xl font-semibold tabular-nums tracking-tight sm:text-7xl"
                         data-testid="operator-current-ticket"
                       >
                         {current.ticketNumber}
@@ -222,7 +222,7 @@ export function OperatorQueue({
 
           <section
             aria-labelledby="waiting-tickets"
-            className="rounded-2xl border bg-card p-5 sm:p-6"
+            className="rounded-lg border bg-card p-5 sm:p-6"
           >
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <div>
@@ -233,7 +233,7 @@ export function OperatorQueue({
                   Customers are served in this order.
                 </p>
               </div>
-              <span className="rounded-full bg-muted px-3 py-1 text-sm font-medium tabular-nums">
+              <span className="text-sm font-medium tabular-nums text-muted-foreground">
                 {waiting.length} {waiting.length === 1 ? 'ticket' : 'tickets'}
               </span>
             </div>
@@ -241,7 +241,7 @@ export function OperatorQueue({
               {waiting.length === 0 ? (
                 <motion.p
                   animate={{ opacity: 1 }}
-                  className="mt-4 rounded-xl border border-dashed bg-muted/30 p-5 text-sm text-muted-foreground"
+                  className="mt-4 rounded-md border bg-background p-5 text-sm text-muted-foreground"
                   exit={motionExit}
                   initial={motionInitial}
                   key="empty-waiting-list"
@@ -272,10 +272,10 @@ export function OperatorQueue({
                       transition={motionTransition}
                     >
                       <span className="flex min-w-0 items-center gap-3">
-                        <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium tabular-nums">
+                        <span className="inline-flex size-8 shrink-0 items-center justify-center border-r border-border pr-3 font-mono text-sm font-medium tabular-nums text-muted-foreground">
                           {index + 1}
                         </span>
-                        <span className="truncate font-semibold tabular-nums">
+                        <span className="truncate font-mono font-semibold tabular-nums">
                           Ticket {ticket.ticketNumber}
                         </span>
                       </span>

@@ -19,21 +19,14 @@ export function LandingHero({ user }: LandingHeroProps) {
       id="top"
       tabIndex={-1}
     >
-      <div aria-hidden="true" className="landing-hero-grid" />
-      <div className="landing-hero-glow landing-hero-glow-one" aria-hidden="true" />
-      <div className="landing-hero-glow landing-hero-glow-two" aria-hidden="true" />
-
       <div className="relative mx-auto grid max-w-content gap-14 px-page pb-20 pt-14 sm:pb-24 sm:pt-20 lg:min-h-[650px] lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-10 lg:py-20">
         <div className="relative z-10 max-w-2xl">
           <motion.p
             animate={{ opacity: 1, y: 0 }}
-            className="landing-eyebrow inline-flex items-center gap-2 rounded-full border border-primary/15 bg-background/80 px-3.5 py-2 text-sm font-medium text-foreground shadow-sm backdrop-blur"
+            className="landing-eyebrow text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground"
             initial={{ opacity: 0, y: 12 }}
             transition={{ delay: 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
-            <span aria-hidden="true" className="landing-eyebrow-mark">
-              <span />
-            </span>
             A calmer way to move through the line
           </motion.p>
 
@@ -47,7 +40,7 @@ export function LandingHero({ user }: LandingHeroProps) {
               id="hero-heading"
             >
               A lighter wait.
-              <span className="block text-primary">A clearer next step.</span>
+              <span className="block text-brand-accent">A clearer next step.</span>
             </PageHeading>
           </motion.div>
 
@@ -75,7 +68,7 @@ export function LandingHero({ user }: LandingHeroProps) {
             </Button>
             <Button
               asChild
-              className="min-h-12 border-primary/20 bg-background/80 px-5 text-base backdrop-blur"
+              className="min-h-12 border-border bg-card px-5 text-base"
               variant="outline"
             >
               <a href="#queue-demo">
@@ -92,12 +85,12 @@ export function LandingHero({ user }: LandingHeroProps) {
             transition={{ delay: 0.48, duration: 0.55 }}
           >
             <span className="inline-flex items-center gap-2">
-              <Check aria-hidden="true" className="text-status-success" size={16} />
+              <Check aria-hidden="true" className="text-brand-accent" size={16} />
               One clear ticket journey
             </span>
             <span className="hidden h-4 w-px bg-border sm:block" />
             <span className="inline-flex items-center gap-2">
-              <Check aria-hidden="true" className="text-status-success" size={16} />A view for each
+              <Check aria-hidden="true" className="text-brand-accent" size={16} />A view for each
               role
             </span>
           </motion.div>
@@ -109,19 +102,9 @@ export function LandingHero({ user }: LandingHeroProps) {
           initial={{ opacity: 0, y: 26, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ delay: 0.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          whileHover={{ y: -4, rotate: -0.25 }}
         >
-          <div
-            aria-hidden="true"
-            className="landing-preview-decoration landing-preview-decoration-one"
-          />
-          <div
-            aria-hidden="true"
-            className="landing-preview-decoration landing-preview-decoration-two"
-          />
-
           <div className="landing-preview-window relative">
-            <div className="flex items-center justify-between gap-3 border-b border-border/80 px-5 py-4 sm:px-7">
+            <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4 sm:px-7">
               <div className="flex items-center gap-3">
                 <span aria-hidden="true" className="landing-window-mark">
                   Q
@@ -135,18 +118,15 @@ export function LandingHero({ user }: LandingHeroProps) {
             </div>
 
             <div className="grid gap-4 p-4 sm:gap-5 sm:p-6">
-              <div className="landing-ticket-feature rounded-2xl p-5 sm:p-6">
+              <div className="landing-ticket-feature rounded-lg p-5 sm:p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Your ticket</p>
-                    <p className="mt-2 text-5xl font-semibold leading-none tracking-[-0.06em] tabular-nums sm:text-6xl">
+                    <p className="mt-2 font-mono text-5xl font-semibold leading-none tracking-[-0.06em] tabular-nums sm:text-6xl">
                       A104
                     </p>
                   </div>
-                  <span className="landing-waiting-pill">
-                    <span aria-hidden="true" />
-                    Waiting
-                  </span>
+                  <span className="landing-waiting-pill">Waiting</span>
                 </div>
                 <div aria-hidden="true" className="landing-queue-track mt-6">
                   <span className="landing-queue-track-progress" />
@@ -160,60 +140,45 @@ export function LandingHero({ user }: LandingHeroProps) {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="landing-preview-stat rounded-xl border border-border/80 bg-background p-4">
+                <div className="landing-preview-stat p-4">
                   <p className="text-xs font-medium uppercase tracking-[0.11em] text-muted-foreground">
                     Now serving
                   </p>
                   <div className="mt-3 flex items-center justify-between gap-2">
-                    <span className="text-2xl font-semibold tracking-tight tabular-nums">A101</span>
-                    <span className="grid size-8 place-items-center rounded-full bg-status-success-surface text-status-success">
+                    <span className="font-mono text-2xl font-semibold tracking-tight tabular-nums">
+                      A101
+                    </span>
+                    <span className="text-status-success">
                       <Check aria-hidden="true" size={16} />
                     </span>
                   </div>
                 </div>
-                <div className="landing-preview-stat rounded-xl border border-border/80 bg-background p-4">
+                <div className="landing-preview-stat p-4">
                   <p className="text-xs font-medium uppercase tracking-[0.11em] text-muted-foreground">
                     Ahead of you
                   </p>
                   <div className="mt-3 flex items-center justify-between gap-2">
-                    <span className="text-2xl font-semibold tracking-tight tabular-nums">02</span>
+                    <span className="font-mono text-2xl font-semibold tracking-tight tabular-nums">
+                      02
+                    </span>
                     <span className="flex -space-x-2" aria-hidden="true">
-                      <span className="landing-ticket-chip landing-ticket-chip-blue">A2</span>
-                      <span className="landing-ticket-chip landing-ticket-chip-green">A3</span>
+                      <span className="landing-ticket-chip font-mono">A2</span>
+                      <span className="landing-ticket-chip font-mono">A3</span>
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 rounded-xl bg-muted/75 px-4 py-3">
-                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-background text-primary shadow-sm">
-                  <Check aria-hidden="true" size={17} />
-                </span>
+              <div className="flex items-center gap-3 border-t px-4 py-3">
+                <Check aria-hidden="true" className="shrink-0 text-brand-accent" size={17} />
                 <p className="text-sm leading-5 text-muted-foreground">
                   Ticket status stays clear at every step.
                 </p>
               </div>
             </div>
           </div>
-
-          <motion.div
-            aria-hidden="true"
-            className="landing-callout-bubble absolute -left-4 top-[27%] hidden items-center gap-3 rounded-2xl border bg-card px-4 py-3 shadow-xl shadow-primary/10 sm:flex"
-            animate={{ y: [0, -5, 0] }}
-            transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <span className="landing-callout-icon grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground">
-              <ArrowRight size={17} />
-            </span>
-            <span>
-              <span className="block text-xs font-medium text-muted-foreground">Sample call</span>
-              <span className="mt-0.5 block text-sm font-semibold">A101 · now serving</span>
-            </span>
-          </motion.div>
         </motion.aside>
       </div>
-
-      <div aria-hidden="true" className="landing-hero-baseline" />
     </section>
   )
 }

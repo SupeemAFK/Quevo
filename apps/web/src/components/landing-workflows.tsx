@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowDown, ArrowRight, ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 import { motion } from 'motion/react'
 import { LandingReveal } from './landing-reveal'
 import { Button } from './ui/button'
@@ -21,7 +21,7 @@ export function LandingWorkflows() {
       tabIndex={-1}
     >
       <LandingReveal className="max-w-2xl">
-        <p className="text-sm font-semibold uppercase tracking-[0.14em] text-primary">
+        <p className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           One visit, two clear views
         </p>
         <h2 className="mt-3 text-section font-semibold tracking-tight" id="workflows-heading">
@@ -35,12 +35,11 @@ export function LandingWorkflows() {
 
       <div className="mt-10 grid gap-5 lg:grid-cols-2">
         <motion.article
-          className="landing-feature-card rounded-2xl border bg-card p-6 sm:p-8"
+          className="landing-feature-card p-0 pb-7 pt-6 sm:pb-8"
           initial={{ opacity: 0, y: 22 }}
           transition={{ delay: 0.06, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           viewport={{ amount: 0.24, once: true }}
           whileInView={{ opacity: 1, y: 0 }}
-          whileHover={{ y: -5 }}
         >
           <span aria-hidden="true" className="landing-feature-icon landing-feature-icon-customer">
             01
@@ -53,19 +52,19 @@ export function LandingWorkflows() {
           </h3>
           <ol className="mt-6 space-y-4">
             <li className="flex items-start gap-3">
-              <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-secondary text-sm font-semibold text-secondary-foreground">
+              <span className="mt-0.5 w-5 shrink-0 font-mono text-sm font-semibold text-foreground">
                 1
               </span>
               <span className="leading-6">Sign in and choose an active branch service.</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-secondary text-sm font-semibold text-secondary-foreground">
+              <span className="mt-0.5 w-5 shrink-0 font-mono text-sm font-semibold text-foreground">
                 2
               </span>
               <span className="leading-6">Join the queue and receive your ticket number.</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-secondary text-sm font-semibold text-secondary-foreground">
+              <span className="mt-0.5 w-5 shrink-0 font-mono text-sm font-semibold text-foreground">
                 3
               </span>
               <span className="leading-6">Return to your ticket to see its current status.</span>
@@ -80,12 +79,11 @@ export function LandingWorkflows() {
         </motion.article>
 
         <motion.article
-          className="landing-feature-card rounded-2xl border bg-card p-6 sm:p-8"
+          className="landing-feature-card p-0 pb-7 pt-6 sm:pb-8"
           initial={{ opacity: 0, y: 22 }}
           transition={{ delay: 0.16, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           viewport={{ amount: 0.24, once: true }}
           whileInView={{ opacity: 1, y: 0 }}
-          whileHover={{ y: -5 }}
         >
           <span aria-hidden="true" className="landing-feature-icon landing-feature-icon-operator">
             02
@@ -98,19 +96,19 @@ export function LandingWorkflows() {
           </h3>
           <ol className="mt-6 space-y-4">
             <li className="flex items-start gap-3">
-              <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-secondary text-sm font-semibold text-secondary-foreground">
+              <span className="mt-0.5 w-5 shrink-0 font-mono text-sm font-semibold text-foreground">
                 1
               </span>
               <span className="leading-6">Open an assigned branch and service queue.</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-secondary text-sm font-semibold text-secondary-foreground">
+              <span className="mt-0.5 w-5 shrink-0 font-mono text-sm font-semibold text-foreground">
                 2
               </span>
               <span className="leading-6">Call the next waiting ticket and start service.</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-secondary text-sm font-semibold text-secondary-foreground">
+              <span className="mt-0.5 w-5 shrink-0 font-mono text-sm font-semibold text-foreground">
                 3
               </span>
               <span className="leading-6">Complete or skip the current ticket.</span>
@@ -128,7 +126,7 @@ export function LandingWorkflows() {
       <LandingReveal delay={0.12}>
         <section
           aria-labelledby="lifecycle-heading"
-          className="landing-lifecycle mt-14 rounded-2xl bg-muted p-6 sm:p-8"
+          className="landing-lifecycle mt-14 pt-6 sm:pt-8"
         >
           <div className="max-w-2xl">
             <h3 className="text-lg font-semibold" id="lifecycle-heading">
@@ -141,32 +139,19 @@ export function LandingWorkflows() {
           </div>
           <ol
             aria-label="Queue ticket lifecycle"
-            className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"
+            className="mt-6 grid gap-x-5 sm:grid-cols-2 lg:grid-cols-5"
           >
             {lifecycle.map((step, index) => (
               <motion.li
-                className="landing-lifecycle-step flex items-start gap-3 rounded-xl border bg-card p-4"
+                className="landing-lifecycle-step flex items-start gap-3 border-t py-4"
                 key={step.label}
                 initial={{ opacity: 0, y: 12 }}
                 transition={{ delay: index * 0.07, duration: 0.4, ease: 'easeOut' }}
                 viewport={{ amount: 0.3, once: true }}
                 whileInView={{ opacity: 1, y: 0 }}
-                whileHover={{ y: -3 }}
               >
-                <span
-                  aria-hidden="true"
-                  className="grid size-8 shrink-0 place-items-center rounded-full bg-secondary text-secondary-foreground"
-                >
-                  {index === lifecycle.length - 1 ? (
-                    <ArrowRight size={16} />
-                  ) : index > 0 ? (
-                    <ArrowDown className="sm:hidden" size={16} />
-                  ) : (
-                    <span className="text-sm font-semibold">{index + 1}</span>
-                  )}
-                  {index > 0 && index < lifecycle.length - 1 ? (
-                    <ArrowRight className="hidden sm:block" size={16} />
-                  ) : null}
+                <span aria-hidden="true" className="w-5 shrink-0 font-mono text-sm text-foreground">
+                  {String(index + 1).padStart(2, '0')}
                 </span>
                 <span>
                   <span className="block font-semibold">{step.label}</span>

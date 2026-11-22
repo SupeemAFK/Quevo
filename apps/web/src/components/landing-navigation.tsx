@@ -51,7 +51,7 @@ export function LandingNavigation({ user, onSignOut, signOutError }: Props) {
   }, [menuOpen])
 
   return (
-    <header className="landing-navigation-bar sticky top-0 z-40 border-b bg-background/90 backdrop-blur-xl">
+    <header className="landing-navigation-bar sticky top-0 z-40 border-b bg-background">
       <div className="relative mx-auto flex min-h-16 max-w-content items-center justify-between gap-4 px-page">
         <Link
           aria-label="Quevo home"
@@ -69,7 +69,7 @@ export function LandingNavigation({ user, onSignOut, signOutError }: Props) {
           aria-controls="landing-navigation"
           aria-expanded={menuOpen}
           aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
-          className="inline-flex size-11 items-center justify-center rounded-lg border border-border bg-card text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+          className="inline-flex size-11 items-center justify-center rounded-md border border-border bg-card text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
           ref={menuButtonRef}
           onClick={() => setMenuOpen((open) => !open)}
           type="button"
@@ -93,7 +93,7 @@ export function LandingNavigation({ user, onSignOut, signOutError }: Props) {
 
         <nav
           aria-label="Primary"
-          className={`${menuOpen ? 'block' : 'hidden'} absolute left-0 right-0 top-full border-b bg-background p-4 shadow-lg md:static md:block md:border-0 md:bg-transparent md:p-0 md:shadow-none`}
+          className={`${menuOpen ? 'block' : 'hidden'} absolute left-0 right-0 top-full border-b bg-background p-4 md:static md:block md:border-0 md:bg-transparent md:p-0`}
           id="landing-navigation"
         >
           <ul className="flex flex-col gap-2 md:flex-row md:items-center md:gap-6">
