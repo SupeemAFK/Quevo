@@ -7,15 +7,22 @@ test('landing page explains Quevo and its sample queue stays local', async ({ pa
   })
 
   await page.goto('/')
+  await page.waitForLoadState('networkidle')
 
-  await expect(page).toHaveTitle('Quevo | Walk-in queues, easier to follow')
+  await expect(page).toHaveTitle('Quevo | A clearer queue for every visit')
   await expect(page.locator('meta[name="description"]')).toHaveAttribute(
     'content',
-    'Quevo helps customers join an active branch service and helps operators guide each ticket through service.',
+    'Follow a walk-in ticket from joining an active service through the final step.',
   )
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Walk-in queues, easier to follow.' }),
+    page.getByRole('heading', {
+      level: 1,
+      name: 'A lighter wait. A clearer next step.',
+    }),
   ).toBeVisible()
+  await expect(page.getByRole('complementary', { name: 'Sample queue preview' })).toContainText(
+    'Sample queue',
+  )
   await expect(page.getByRole('link', { name: 'Skip to main content' })).toHaveAttribute(
     'href',
     '#main-content',
@@ -34,10 +41,14 @@ test('landing page explains Quevo and its sample queue stays local', async ({ pa
   await page.getByRole('link', { name: 'Try the queue demo' }).first().click()
   await expect(page).toHaveURL(/#queue-demo$/)
   await expect(page.locator('#queue-demo')).toBeFocused()
-  await page.getByRole('button', { name: 'Call next' }).focus()
+  const callNextButton = page.getByRole('button', { name: 'Call next' })
+  await callNextButton.focus()
+  await expect(callNextButton).toBeFocused()
   await page.keyboard.press('Enter')
   await expect(page.getByRole('status')).toHaveText('Ticket A101 is now called.')
-  await page.getByRole('button', { name: 'Mark served' }).focus()
+  const markServedButton = page.getByRole('button', { name: 'Mark served' })
+  await markServedButton.focus()
+  await expect(markServedButton).toBeFocused()
   await page.keyboard.press('Enter')
   await expect(page.getByRole('status')).toHaveText('Ticket A101 is marked served.')
 
@@ -77,6 +88,7 @@ test('mobile navigation is keyboard operable and the page fits required widths',
   }
 
   await page.emulateMedia({ reducedMotion: 'reduce' })
+  await expect(page.locator('.landing-callout-bubble')).toHaveCSS('animation-name', 'none')
   await page.getByRole('button', { name: 'Reset demo' }).focus()
   await page.keyboard.press('Enter')
   await page.getByRole('button', { name: 'Call next' }).focus()

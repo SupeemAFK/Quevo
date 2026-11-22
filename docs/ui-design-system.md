@@ -22,6 +22,12 @@ Tokens are defined in `apps/web/src/styles.css` and mapped into Tailwind utiliti
 
 Use utilities such as `text-status-success`, `bg-status-success-surface`, `px-page`, `py-section`, and `max-w-content` instead of adding page-specific color or spacing values. Use `text-destructive` and `role="alert"` for errors; informational and success copy should use the matching status token plus plain text.
 
+The landing page adds a restrained mint accent and blue and violet surface tokens (`--landing-mint`, `--landing-mint-surface`, `--landing-blue-surface`, and `--landing-violet-surface`) for its sample queue illustration. Keep these accents on the public landing page; queue state continues to use the shared status tokens.
+
+## Motion
+
+Use the existing `motion` package for short entrance, in-view, and state-change transitions. The root route transition and public landing animations use `MotionConfig` with `reducedMotion="user"`; CSS-only decorative animation must also stop under `prefers-reduced-motion`. Keep hover movement subtle and preserve the existing visible focus rings and minimum touch targets.
+
 ## Contrast and focus
 
 The foreground/background pairs below were checked against WCAG 2.2 relative luminance. Small text meets the 4.5:1 AA target; the focus ring meets the 3:1 non-text contrast target against the page and card surfaces.

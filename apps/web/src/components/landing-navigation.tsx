@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { Menu, X } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import type { Identity } from '@/lib/auth'
 import { FeedbackMessage } from './feedback-message'
@@ -50,15 +51,17 @@ export function LandingNavigation({ user, onSignOut, signOutError }: Props) {
   }, [menuOpen])
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
+    <header className="landing-navigation-bar sticky top-0 z-40 border-b bg-background/90 backdrop-blur-xl">
       <div className="relative mx-auto flex min-h-16 max-w-content items-center justify-between gap-4 px-page">
         <Link
           aria-label="Quevo home"
-          className="inline-flex items-center gap-2 rounded-md text-lg font-semibold tracking-tight focus-visible:outline"
+          className="inline-flex items-center gap-2.5 rounded-md text-lg font-semibold tracking-tight focus-visible:outline"
           onClick={closeMenu}
           to="/"
         >
-          <span aria-hidden="true" className="size-2.5 rounded-full bg-primary" />
+          <span aria-hidden="true" className="landing-brand-mark">
+            Q
+          </span>
           Quevo
         </Link>
 
@@ -71,7 +74,21 @@ export function LandingNavigation({ user, onSignOut, signOutError }: Props) {
           onClick={() => setMenuOpen((open) => !open)}
           type="button"
         >
-          {menuOpen ? <X aria-hidden="true" size={20} /> : <Menu aria-hidden="true" size={20} />}
+          <AnimatePresence initial={false} mode="wait">
+            <motion.span
+              animate={{ opacity: 1, rotate: 0, scale: 1 }}
+              exit={{ opacity: 0, rotate: -45, scale: 0.7 }}
+              initial={{ opacity: 0, rotate: 45, scale: 0.7 }}
+              key={menuOpen ? 'close' : 'open'}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
+            >
+              {menuOpen ? (
+                <X aria-hidden="true" size={20} />
+              ) : (
+                <Menu aria-hidden="true" size={20} />
+              )}
+            </motion.span>
+          </AnimatePresence>
         </button>
 
         <nav
@@ -83,7 +100,7 @@ export function LandingNavigation({ user, onSignOut, signOutError }: Props) {
             {sections.map((section) => (
               <li key={section.href}>
                 <a
-                  className="flex min-h-11 items-center rounded-md px-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline"
+                  className="flex min-h-11 items-center rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground focus-visible:outline"
                   href={section.href}
                   onClick={() => closeMenuAtSection(section.href)}
                 >

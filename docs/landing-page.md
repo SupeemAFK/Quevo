@@ -9,6 +9,12 @@ The `/` route introduces Quevo to visitors and keeps the existing `/login` conve
 - `#workflows` describes the customer and operator steps and ticket lifecycle.
 - The closing action links to `/login`; footer links return to those page sections.
 
+## Visual design and motion
+
+The hero uses a queue overview built from interface elements rather than stock imagery: a sample ticket, a short queue path, and small service-status cards. The preview is labeled as sample data and does not represent a live branch. The interactive demo remains the source of truth for trying the queue transitions.
+
+Motion is used to make the page feel responsive without delaying its content: the hero enters in a short sequence, sections and workflow cards reveal once as they enter view, queue items animate when the local demo changes, and controls lift slightly on hover or press. Route content uses a brief entrance transition. These effects use the existing Motion dependency and follow the operating system's reduced-motion preference; the decorative CSS animation is disabled in reduced-motion mode. Keep animation short and remove it when it does not clarify a state change or hierarchy.
+
 The mobile navigation button exposes its expanded state and controls the same section links as the desktop header. A skip link takes keyboard users directly to the main content. Use native anchors for sections and TanStack links for application routes.
 
 ## Demo data boundary
@@ -21,4 +27,4 @@ The page describes the implemented Sprint 1 flow: customers choose an active ser
 
 ## Verification
 
-`tests/e2e/home.spec.ts` checks page metadata, section copy, the sample ticket lifecycle, no API calls from the demo, skip-link and mobile-menu keyboard operation, reduced-motion operation, and layout widths of 320, 375, 768, and 1280 CSS pixels. Component tests cover the menu's expanded state and the demo's call, serve, empty, and reset states. Check the accessibility tree and perform a screen-reader pass during release review; the route has one page heading, named navigation landmarks, labeled queue sections, and a polite announcement for each demo action.
+`tests/e2e/home.spec.ts` checks page metadata, section copy, the sample-ticket label and lifecycle, no API calls from the demo, skip-link and mobile-menu keyboard operation, reduced-motion operation, and layout widths of 320, 375, 768, and 1280 CSS pixels. Component tests cover the menu's expanded state and the demo's call, serve, empty, and reset states. Check the accessibility tree and perform a screen-reader pass during release review; the route has one page heading, named navigation landmarks, labeled queue sections, and a polite announcement for each demo action.

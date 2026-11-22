@@ -6,6 +6,7 @@ import {
   Scripts,
   useRouterState,
 } from '@tanstack/react-router'
+import { MotionConfig, motion } from 'motion/react'
 import { useEffect, useRef } from 'react'
 
 import appCss from '../styles.css?url'
@@ -48,7 +49,16 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children}
+        <MotionConfig reducedMotion="user">
+          <motion.div
+            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 8 }}
+            key={pathname}
+            transition={{ duration: 0.24, ease: 'easeOut' }}
+          >
+            {children}
+          </motion.div>
+        </MotionConfig>
         <Scripts />
       </body>
     </html>
