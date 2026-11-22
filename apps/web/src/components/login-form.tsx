@@ -19,6 +19,7 @@ export function LoginForm({ signIn, onSuccess }: LoginFormProps) {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (isSubmitting) return
     setFeedback(null)
     setIsSubmitting(true)
     setPassword('')
@@ -42,7 +43,7 @@ export function LoginForm({ signIn, onSuccess }: LoginFormProps) {
         </label>
         <input
           autoComplete="email"
-          className="h-10 rounded-md border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-11 rounded-md border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           id="email"
           name="email"
           onChange={(event) => setEmail(event.target.value)}
@@ -58,7 +59,7 @@ export function LoginForm({ signIn, onSuccess }: LoginFormProps) {
         </label>
         <input
           autoComplete="current-password"
-          className="h-10 rounded-md border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-11 rounded-md border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           id="password"
           name="password"
           onChange={(event) => setPassword(event.target.value)}
@@ -68,7 +69,11 @@ export function LoginForm({ signIn, onSuccess }: LoginFormProps) {
         />
       </div>
 
-      <Button disabled={isSubmitting} type="submit">
+      <Button
+        aria-disabled={isSubmitting}
+        className="min-h-11 w-full aria-disabled:pointer-events-none aria-disabled:opacity-50"
+        type="submit"
+      >
         Sign in
       </Button>
       <div className="min-h-5">

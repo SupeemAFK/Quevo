@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { Menu, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Identity } from '@/lib/auth'
 import { FeedbackMessage } from './feedback-message'
 import { Button } from './ui/button'
@@ -18,12 +18,36 @@ const sections = [
 
 export function LandingNavigation({ user, onSignOut, signOutError }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
   const appPath = user?.role === 'CUSTOMER' ? '/customer' : '/operator'
   const appLabel = user?.role === 'CUSTOMER' ? 'Open customer queue' : 'Open operator queue'
 
   function closeMenu() {
     setMenuOpen(false)
   }
+
+  function closeMenuAtSection(href: string) {
+    setMenuOpen(false)
+    const target = document.getElementById(href.slice(1))
+    if (target) {
+      target.focus({ preventScroll: true })
+    } else {
+      menuButtonRef.current?.focus()
+    }
+  }
+
+  useEffect(() => {
+    if (!menuOpen) return
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return
+      setMenuOpen(false)
+      menuButtonRef.current?.focus()
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [menuOpen])
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
@@ -43,6 +67,7 @@ export function LandingNavigation({ user, onSignOut, signOutError }: Props) {
           aria-expanded={menuOpen}
           aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
           className="inline-flex size-11 items-center justify-center rounded-lg border border-border bg-card text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+          ref={menuButtonRef}
           onClick={() => setMenuOpen((open) => !open)}
           type="button"
         >
@@ -60,7 +85,7 @@ export function LandingNavigation({ user, onSignOut, signOutError }: Props) {
                 <a
                   className="flex min-h-11 items-center rounded-md px-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline"
                   href={section.href}
-                  onClick={closeMenu}
+                  onClick={() => closeMenuAtSection(section.href)}
                 >
                   {section.label}
                 </a>

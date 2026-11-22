@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { AuthenticatedShell } from '@/components/authenticated-shell'
 import { FeedbackMessage, LoadingMessage } from '@/components/feedback-message'
 import { OperatorQueue } from '@/components/operator-queue'
+import { PageHeading } from '@/components/page-heading'
 import { Button } from '@/components/ui/button'
 import { getCurrentUser } from '@/lib/auth'
 import {
@@ -84,7 +85,9 @@ function OperatorPage() {
       <div className="space-y-8">
         <header>
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Operator queue</h1>
+            <PageHeading className="text-3xl font-semibold tracking-tight">
+              Operator queue
+            </PageHeading>
             <p className="mt-2 text-sm text-muted-foreground">
               Review the waiting list and guide each ticket through service.
             </p>
@@ -96,10 +99,12 @@ function OperatorPage() {
           <div className="space-y-4">
             <FeedbackMessage kind="error">{queues.error.message}</FeedbackMessage>
             <Button
-              className="min-h-11 px-4"
+              aria-disabled={queues.isFetching}
+              className="min-h-11 px-4 aria-disabled:pointer-events-none aria-disabled:opacity-50"
               variant="outline"
-              disabled={queues.isFetching}
-              onClick={() => void queues.refetch()}
+              onClick={() => {
+                if (!queues.isFetching) void queues.refetch()
+              }}
             >
               {queues.isFetching ? 'Retrying…' : 'Try again'}
             </Button>
@@ -159,10 +164,12 @@ function OperatorPage() {
               <div className="space-y-4">
                 <FeedbackMessage kind="error">{queue.error.message}</FeedbackMessage>
                 <Button
-                  className="min-h-11 px-4"
+                  aria-disabled={queue.isFetching}
+                  className="min-h-11 px-4 aria-disabled:pointer-events-none aria-disabled:opacity-50"
                   variant="outline"
-                  disabled={queue.isFetching}
-                  onClick={() => void queue.refetch()}
+                  onClick={() => {
+                    if (!queue.isFetching) void queue.refetch()
+                  }}
                 >
                   {queue.isFetching ? 'Retrying…' : 'Try again'}
                 </Button>

@@ -4,6 +4,7 @@ import { ArrowRight, Check } from 'lucide-react'
 import { useState } from 'react'
 import { LandingNavigation } from '@/components/landing-navigation'
 import { LandingWorkflows } from '@/components/landing-workflows'
+import { PageHeading } from '@/components/page-heading'
 import { QueueDemo } from '@/components/queue-demo'
 import { Button } from '@/components/ui/button'
 import { getCurrentUser, signOut } from '@/lib/auth'
@@ -55,24 +56,25 @@ function Home() {
         user={user}
       />
 
-      <main id="main-content">
+      <main id="main-content" tabIndex={-1}>
         <section
           aria-labelledby="hero-heading"
           className="mx-auto grid max-w-content gap-12 px-page py-section md:grid-cols-[1.05fr_0.95fr] md:items-center"
           id="top"
+          tabIndex={-1}
         >
           <div className="max-w-2xl">
             <p className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-sm font-medium text-muted-foreground shadow-sm">
               <span aria-hidden="true" className="size-2 rounded-full bg-status-success" />A clearer
               walk-in queue
             </p>
-            <h1
+            <PageHeading
               className="mt-6 text-display font-semibold leading-[1.02] tracking-[-0.045em]"
               id="hero-heading"
             >
               Walk-in queues,
               <span className="block text-primary">easier to follow.</span>
-            </h1>
+            </PageHeading>
             <p className="mt-6 max-w-xl text-lg leading-8 text-muted-foreground">
               Quevo helps customers join an available branch service and gives operators a clear
               view of who is waiting and who is being served.
@@ -175,7 +177,11 @@ function Home() {
 
       <footer className="border-t bg-background">
         <div className="mx-auto flex max-w-content flex-col gap-5 px-page py-7 sm:flex-row sm:items-center sm:justify-between">
-          <Link aria-label="Quevo home" className="font-semibold tracking-tight" to="/">
+          <Link
+            aria-label="Quevo home"
+            className="inline-flex min-h-11 items-center font-semibold tracking-tight focus-visible:outline"
+            to="/"
+          >
             Quevo
           </Link>
           <nav aria-label="Footer">

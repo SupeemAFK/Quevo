@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { AuthenticatedShell } from '@/components/authenticated-shell'
 import { CustomerTicketDetails } from '@/components/customer-ticket-details'
 import { FeedbackMessage, LoadingMessage } from '@/components/feedback-message'
+import { PageHeading } from '@/components/page-heading'
 import { Button } from '@/components/ui/button'
 import { getCurrentUser } from '@/lib/auth'
 import { customerTicketOptions } from '@/lib/customer-queue'
@@ -31,6 +32,7 @@ function CustomerTicketPage() {
   })
 
   async function refreshStatus() {
+    if (ticketQuery.isFetching) return
     setFeedback(null)
     const result = await ticketQuery.refetch()
     setFeedback(
@@ -47,7 +49,9 @@ function CustomerTicketPage() {
           <p className="text-sm font-semibold uppercase tracking-[0.12em] text-primary">
             Customer ticket
           </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">Your ticket</h1>
+          <PageHeading className="mt-2 text-3xl font-semibold tracking-tight">
+            Your ticket
+          </PageHeading>
         </header>
 
         {ticketQuery.isPending ? (
@@ -63,7 +67,8 @@ function CustomerTicketPage() {
           <div className="my-6 space-y-4">
             <FeedbackMessage kind="error">{ticketQuery.error.message}</FeedbackMessage>
             <Button
-              disabled={ticketQuery.isFetching}
+              aria-disabled={ticketQuery.isFetching}
+              className="min-h-11 px-4 aria-disabled:pointer-events-none aria-disabled:opacity-50"
               onClick={() => void refreshStatus()}
               variant="outline"
             >

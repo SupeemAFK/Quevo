@@ -25,6 +25,41 @@ vi.mock('@tanstack/react-router', () => ({
 type ActiveTicket = components['schemas']['queue.TicketResponse']
 
 describe('CustomerServiceSelection', () => {
+  it('supports keyboard service selection and queue joining', async () => {
+    const user = userEvent.setup()
+    const onJoin = vi.fn()
+    const services = [
+      {
+        id: 'service-1',
+        branchId: 'branch-1',
+        branchName: 'Demo Branch',
+        name: 'General Service',
+      },
+    ]
+    render(
+      <CustomerServiceSelection
+        activeTickets={[]}
+        error=""
+        joining={false}
+        onJoin={onJoin}
+        services={services}
+      />,
+    )
+
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'General Service at Demo Branch' })).toHaveFocus()
+    await user.keyboard('{Space}')
+    expect(screen.getByRole('button', { name: 'General Service at Demo Branch' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'Join queue' })).toHaveFocus()
+    await user.keyboard('{Enter}')
+
+    expect(onJoin).toHaveBeenCalledWith(services[0])
+  })
+
   it('requires a service selection before joining', async () => {
     const user = userEvent.setup()
     const onJoin = vi.fn()
@@ -142,7 +177,10 @@ describe('CustomerServiceSelection', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('Joining queue…')
     expect(screen.getByRole('button', { name: 'Join queue' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Join queue' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Join queue' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
     expect(screen.getByRole('button', { name: 'General Service at Demo Branch' })).toBeDisabled()
   })
 })

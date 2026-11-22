@@ -1,5 +1,12 @@
 import type { QueryClient } from '@tanstack/react-query'
-import { createRootRouteWithContext, HeadContent, Link, Scripts } from '@tanstack/react-router'
+import {
+  createRootRouteWithContext,
+  HeadContent,
+  Link,
+  Scripts,
+  useRouterState,
+} from '@tanstack/react-router'
+import { useEffect, useRef } from 'react'
 
 import appCss from '../styles.css?url'
 
@@ -21,6 +28,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const previousPathname = useRef(pathname)
+
+  useEffect(() => {
+    if (previousPathname.current === pathname) return
+    previousPathname.current = pathname
+    const focusFrame = window.requestAnimationFrame(() => {
+      document.querySelector<HTMLElement>('main h1[tabindex="-1"]')?.focus()
+    })
+    return () => window.cancelAnimationFrame(focusFrame)
+  }, [pathname])
+
   return (
     <html lang="en">
       <head>
@@ -41,7 +60,9 @@ function NotFound() {
         <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           404
         </p>
-        <h1 className="text-4xl font-semibold tracking-tight">Page not found</h1>
+        <h1 className="text-4xl font-semibold tracking-tight" tabIndex={-1}>
+          Page not found
+        </h1>
         <p className="mb-7 mt-3 text-muted-foreground">The page you requested does not exist.</p>
         <Link className="text-primary underline-offset-4 hover:underline" to="/">
           Back to Quevo

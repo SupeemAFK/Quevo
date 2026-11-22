@@ -16,6 +16,7 @@ export function LandingWorkflows() {
       aria-labelledby="workflows-heading"
       className="scroll-mt-24 mx-auto max-w-content px-page py-section"
       id="workflows"
+      tabIndex={-1}
     >
       <div className="max-w-2xl">
         <p className="text-sm font-semibold uppercase tracking-[0.14em] text-primary">

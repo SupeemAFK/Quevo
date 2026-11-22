@@ -29,6 +29,7 @@ export function CustomerServiceSelection({
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (joining) return
     const selectedService = services.find((service) => service.id === selectedServiceID)
     if (!selectedService) {
       setSelectionError('Select a service before joining the queue.')
@@ -56,7 +57,7 @@ export function CustomerServiceSelection({
               <li key={ticket.id}>
                 <Link
                   aria-label={`View ticket ${ticket.ticketNumber} (${ticket.serviceName} at ${ticket.branchName}). Status: ${ticketStatusLabel(ticket.status)}`}
-                  className="group flex min-h-28 flex-col rounded-xl border bg-card p-4 text-left shadow-sm transition-colors hover:border-primary/40 hover:bg-background focus-visible:outline"
+                  className="group flex min-h-28 flex-col rounded-xl border bg-card p-4 text-left shadow-sm transition-colors hover:border-primary/40 hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   params={{ ticketId: ticket.id }}
                   to="/tickets/$ticketId"
                 >
@@ -106,7 +107,7 @@ export function CustomerServiceSelection({
                 <button
                   aria-pressed={selected}
                   aria-label={`${service.name} at ${service.branchName}`}
-                  className={`flex min-h-20 w-full items-center justify-between gap-4 rounded-xl border p-4 text-left transition-colors ${selected ? 'border-primary bg-primary/5 ring-1 ring-primary/30' : 'bg-card hover:bg-muted/60'}`}
+                  className={`flex min-h-20 w-full items-center justify-between gap-4 rounded-xl border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${selected ? 'border-primary bg-primary/5 ring-1 ring-primary/30' : 'bg-card hover:bg-muted/60'}`}
                   key={service.id}
                   onClick={() => {
                     setSelectedServiceID(service.id)
@@ -136,8 +137,9 @@ export function CustomerServiceSelection({
         {selectionError ? <FeedbackMessage kind="error">{selectionError}</FeedbackMessage> : null}
         {error ? <FeedbackMessage kind="error">{error}</FeedbackMessage> : null}
         <Button
-          className="min-h-12 w-full px-5 sm:w-auto"
-          disabled={joining || services.length === 0}
+          aria-disabled={joining || services.length === 0}
+          className="min-h-12 w-full px-5 aria-disabled:pointer-events-none aria-disabled:opacity-50 sm:w-auto"
+          disabled={services.length === 0}
           type="submit"
         >
           Join queue

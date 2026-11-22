@@ -56,7 +56,9 @@ describe('CustomerTicketDetails', () => {
       />,
     )
 
-    await user.click(screen.getByRole('button', { name: 'Refresh status' }))
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'Refresh status' })).toHaveFocus()
+    await user.keyboard('{Enter}')
     expect(onRefresh).toHaveBeenCalledOnce()
     rerender(
       <CustomerTicketDetails
@@ -73,7 +75,10 @@ describe('CustomerTicketDetails', () => {
     render(<CustomerTicketDetails feedback={null} onRefresh={vi.fn()} refreshing ticket={ticket} />)
 
     expect(screen.getByTestId('ticket-number')).toHaveTextContent('12')
-    expect(screen.getByRole('button', { name: 'Refresh status' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Refresh status' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
     expect(screen.getByRole('status')).toHaveTextContent('Refreshing ticket status…')
   })
 

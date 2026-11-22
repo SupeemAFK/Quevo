@@ -57,10 +57,15 @@ describe('LandingNavigation', () => {
     )
 
     await user.click(screen.getByRole('link', { name: 'How it works' }))
-    expect(screen.getByRole('button', { name: 'Open navigation menu' })).toHaveAttribute(
-      'aria-expanded',
-      'false',
-    )
+    const trigger = screen.getByRole('button', { name: 'Open navigation menu' })
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    expect(trigger).toHaveFocus()
+
+    await user.click(trigger)
+    await user.tab()
+    await user.keyboard('{Escape}')
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    expect(trigger).toHaveFocus()
   })
 
   it('shows only the signed-in customer destination and preserves sign out', async () => {

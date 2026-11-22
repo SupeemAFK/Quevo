@@ -26,6 +26,33 @@ const detail: Detail = {
 }
 
 describe('OperatorQueue', () => {
+  it('supports keyboard queue refresh and call-next in focus order', async () => {
+    const user = userEvent.setup()
+    const onAction = vi.fn()
+    const onRefresh = vi.fn()
+    render(
+      <OperatorQueue
+        detail={detail}
+        busy={false}
+        refreshing={false}
+        pendingAction={null}
+        message=""
+        error=""
+        onAction={onAction}
+        onRefresh={onRefresh}
+      />,
+    )
+
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'Refresh queue' })).toHaveFocus()
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'Call next' })).toHaveFocus()
+    await user.keyboard('{Enter}')
+
+    expect(onAction).toHaveBeenCalledWith('call-next')
+    expect(onRefresh).not.toHaveBeenCalled()
+  })
+
   it('shows only actions allowed by the current ticket state', async () => {
     const user = userEvent.setup()
     const onAction = vi.fn()
@@ -131,9 +158,18 @@ describe('OperatorQueue', () => {
     )
 
     expect(screen.getByTestId('operator-current-ticket')).toHaveTextContent('1')
-    expect(screen.getByRole('button', { name: 'Refresh queue' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Start service' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Skip ticket' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Refresh queue' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
+    expect(screen.getByRole('button', { name: 'Start service' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
+    expect(screen.getByRole('button', { name: 'Skip ticket' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
     expect(screen.getByRole('status')).toHaveTextContent('Starting service…')
   })
 
@@ -153,7 +189,10 @@ describe('OperatorQueue', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('Refreshing queue…')
     expect(screen.getAllByRole('status')).toHaveLength(1)
-    expect(screen.getByRole('button', { name: 'Refresh queue' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Refresh queue' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
   })
 
   it('uses one status announcement for success and an alert for errors', () => {
@@ -229,7 +268,9 @@ describe('OperatorQueue', () => {
     }
     const { rerender } = render(<OperatorQueue {...props} error="" />)
 
-    await user.click(screen.getByRole('button', { name: 'Call next' }))
+    const callNext = screen.getByRole('button', { name: 'Call next' })
+    callNext.focus()
+    await user.click(callNext)
     expect(onAction).toHaveBeenCalledWith('call-next')
     rerender(
       <OperatorQueue
@@ -242,5 +283,43 @@ describe('OperatorQueue', () => {
     expect(screen.queryByTestId('operator-current-ticket')).not.toBeInTheDocument()
     expect(screen.getByRole('alert')).toHaveTextContent('Refresh the queue and try again.')
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Call next' })).toHaveFocus()
+  })
+
+  it('moves keyboard focus to the next valid action after a confirmed transition', () => {
+    const props = {
+      busy: false,
+      refreshing: false,
+      pendingAction: null,
+      message: '',
+      error: '',
+      onAction: vi.fn(),
+      onRefresh: vi.fn(),
+    }
+    const { rerender } = render(<OperatorQueue {...props} detail={detail} />)
+    screen.getByRole('button', { name: 'Call next' }).focus()
+
+    rerender(
+      <OperatorQueue
+        {...props}
+        detail={{ ...detail, current: { ...ticket, status: 'PENDING' }, waiting: [] }}
+        message="Ticket 1 called."
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Start service' })).toHaveFocus()
+
+    rerender(
+      <OperatorQueue
+        {...props}
+        detail={{ ...detail, current: { ...ticket, status: 'OPERATING' }, waiting: [] }}
+        message="Service started."
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Complete service' })).toHaveFocus()
+
+    rerender(
+      <OperatorQueue {...props} detail={{ ...detail, waiting: [] }} message="Service completed." />,
+    )
+    expect(screen.getByText('You have no current ticket.')).toHaveFocus()
   })
 })

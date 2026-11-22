@@ -51,6 +51,7 @@ export function QueueDemo() {
         aria-labelledby="queue-demo-heading"
         className="scroll-mt-24 border-y bg-muted/50"
         id="queue-demo"
+        tabIndex={-1}
       >
         <div className="mx-auto grid max-w-content gap-8 px-page py-section lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
           <div className="max-w-xl">

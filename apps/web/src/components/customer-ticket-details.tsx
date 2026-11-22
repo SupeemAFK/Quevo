@@ -25,9 +25,11 @@ export function CustomerTicketDetails({ ticket, refreshing, feedback, onRefresh 
           </p>
         </div>
         <Button
-          className="min-h-11 px-4"
-          disabled={refreshing}
-          onClick={onRefresh}
+          aria-disabled={refreshing}
+          className="min-h-11 px-4 aria-disabled:pointer-events-none aria-disabled:opacity-50"
+          onClick={() => {
+            if (!refreshing) onRefresh()
+          }}
           variant="outline"
         >
           <RefreshCw

@@ -4,6 +4,32 @@ import { describe, expect, it, vi } from 'vitest'
 import { LoginForm } from './login-form'
 
 describe('LoginForm', () => {
+  it('supports keyboard-only credential entry and submission in tab order', async () => {
+    const user = userEvent.setup()
+    const signIn = vi.fn().mockResolvedValue({
+      id: 'customer-1',
+      displayName: 'Demo Customer',
+      role: 'CUSTOMER',
+    })
+    render(<LoginForm signIn={signIn} />)
+
+    await user.tab()
+    expect(screen.getByLabelText('Email')).toHaveFocus()
+    await user.type(screen.getByLabelText('Email'), 'customer@example.test')
+    await user.tab()
+    expect(screen.getByLabelText('Password')).toHaveFocus()
+    await user.type(screen.getByLabelText('Password'), 'local-demo-password')
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'Sign in' })).toHaveFocus()
+    await user.keyboard('{Enter}')
+
+    expect(signIn).toHaveBeenCalledWith({
+      email: 'customer@example.test',
+      password: 'local-demo-password',
+    })
+    expect(await screen.findByRole('status')).toHaveTextContent('Signed in successfully.')
+  })
+
   it('submits credentials and shows success', async () => {
     const user = userEvent.setup()
     const signIn = vi.fn().mockResolvedValue({
@@ -66,7 +92,7 @@ describe('LoginForm', () => {
     await user.click(screen.getByRole('button', { name: 'Sign in' }))
 
     expect(screen.getByRole('status')).toHaveTextContent('Signing in…')
-    expect(screen.getByRole('button', { name: 'Sign in' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Sign in' })).toHaveAttribute('aria-disabled', 'true')
     finishSignIn()
     await screen.findByText('Signed in successfully.')
     expect(screen.getByRole('status')).toHaveTextContent('Signed in successfully.')

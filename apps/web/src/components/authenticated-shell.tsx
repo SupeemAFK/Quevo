@@ -84,7 +84,7 @@ export function AuthenticatedShell({ user, currentSection, children }: Props) {
           </div>
         ) : null}
       </header>
-      <main className="mx-auto max-w-content px-page py-8 sm:py-10" id="app-main">
+      <main className="mx-auto max-w-content px-page py-8 sm:py-10" id="app-main" tabIndex={-1}>
         {children}
       </main>
     </div>

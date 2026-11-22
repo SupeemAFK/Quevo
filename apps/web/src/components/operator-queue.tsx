@@ -1,4 +1,5 @@
 import { AnimatePresence, LayoutGroup, MotionConfig, motion, useReducedMotion } from 'motion/react'
+import { useEffect, useRef } from 'react'
 import type { components } from '@/client/api/schema'
 import { FeedbackMessage, LoadingMessage } from './feedback-message'
 import { TicketStatus } from './ticket-status'
@@ -29,6 +30,9 @@ export function OperatorQueue({
   onRefresh,
 }: Props) {
   const { current, waiting } = detail
+  const nextActionRef = useRef<HTMLButtonElement>(null)
+  const emptyCurrentRef = useRef<HTMLParagraphElement>(null)
+  const lastMessageRef = useRef('')
   const prefersReducedMotion = useReducedMotion() ?? false
   const motionTransition = prefersReducedMotion
     ? { duration: 0 }
@@ -41,6 +45,30 @@ export function OperatorQueue({
     complete: 'Completing service…',
     skip: 'Skipping ticket…',
   }
+
+  useEffect(() => {
+    if (!message) {
+      lastMessageRef.current = ''
+      return
+    }
+    if (lastMessageRef.current === message) return
+    lastMessageRef.current = message
+    const nextAction = nextActionRef.current
+    if (nextAction && !nextAction.disabled) {
+      nextAction.focus()
+    } else {
+      emptyCurrentRef.current?.focus()
+    }
+  }, [message])
+
+  function handleAction(action: Action) {
+    if (!busy) onAction(action)
+  }
+
+  function handleRefresh() {
+    if (!busy && !refreshing) onRefresh()
+  }
+
   return (
     <MotionConfig reducedMotion="user">
       <LayoutGroup id={`operator-queue-${detail.queue.serviceId}`}>
@@ -67,10 +95,10 @@ export function OperatorQueue({
                   </span>
                 </div>
                 <Button
-                  className="min-h-11 px-4"
+                  aria-disabled={busy || refreshing}
+                  className="min-h-11 px-4 aria-disabled:pointer-events-none aria-disabled:opacity-50"
                   variant="outline"
-                  disabled={busy || refreshing}
-                  onClick={onRefresh}
+                  onClick={handleRefresh}
                 >
                   Refresh queue
                 </Button>
@@ -106,17 +134,18 @@ export function OperatorQueue({
                       {current.status === 'PENDING' ? (
                         <>
                           <Button
-                            className="min-h-11 px-5"
-                            disabled={busy}
-                            onClick={() => onAction('start')}
+                            aria-disabled={busy}
+                            className="min-h-11 px-5 aria-disabled:pointer-events-none aria-disabled:opacity-50"
+                            onClick={() => handleAction('start')}
+                            ref={nextActionRef}
                           >
                             Start service
                           </Button>
                           <Button
-                            className="min-h-11 px-5"
+                            aria-disabled={busy}
                             variant="outline"
-                            disabled={busy}
-                            onClick={() => onAction('skip')}
+                            className="min-h-11 px-5 aria-disabled:pointer-events-none aria-disabled:opacity-50"
+                            onClick={() => handleAction('skip')}
                           >
                             Skip ticket
                           </Button>
@@ -124,9 +153,10 @@ export function OperatorQueue({
                       ) : null}
                       {current.status === 'OPERATING' ? (
                         <Button
-                          className="min-h-11 px-5"
-                          disabled={busy}
-                          onClick={() => onAction('complete')}
+                          aria-disabled={busy}
+                          className="min-h-11 px-5 aria-disabled:pointer-events-none aria-disabled:opacity-50"
+                          onClick={() => handleAction('complete')}
+                          ref={nextActionRef}
                         >
                           Complete service
                         </Button>
@@ -143,7 +173,9 @@ export function OperatorQueue({
                     transition={motionTransition}
                   >
                     <div>
-                      <p className="font-semibold">You have no current ticket.</p>
+                      <p className="font-semibold" ref={emptyCurrentRef} tabIndex={-1}>
+                        You have no current ticket.
+                      </p>
                       <p className="mt-1 text-sm text-muted-foreground">
                         {waiting.length > 0
                           ? 'Call the next customer when you are ready.'
@@ -151,9 +183,11 @@ export function OperatorQueue({
                       </p>
                     </div>
                     <Button
-                      className="min-h-11 w-full px-5 sm:w-auto"
-                      disabled={busy || waiting.length === 0}
-                      onClick={() => onAction('call-next')}
+                      aria-disabled={busy || waiting.length === 0}
+                      className="min-h-11 w-full px-5 sm:w-auto aria-disabled:pointer-events-none aria-disabled:opacity-50"
+                      disabled={waiting.length === 0}
+                      onClick={() => handleAction('call-next')}
+                      ref={nextActionRef}
                     >
                       Call next
                     </Button>

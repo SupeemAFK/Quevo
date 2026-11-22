@@ -3,6 +3,7 @@ import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { AuthenticatedShell } from '@/components/authenticated-shell'
 import { CustomerServiceSelection } from '@/components/customer-service-selection'
 import { FeedbackMessage, LoadingMessage } from '@/components/feedback-message'
+import { PageHeading } from '@/components/page-heading'
 import { Button } from '@/components/ui/button'
 import { getCurrentUser } from '@/lib/auth'
 import { customerQueueOptions, customerTicketOptions, joinQueue } from '@/lib/customer-queue'
@@ -54,7 +55,9 @@ function CustomerServicesPage() {
           <p className="text-sm font-semibold uppercase tracking-[0.12em] text-primary">
             Customer queue
           </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">Join a queue</h1>
+          <PageHeading className="mt-2 text-3xl font-semibold tracking-tight">
+            Join a queue
+          </PageHeading>
           <p className="mt-2 text-muted-foreground">
             Choose an active service to receive your ticket number.
           </p>
@@ -66,8 +69,11 @@ function CustomerServicesPage() {
           <div className="space-y-4">
             <FeedbackMessage kind="error">{queueQuery.error.message}</FeedbackMessage>
             <Button
-              disabled={queueQuery.isFetching}
-              onClick={() => void queueQuery.refetch()}
+              aria-disabled={queueQuery.isFetching}
+              className="min-h-11 px-4 aria-disabled:pointer-events-none aria-disabled:opacity-50"
+              onClick={() => {
+                if (!queueQuery.isFetching) void queueQuery.refetch()
+              }}
               variant="outline"
             >
               {queueQuery.isFetching ? 'Retrying…' : 'Try again'}
