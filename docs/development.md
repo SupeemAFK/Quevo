@@ -8,7 +8,7 @@ From the repository root, run:
 docker compose up --build
 ```
 
-Compose starts PostgreSQL, the Go API, and the TanStack Start web app. Open `http://localhost:3000`. The API is available at `http://localhost:8080`; Swagger UI is at `http://localhost:8080/swagger/` and the generated OpenAPI JSON is at `http://localhost:8080/openapi.json`. PostgreSQL is exposed on port `5432` for local tools. Stop the stack with `Ctrl+C`. Add `-d` to run it in the background and use `docker compose down` to stop it.
+Compose starts PostgreSQL, the Go API, and the TanStack Start web app. Open `http://localhost:3000`. The API is available at `http://localhost:8080`; Swagger UI is at `http://localhost:8080/swagger/` and the generated OpenAPI JSON is at `http://localhost:8080/openapi.json`. PostgreSQL is exposed on port `5432` for local tools. Stop the stack with `Ctrl+C`. Add `-d` to run it in the background and use `docker compose down` to stop it. Quevo's current production API documentation URLs and public access policy are listed in the [Lab 5 deployment guide](labs/lab-05/deployment.md#swagger-access-policy).
 
 Compose stores database files in the named `postgres-data` volume. To reset the local database, run `docker compose down -v`.
 
