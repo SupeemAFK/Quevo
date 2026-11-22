@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import type { Identity } from '@/lib/auth'
 import { FeedbackMessage } from './feedback-message'
+import { QuevoMark } from './quevo-mark'
 import { ThemePreferenceSelect } from './theme-preference-select'
 import { Button } from './ui/button'
 
@@ -57,9 +58,7 @@ export function LandingNavigation({ user, onSignOut, signOutError }: Props) {
           onClick={closeMenu}
           to="/"
         >
-          <span aria-hidden="true" className="landing-brand-mark">
-            Q
-          </span>
+          <QuevoMark className="size-6 shrink-0" />
           Quevo
         </Link>
 

@@ -23,7 +23,7 @@ The web foundation remains shadcn/ui, Tailwind CSS, Geist Sans and Geist Mono, M
 
 ## Component rules
 
-- Use white/black and neutral grays for page structure. Use neutral layering only where it clarifies the product preview. Avoid decorative backgrounds, gradients, glows, or visual effects.
+- Use white/black and neutral grays for page structure. Use neutral layering only where it clarifies the product preview. Avoid generic decorative backgrounds, gradients, glows, or visual effects. Landing-page queue artwork may use low-contrast route lines and ticket slips at the edges of sections.
 - Reserve green for selected service, activity markers, and meaningful active/success states. Primary controls stay black/white. Do not color headline text green.
 - Use plain text for metadata. Ticket statuses may use a neutral outline with a visible text label.
 - Use bounded surfaces only where they improve focus, such as the queue preview, ticket, form, or operator current-ticket area.
@@ -45,7 +45,7 @@ Error and warning colors are reserved for those semantic messages. Ticket transi
 
 ## Motion
 
-Use Motion where it explains an interaction: the landing role switch, selected service/queue, ticket status, queue reordering, animated counts, or short control/feedback transitions. Keep actions immediate, limit looping movement to the live sample and ticket progress marker, and respect reduced motion. Landing content reveals as its section enters view. Status text remains visible immediately while its icon transitions. The landing preview is a local interactive sample; it cycles through the same three tickets, can be paused, and does not read or change a real queue. Playback is disabled when reduced motion is requested.
+Use Motion where it explains an interaction: the landing role switch, selected service/queue, ticket status, queue reordering, animated counts, or short control/feedback transitions. Keep actions immediate. Landing route markers and ticket slips may move subtly to reinforce queue progression; keep them behind content and respect reduced motion. Landing content reveals as its section enters view. Status text remains visible immediately while its icon transitions. The landing preview is a local interactive sample; it cycles through the same three tickets, can be paused, and does not read or change a real queue. Playback is disabled when reduced motion is requested.
 
 ## Contrast
 

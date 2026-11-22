@@ -170,12 +170,6 @@
   }
 }
 
-.landing-brand-mark {
-  color: var(--brand-green);
-  font-weight: 700;
-  letter-spacing: -0.08em;
-}
-
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

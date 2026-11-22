@@ -4,57 +4,12 @@ import { MotionConfig, motion } from 'motion/react'
 import type { Identity } from '@/lib/auth'
 import { usePrefersReducedMotion } from '@/lib/use-prefers-reduced-motion'
 import { PageHeading } from './page-heading'
+import { QueueBackdrop } from './queue-backdrop'
 import { QueueDemo } from './queue-demo'
 import { Button } from './ui/button'
 
 type LandingHeroProps = {
   user: Identity | null
-}
-
-function FlowBackdrop({ reducedMotion }: { reducedMotion: boolean }) {
-  return (
-    <svg
-      aria-hidden="true"
-      className="pointer-events-none absolute right-0 top-0 hidden h-full w-[68%] lg:block"
-      fill="none"
-      preserveAspectRatio="none"
-      viewBox="0 0 900 650"
-    >
-      <path
-        d="M 930 90 C 770 90 790 205 635 205 S 500 365 350 365 S 180 545 -40 545"
-        opacity="0.32"
-        stroke="var(--border)"
-        strokeWidth="1.5"
-      />
-      <motion.path
-        animate={reducedMotion ? { strokeDashoffset: 0 } : { strokeDashoffset: [0, -120] }}
-        d="M 930 90 C 770 90 790 205 635 205 S 500 365 350 365 S 180 545 -40 545"
-        opacity="0.38"
-        stroke="var(--brand-green)"
-        strokeDasharray="2 18"
-        strokeLinecap="round"
-        strokeWidth="2"
-        transition={{ duration: 18, ease: 'linear', repeat: reducedMotion ? 0 : Infinity }}
-      />
-      <motion.circle
-        animate={
-          reducedMotion
-            ? { cx: 635, cy: 205 }
-            : {
-                cx: [930, 850, 780, 690, 635, 550, 480, 350, 280, 220, 150, 50, -40],
-                cy: [90, 101, 150, 199, 205, 245, 320, 365, 415, 500, 545, 545, 545],
-              }
-        }
-        fill="var(--brand-green)"
-        r="4"
-        stroke="var(--background)"
-        strokeWidth="3"
-        transition={{ duration: 20, ease: 'linear', repeat: reducedMotion ? 0 : Infinity }}
-      />
-      <circle cx="635" cy="205" fill="var(--background)" r="5" stroke="var(--border)" />
-      <circle cx="350" cy="365" fill="var(--background)" r="5" stroke="var(--border)" />
-    </svg>
-  )
 }
 
 function reveal(delay: number, reducedMotion: boolean) {
@@ -81,7 +36,7 @@ export function LandingHero({ user }: LandingHeroProps) {
         id="top"
         tabIndex={-1}
       >
-        <FlowBackdrop reducedMotion={prefersReducedMotion} />
+        <QueueBackdrop reducedMotion={prefersReducedMotion} variant="hero" />
         <div className="relative z-10 mx-auto grid max-w-content items-center gap-10 px-page py-14 sm:py-18 lg:min-h-[650px] lg:grid-cols-[0.78fr_1.22fr] lg:gap-12 lg:py-20">
           <div className="max-w-xl">
             <motion.p

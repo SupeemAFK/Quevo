@@ -4,12 +4,12 @@ The `/` route introduces Quevo with a single sign-in action and a secondary link
 
 ## Layout
 
-- `#top` pairs the value statement and two clear actions with a layered queue preview and a short three-step path from choosing a service to being called.
+- `#top` pairs the value statement and two clear actions with a layered queue preview, a short three-step path, and a restrained animated route with ticket slips.
 - `#queue-demo` is the only demonstration. Its animated customer/operator switch shows the same sample tickets as a digital ticket or an operator queue. Counts, ticket changes, status, and ordered rows respond to the local controls; sample state stays in local React state. The sample cycles continuously on load, offers pause/replay, and stays still for reduced-motion preferences.
-- `#workflows` explains the customer and operator steps with small queue-specific interface snippets, staggered reveals, and a moving ticket-progress marker.
+- `#workflows` explains the customer and operator steps with small queue-specific interface snippets, staggered reveals, and an edge-aligned queue route with softly moving ticket slips.
 - The header and footer link to the workflow explanation and sample, with a sign-in action.
 
-The page follows the black-and-white system in [the visual system](design/visual-system.md). Green marks active or successful states; primary controls use neutral black and white. Lucide icons label meaningful roles and actions. Typography, dividers, a short sequence rail, and one layered product preview establish the visual hierarchy. Theme preference is a compact System/Light/Dark icon group with persistent selection. Section links scroll smoothly unless reduced motion is preferred.
+The page follows the black-and-white system in [the visual system](design/visual-system.md). Green marks active or successful states; primary controls use neutral black and white. Lucide icons label meaningful roles and actions. The Quevo mark is a compact ordered-ticket SVG used in the header, footer, and favicon. Typography, dividers, a short sequence rail, and one layered product preview establish the visual hierarchy. Queue-slip artwork stays at the section edges so it adds movement without competing with copy or controls. Theme preference is a compact System/Light/Dark icon group with persistent selection. Section links scroll smoothly unless reduced motion is preferred.
 
 The mobile navigation supports keyboard operation and the page provides a skip link. Native anchors handle page sections; TanStack links handle application routes.
 

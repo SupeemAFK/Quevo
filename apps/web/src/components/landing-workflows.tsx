@@ -1,6 +1,7 @@
 import { ArrowRight, ListOrdered, PhoneCall, RefreshCw, TicketCheck } from 'lucide-react'
 import { MotionConfig, motion } from 'motion/react'
 import { usePrefersReducedMotion } from '@/lib/use-prefers-reduced-motion'
+import { QueueBackdrop } from './queue-backdrop'
 import { TicketStatus } from './ticket-status'
 
 const highlights = [
@@ -134,11 +135,12 @@ export function LandingWorkflows() {
     <MotionConfig reducedMotion="user">
       <section
         aria-labelledby="workflows-heading"
-        className="bg-muted"
+        className="relative isolate overflow-hidden bg-muted"
         id="workflows"
         tabIndex={-1}
       >
-        <div className="mx-auto max-w-content px-page py-section">
+        <QueueBackdrop reducedMotion={prefersReducedMotion} variant="workflows" />
+        <div className="relative z-10 mx-auto max-w-content px-page py-section">
           <motion.div
             className="grid gap-4 border-b border-border pb-8 md:grid-cols-[1fr_0.7fr] md:items-end"
             initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}

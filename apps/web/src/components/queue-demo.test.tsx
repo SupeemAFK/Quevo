@@ -4,6 +4,18 @@ import { describe, expect, it } from 'vitest'
 import { QueueDemo } from './queue-demo'
 
 describe('QueueDemo', () => {
+  it('uses neutral ticket panels in both preview roles and themes', async () => {
+    const user = userEvent.setup()
+    render(<QueueDemo autoPlay={false} />)
+
+    const operatorTicket = screen.getByRole('region', { name: 'Current ticket' })
+    expect(operatorTicket).toHaveClass('bg-muted', 'dark:bg-accent')
+
+    await user.click(screen.getByRole('button', { name: 'Customer' }))
+    const customerTicket = await screen.findByRole('region', { name: 'Your ticket' })
+    expect(customerTicket).toHaveClass('bg-muted', 'dark:bg-accent')
+  })
+
   it('calls the oldest waiting ticket, marks it served, and resets the example', async () => {
     const user = userEvent.setup()
     render(<QueueDemo autoPlay={false} />)

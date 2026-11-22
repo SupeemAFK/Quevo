@@ -295,17 +295,17 @@ export function QueueDemo({ autoPlay = true }: QueueDemoProps = {}) {
             >
               <section
                 aria-labelledby="demo-current-heading"
-                className="flex min-h-[22rem] flex-col justify-between bg-foreground p-5 text-background sm:p-6 dark:bg-accent dark:text-foreground"
+                className="flex min-h-[22rem] flex-col justify-between bg-muted p-5 text-foreground sm:p-6 dark:bg-accent dark:text-foreground"
               >
                 <div>
                   <div className="flex items-center justify-between gap-3">
                     <h3
-                      className="text-sm font-medium text-background/70 dark:text-muted-foreground"
+                      className="text-sm font-medium text-muted-foreground"
                       id="demo-current-heading"
                     >
                       Current ticket
                     </h3>
-                    <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-background/60 dark:text-muted-foreground">
+                    <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                       {current ? 'In service' : next ? 'Next to call' : 'Queue clear'}
                     </span>
                   </div>
@@ -343,7 +343,7 @@ export function QueueDemo({ autoPlay = true }: QueueDemoProps = {}) {
 
                 <div className="mt-8 grid gap-2">
                   <Button
-                    className="min-h-11 w-full min-w-0 justify-between bg-background px-4 text-foreground hover:bg-muted dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
+                    className="min-h-11 w-full min-w-0 justify-between px-4"
                     disabled={isPlaying || current !== null || waiting.length === 0}
                     onClick={callNext}
                   >
@@ -354,7 +354,7 @@ export function QueueDemo({ autoPlay = true }: QueueDemoProps = {}) {
                     <ArrowRight aria-hidden="true" className="shrink-0" size={16} />
                   </Button>
                   <Button
-                    className="min-h-11 w-full min-w-0 border-background/30 bg-transparent px-4 text-background hover:bg-background/10 hover:text-background dark:border-border dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground"
+                    className="min-h-11 w-full min-w-0 border-border bg-transparent px-4 text-foreground hover:bg-background"
                     disabled={isPlaying || current === null}
                     onClick={markServed}
                     variant="outline"
@@ -363,7 +363,7 @@ export function QueueDemo({ autoPlay = true }: QueueDemoProps = {}) {
                     Mark served
                   </Button>
                   <Button
-                    className="min-h-10 w-full min-w-0 text-background hover:bg-background/10 hover:text-background dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground"
+                    className="min-h-10 w-full min-w-0 text-muted-foreground hover:bg-background hover:text-foreground"
                     onClick={resetDemo}
                     variant="ghost"
                   >
@@ -444,17 +444,17 @@ export function QueueDemo({ autoPlay = true }: QueueDemoProps = {}) {
             >
               <section
                 aria-labelledby="demo-customer-heading"
-                className="flex min-h-[22rem] flex-col justify-between bg-foreground p-5 text-background sm:p-6 dark:bg-accent dark:text-foreground"
+                className="flex min-h-[22rem] flex-col justify-between bg-muted p-5 text-foreground sm:p-6 dark:bg-accent dark:text-foreground"
               >
                 <div>
                   <div className="flex items-center justify-between gap-3">
                     <h3
-                      className="text-sm font-medium text-background/70 dark:text-muted-foreground"
+                      className="text-sm font-medium text-muted-foreground"
                       id="demo-customer-heading"
                     >
                       Your ticket
                     </h3>
-                    <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-background/60 dark:text-muted-foreground">
+                    <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                       General service
                     </span>
                   </div>
@@ -471,12 +471,10 @@ export function QueueDemo({ autoPlay = true }: QueueDemoProps = {}) {
                     <TicketStatus status={customerStatus} />
                   </div>
                 </div>
-                <div className="mt-8 border-t border-background/20 pt-4 dark:border-border">
-                  <p className="text-sm leading-6 text-background/80 dark:text-muted-foreground">
-                    {customerGuidance}
-                  </p>
+                <div className="mt-8 border-t border-border pt-4">
+                  <p className="text-sm leading-6 text-muted-foreground">{customerGuidance}</p>
                   <button
-                    className="mt-4 inline-flex min-h-10 items-center gap-2 text-sm font-medium text-background underline-offset-4 hover:underline focus-visible:outline dark:text-foreground"
+                    className="mt-4 inline-flex min-h-10 items-center gap-2 text-sm font-medium text-foreground underline-offset-4 hover:underline focus-visible:outline"
                     onClick={() => setView('operator')}
                     type="button"
                   >
