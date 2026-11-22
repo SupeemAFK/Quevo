@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { components } from '@/client/api/schema'
@@ -96,7 +96,12 @@ describe('OperatorQueue', () => {
     expect(screen.getByRole('list', { name: 'Customers waiting in order' })).toBeInTheDocument()
     expect(screen.getByText('Ticket 1')).toBeInTheDocument()
     expect(screen.getByText('Ticket 2')).toBeInTheDocument()
-    expect(screen.getAllByText('Waiting', { exact: true })).toHaveLength(2)
+    expect(
+      within(screen.getByRole('list', { name: 'Customers waiting in order' })).getAllByText(
+        'Waiting',
+        { exact: true },
+      ),
+    ).toHaveLength(2)
   })
 
   it('disables queue actions while a request is pending and retains the current ticket', () => {
