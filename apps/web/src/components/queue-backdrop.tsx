@@ -2,12 +2,15 @@ import { motion } from 'motion/react'
 
 type QueueBackdropProps = {
   reducedMotion: boolean
-  variant: 'hero' | 'workflows' | 'footer'
+  variant: 'hero' | 'workflows' | 'footer' | 'login'
 }
 
 const route = 'M 1010 38 C 830 38 840 142 650 142 S 500 270 335 270 S 145 390 -25 390'
-const workflowRoute = 'M 1035 0 C 830 45 930 105 1020 150 S 855 260 980 320 S 900 390 1035 430'
 const footerRoute = 'M 1030 10 C 840 48 930 82 1030 116 S 875 178 1030 220'
+const workflowFlow = 'M -80 650 C 150 600 170 270 415 290 S 650 650 860 480 S 1120 110 1510 190'
+const workflowReturn = 'M -70 230 C 210 100 300 510 570 540 S 940 250 1100 365 S 1310 630 1510 570'
+const loginFlow = 'M -80 740 C 180 670 230 340 470 350 S 770 690 940 490 S 1190 140 1520 200'
+const loginReturn = 'M -60 210 C 190 100 340 470 590 500 S 900 240 1080 330 S 1300 620 1500 580'
 
 function TicketSlip({
   delay,
@@ -55,30 +58,134 @@ function TicketSlip({
 export function QueueBackdrop({ reducedMotion, variant }: QueueBackdropProps) {
   const className = {
     hero: 'right-0 top-0 hidden h-full w-[67%] opacity-55 lg:block',
-    workflows: 'right-0 top-0 hidden h-full w-[54%] opacity-60 md:block',
+    workflows: 'inset-0 h-full w-full opacity-40',
     footer: 'bottom-0 right-0 hidden h-full w-[45%] opacity-50 sm:block',
+    login: 'inset-0 h-full w-full opacity-40',
   }[variant]
-  const path = variant === 'workflows' ? workflowRoute : variant === 'footer' ? footerRoute : route
+  const isFullBleed = variant === 'workflows' || variant === 'login'
+  const path = {
+    hero: route,
+    workflows: workflowFlow,
+    footer: footerRoute,
+    login: loginFlow,
+  }[variant]
 
   return (
     <svg
       aria-hidden="true"
       className={`pointer-events-none absolute ${className}`}
       fill="none"
-      preserveAspectRatio="none"
-      viewBox="0 0 1000 430"
+      preserveAspectRatio={isFullBleed ? 'xMidYMid slice' : 'none'}
+      viewBox={isFullBleed ? '0 0 1440 820' : '0 0 1000 430'}
     >
-      <path d={path} stroke="var(--border)" strokeWidth="1.4" />
+      <path
+        d={path}
+        opacity={isFullBleed ? '0.82' : '1'}
+        stroke="var(--border)"
+        strokeWidth={isFullBleed ? '1.6' : '1.4'}
+      />
       <motion.path
         animate={reducedMotion ? { strokeDashoffset: 0 } : { strokeDashoffset: [0, -108] }}
         d={path}
-        opacity="0.52"
+        opacity={isFullBleed ? '0.38' : '0.52'}
         stroke="var(--brand-green)"
         strokeDasharray="2 17"
         strokeLinecap="round"
         strokeWidth="1.8"
         transition={{ duration: 16, ease: 'linear', repeat: reducedMotion ? 0 : Infinity }}
       />
+
+      {variant === 'workflows' ? (
+        <>
+          <path d={workflowReturn} opacity="0.56" stroke="var(--border)" strokeWidth="1.2" />
+          <motion.path
+            animate={reducedMotion ? { strokeDashoffset: 0 } : { strokeDashoffset: [0, 126] }}
+            d={workflowReturn}
+            opacity="0.27"
+            stroke="var(--brand-green)"
+            strokeDasharray="2 21"
+            strokeLinecap="round"
+            strokeWidth="1.8"
+            transition={{ duration: 20, ease: 'linear', repeat: reducedMotion ? 0 : Infinity }}
+          />
+          <circle
+            cx="205"
+            cy="590"
+            fill="var(--background)"
+            r="7"
+            stroke="var(--border)"
+            strokeWidth="1.6"
+          />
+          <circle
+            cx="570"
+            cy="540"
+            fill="var(--background)"
+            r="7"
+            stroke="var(--border)"
+            strokeWidth="1.6"
+          />
+          <circle
+            cx="1100"
+            cy="365"
+            fill="var(--background)"
+            r="7"
+            stroke="var(--border)"
+            strokeWidth="1.6"
+          />
+          <TicketSlip delay={0} reducedMotion={reducedMotion} x={92} y={152} />
+          <TicketSlip delay={0.8} reducedMotion={reducedMotion} x={640} y={700} />
+          <TicketSlip delay={1.6} reducedMotion={reducedMotion} x={1190} y={110} />
+          <motion.circle
+            animate={
+              reducedMotion
+                ? { cx: 860, cy: 480 }
+                : {
+                    cx: [0, 205, 415, 570, 860, 1100, 1440],
+                    cy: [650, 590, 290, 540, 480, 365, 190],
+                  }
+            }
+            fill="var(--brand-green)"
+            r="4.5"
+            stroke="var(--background)"
+            strokeWidth="3"
+            transition={{ duration: 24, ease: 'linear', repeat: reducedMotion ? 0 : Infinity }}
+          />
+        </>
+      ) : null}
+
+      {variant === 'login' ? (
+        <>
+          <path d={loginReturn} opacity="0.56" stroke="var(--border)" strokeWidth="1.2" />
+          <motion.path
+            animate={reducedMotion ? { strokeDashoffset: 0 } : { strokeDashoffset: [0, -132] }}
+            d={loginReturn}
+            opacity="0.34"
+            stroke="var(--brand-green)"
+            strokeDasharray="2 20"
+            strokeLinecap="round"
+            strokeWidth="1.8"
+            transition={{ duration: 21, ease: 'linear', repeat: reducedMotion ? 0 : Infinity }}
+          />
+          <TicketSlip delay={0} reducedMotion={reducedMotion} x={138} y={145} />
+          <TicketSlip delay={0.9} reducedMotion={reducedMotion} x={730} y={715} />
+          <TicketSlip delay={1.8} reducedMotion={reducedMotion} x={1210} y={180} />
+          <motion.circle
+            animate={
+              reducedMotion
+                ? { cx: 940, cy: 490 }
+                : {
+                    cx: [0, 210, 470, 700, 940, 1160, 1440],
+                    cy: [740, 670, 350, 600, 490, 260, 200],
+                  }
+            }
+            fill="var(--brand-green)"
+            r="4.5"
+            stroke="var(--background)"
+            strokeWidth="3"
+            transition={{ duration: 24, ease: 'linear', repeat: reducedMotion ? 0 : Infinity }}
+          />
+        </>
+      ) : null}
 
       {variant === 'hero' ? (
         <>
@@ -99,30 +206,6 @@ export function QueueBackdrop({ reducedMotion, variant }: QueueBackdropProps) {
             stroke="var(--background)"
             strokeWidth="3"
             transition={{ duration: 20, ease: 'linear', repeat: reducedMotion ? 0 : Infinity }}
-          />
-        </>
-      ) : null}
-
-      {variant === 'workflows' ? (
-        <>
-          <TicketSlip delay={0} reducedMotion={reducedMotion} x={895} y={42} />
-          <TicketSlip delay={0.6} reducedMotion={reducedMotion} x={925} y={188} />
-          <TicketSlip delay={1.2} reducedMotion={reducedMotion} x={890} y={330} />
-          <circle
-            cx="925"
-            cy="150"
-            fill="var(--background)"
-            r="5"
-            stroke="var(--border)"
-            strokeWidth="1.5"
-          />
-          <circle
-            cx="980"
-            cy="320"
-            fill="var(--background)"
-            r="5"
-            stroke="var(--border)"
-            strokeWidth="1.5"
           />
         </>
       ) : null}
