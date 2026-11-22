@@ -6,7 +6,7 @@ import { QueueDemo } from './queue-demo'
 describe('QueueDemo', () => {
   it('calls the oldest waiting ticket, marks it served, and resets the example', async () => {
     const user = userEvent.setup()
-    render(<QueueDemo />)
+    render(<QueueDemo autoPlay={false} />)
 
     expect(screen.getByRole('status')).toHaveTextContent(
       'Demo ready. Three sample tickets are waiting.',
@@ -56,7 +56,7 @@ describe('QueueDemo', () => {
 
   it('disables calling and serving once the sample queue is empty', async () => {
     const user = userEvent.setup()
-    render(<QueueDemo />)
+    render(<QueueDemo autoPlay={false} />)
 
     for (let i = 0; i < 3; i += 1) {
       await user.click(screen.getByRole('button', { name: 'Call next' }))
@@ -68,9 +68,25 @@ describe('QueueDemo', () => {
     expect(screen.getByRole('button', { name: 'Mark served' })).toBeDisabled()
   })
 
+  it('plays and pauses a local queue run', async () => {
+    const user = userEvent.setup()
+    render(<QueueDemo autoPlay={false} />)
+
+    await user.click(screen.getByRole('button', { name: 'Play sample queue' }))
+    expect(screen.getByRole('status')).toHaveTextContent('Sample playing.')
+    await waitFor(
+      () => expect(screen.getByRole('status')).toHaveTextContent('Ticket A101 is now called.'),
+      { timeout: 2500 },
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Pause sample queue' }))
+    expect(screen.getByRole('status')).toHaveTextContent('Sample paused.')
+    expect(screen.getByRole('button', { name: 'Play sample queue' })).toBeEnabled()
+  })
+
   it('shows the customer ticket progress as the operator moves the queue', async () => {
     const user = userEvent.setup()
-    render(<QueueDemo />)
+    render(<QueueDemo autoPlay={false} />)
 
     await user.click(screen.getByRole('button', { name: 'Call next' }))
     await user.click(screen.getByRole('button', { name: 'Mark served' }))

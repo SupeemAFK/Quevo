@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { RefreshCw, TicketCheck } from 'lucide-react'
 import { AuthenticatedShell } from '@/components/authenticated-shell'
 import { CustomerServiceSelection } from '@/components/customer-service-selection'
 import { FeedbackMessage, LoadingMessage } from '@/components/feedback-message'
@@ -52,7 +53,13 @@ function CustomerServicesPage() {
     <AuthenticatedShell currentSection="customer" user={user}>
       <section className="mx-auto max-w-4xl p-0 sm:p-2">
         <header className="mb-7">
-          <PageHeading className="text-3xl font-semibold tracking-tight">Join a queue</PageHeading>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            Customer
+          </p>
+          <PageHeading className="flex items-center gap-3 text-3xl font-semibold tracking-tight">
+            <TicketCheck aria-hidden="true" size={26} />
+            Join a queue
+          </PageHeading>
           <p className="mt-2 text-muted-foreground">
             Choose an active service to receive your ticket number.
           </p>
@@ -71,6 +78,12 @@ function CustomerServicesPage() {
               }}
               variant="outline"
             >
+              <RefreshCw
+                aria-hidden="true"
+                className={
+                  queueQuery.isFetching ? 'animate-spin motion-reduce:animate-none' : undefined
+                }
+              />
               {queueQuery.isFetching ? 'Retrying…' : 'Try again'}
             </Button>
           </div>

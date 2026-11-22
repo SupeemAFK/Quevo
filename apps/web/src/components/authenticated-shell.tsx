@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useRouter } from '@tanstack/react-router'
+import { ArrowRight, ListOrdered, LogOut } from 'lucide-react'
 import { useState } from 'react'
 import type { Identity } from '@/lib/auth'
 import { signOut } from '@/lib/auth'
@@ -64,7 +65,9 @@ export function AuthenticatedShell({ user, currentSection, children }: Props) {
                 className="inline-flex min-h-11 items-center rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline aria-[current=page]:font-semibold aria-[current=page]:text-foreground"
                 to={queuePath}
               >
+                <ListOrdered aria-hidden="true" className="mr-2" size={16} />
                 {queueLabel}
+                <ArrowRight aria-hidden="true" className="ml-2" size={15} />
               </Link>
             </nav>
           </div>
@@ -81,6 +84,7 @@ export function AuthenticatedShell({ user, currentSection, children }: Props) {
               onClick={() => void handleSignOut()}
               variant="outline"
             >
+              <LogOut aria-hidden="true" />
               Sign out
             </Button>
           </div>

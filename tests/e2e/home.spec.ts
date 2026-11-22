@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 test('landing page explains Quevo and its sample queue stays local', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
   const apiRequests: string[] = []
   page.on('request', (request) => {
     if (new URL(request.url()).port === '8080') apiRequests.push(request.url())
@@ -8,6 +9,7 @@ test('landing page explains Quevo and its sample queue stays local', async ({ pa
 
   await page.goto('/')
   await page.waitForLoadState('networkidle')
+  await expect(page.getByRole('button', { name: 'Play sample queue' })).toBeDisabled()
 
   await expect(page).toHaveTitle('Quevo | A clearer queue for every visit')
   await expect(page.locator('meta[name="description"]')).toHaveAttribute(
@@ -33,6 +35,12 @@ test('landing page explains Quevo and its sample queue stays local', async ({ pa
   )
   await expect(page.getByText('For customers')).toBeVisible()
   await expect(page.getByText('For operators')).toBeVisible()
+  const footer = page.getByRole('contentinfo')
+  await expect(footer).toContainText('Queue management for walk-in service.')
+  await expect(footer.getByRole('link', { name: 'Live sample' })).toHaveAttribute(
+    'href',
+    '#queue-demo',
+  )
   await expect(page.getByRole('button', { name: 'Customer' })).toHaveAttribute(
     'aria-pressed',
     'false',
@@ -41,7 +49,10 @@ test('landing page explains Quevo and its sample queue stays local', async ({ pa
   await expect(page.getByRole('heading', { name: 'Your ticket' })).toBeVisible()
   await expect(page.getByRole('region', { name: 'Your ticket' }).getByText('A102')).toBeVisible()
   await page.getByRole('button', { name: 'Operator', exact: true }).click()
-  await expect(page.getByRole('combobox', { name: 'Color theme' })).toHaveValue('system')
+  await expect(page.getByRole('button', { name: 'Use system theme' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
 
   await page.getByRole('link', { name: 'Explore the sample' }).click()
   await expect(page).toHaveURL(/#queue-demo$/)
@@ -60,7 +71,46 @@ test('landing page explains Quevo and its sample queue stays local', async ({ pa
   expect(apiRequests).toEqual([])
 })
 
+test('landing sample plays automatically and can be paused', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await page.goto('/')
+  await page.waitForLoadState('networkidle')
+
+  const pauseButton = page.getByRole('button', { name: 'Pause sample queue' })
+  await expect(pauseButton).toBeVisible()
+  await expect(page.getByRole('status')).toHaveText('Ticket A101 is now called.', {
+    timeout: 5000,
+  })
+  await expect(page.getByRole('status')).toHaveText('Ticket A102 is now called.', {
+    timeout: 5000,
+  })
+  await expect(page.getByRole('status')).toHaveText(
+    'Ticket A103 is served. The sample queue is starting again.',
+    { timeout: 12000 },
+  )
+
+  await pauseButton.click()
+  await expect(page.getByRole('status')).toHaveText('Sample paused.')
+  await page.waitForTimeout(1500)
+  await expect(page.getByRole('status')).toHaveText('Sample paused.')
+})
+
+test('how it works navigates with a smooth in-page transition', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.goto('/')
+
+  await expect(page.locator('html')).toHaveCSS('scroll-behavior', 'smooth')
+  await page.getByRole('link', { name: 'How it works' }).first().click()
+  await expect(page).toHaveURL(/#workflows$/)
+  await expect(page.locator('#workflows')).toBeFocused()
+  await expect(
+    page.getByRole('heading', { name: 'Know your place. Know what comes next.' }),
+  ).toBeVisible()
+})
+
 test('mobile navigation is keyboard operable and the page fits required widths', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.setViewportSize({ width: 320, height: 900 })
   await page.goto('/')
   await page.waitForLoadState('networkidle')
@@ -104,24 +154,30 @@ test('mobile navigation is keyboard operable and the page fits required widths',
 test('theme preference follows the system by default and persists explicit choices', async ({
   page,
 }) => {
-  await page.emulateMedia({ colorScheme: 'dark' })
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
   await page.goto('/')
 
-  const theme = page.getByRole('combobox', { name: 'Color theme' })
-  await expect(theme).toHaveValue('system')
+  const systemTheme = page.getByRole('button', { name: 'Use system theme' })
+  await expect(systemTheme).toHaveAttribute('aria-pressed', 'true')
   await expect(page.locator('html')).toHaveClass(/dark/)
   await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(17, 17, 17)')
 
-  await theme.selectOption('light')
+  await page.getByRole('button', { name: 'Use light theme' }).click()
   await expect(page.locator('html')).not.toHaveClass(/dark/)
   await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(255, 255, 255)')
   await page.reload()
-  await expect(page.getByRole('combobox', { name: 'Color theme' })).toHaveValue('light')
+  await expect(page.getByRole('button', { name: 'Use light theme' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
   await expect(page.locator('html')).not.toHaveClass(/dark/)
 
-  await page.getByRole('combobox', { name: 'Color theme' }).selectOption('system')
+  await page.getByRole('button', { name: 'Use system theme' }).click()
   await expect(page.locator('html')).toHaveClass(/dark/)
   await page.reload()
-  await expect(page.getByRole('combobox', { name: 'Color theme' })).toHaveValue('system')
+  await expect(page.getByRole('button', { name: 'Use system theme' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
   await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(17, 17, 17)')
 })

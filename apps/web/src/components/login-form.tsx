@@ -1,3 +1,4 @@
+import { LoaderCircle, LockKeyhole, LogIn, Mail } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import { FeedbackMessage, LoadingMessage } from '@/components/feedback-message'
 import { Button } from '@/components/ui/button'
@@ -38,7 +39,8 @@ export function LoginForm({ signIn, onSuccess }: LoginFormProps) {
   return (
     <form className="grid gap-5" method="post" onSubmit={handleSubmit}>
       <div className="grid gap-2">
-        <label className="text-sm font-medium" htmlFor="email">
+        <label className="flex items-center gap-2 text-sm font-medium" htmlFor="email">
+          <Mail aria-hidden="true" className="text-muted-foreground" size={16} />
           Email
         </label>
         <input
@@ -54,7 +56,8 @@ export function LoginForm({ signIn, onSuccess }: LoginFormProps) {
       </div>
 
       <div className="grid gap-2">
-        <label className="text-sm font-medium" htmlFor="password">
+        <label className="flex items-center gap-2 text-sm font-medium" htmlFor="password">
+          <LockKeyhole aria-hidden="true" className="text-muted-foreground" size={16} />
           Password
         </label>
         <input
@@ -72,8 +75,14 @@ export function LoginForm({ signIn, onSuccess }: LoginFormProps) {
       <Button
         aria-disabled={isSubmitting}
         className="min-h-11 w-full aria-disabled:pointer-events-none aria-disabled:opacity-50"
+        disabled={isSubmitting}
         type="submit"
       >
+        {isSubmitting ? (
+          <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" />
+        ) : (
+          <LogIn aria-hidden="true" />
+        )}
         Sign in
       </Button>
       <div className="min-h-5">

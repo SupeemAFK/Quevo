@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, redirect } from '@tanstack/react-router'
+import { Inbox, PanelsTopLeft, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 import { AuthenticatedShell } from '@/components/authenticated-shell'
 import { FeedbackMessage, LoadingMessage } from '@/components/feedback-message'
@@ -96,7 +97,8 @@ function OperatorPage() {
     <AuthenticatedShell currentSection="operator" user={user}>
       <div className="space-y-8">
         <header>
-          <PageHeading className="text-3xl font-semibold tracking-tight">
+          <PageHeading className="flex items-center gap-3 text-3xl font-semibold tracking-tight">
+            <PanelsTopLeft aria-hidden="true" size={26} />
             Operator queue
           </PageHeading>
           <p className="mt-2 max-w-2xl text-muted-foreground">
@@ -117,12 +119,21 @@ function OperatorPage() {
                 if (!queues.isFetching) void queues.refetch()
               }}
             >
+              <RefreshCw
+                aria-hidden="true"
+                className={
+                  queues.isFetching ? 'animate-spin motion-reduce:animate-none' : undefined
+                }
+              />
               {queues.isFetching ? 'Retrying…' : 'Try again'}
             </Button>
           </div>
         ) : queues.data.length === 0 ? (
           <section className="border-y py-5">
-            <h2 className="font-semibold">No assigned queues</h2>
+            <h2 className="flex items-center gap-2 font-semibold">
+              <Inbox aria-hidden="true" size={18} />
+              No assigned queues
+            </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               No queues are assigned to you. Contact your branch administrator for access.
             </p>
@@ -157,6 +168,12 @@ function OperatorPage() {
                       if (!queue.isFetching) void queue.refetch()
                     }}
                   >
+                    <RefreshCw
+                      aria-hidden="true"
+                      className={
+                        queue.isFetching ? 'animate-spin motion-reduce:animate-none' : undefined
+                      }
+                    />
                     {queue.isFetching ? 'Retrying…' : 'Try again'}
                   </Button>
                 </div>

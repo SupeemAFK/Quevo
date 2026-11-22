@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Menu, X } from 'lucide-react'
+import { ArrowRight, LogIn, LogOut, Menu, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import type { Identity } from '@/lib/auth'
@@ -67,7 +67,7 @@ export function LandingNavigation({ user, onSignOut, signOutError }: Props) {
           aria-controls="landing-navigation"
           aria-expanded={menuOpen}
           aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
-          className="inline-flex size-11 items-center justify-center rounded-md border border-border bg-card text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+          className="inline-flex size-11 items-center justify-center rounded-md border border-border bg-card text-foreground transition-colors hover:bg-muted active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
           ref={menuButtonRef}
           onClick={() => setMenuOpen((open) => !open)}
           type="button"
@@ -108,14 +108,23 @@ export function LandingNavigation({ user, onSignOut, signOutError }: Props) {
             ))}
             <li className="flex flex-col gap-2 border-t border-border pt-3 md:flex-row md:border-0 md:pt-0">
               <Link
-                className="flex min-h-11 items-center rounded-md px-4 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline"
+                className="group flex min-h-11 items-center rounded-md px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline"
                 onClick={closeMenu}
                 to={user ? appPath : '/login'}
               >
+                {user ? null : <LogIn aria-hidden="true" className="mr-2" size={16} />}
                 {user ? appLabel : 'Sign in'}
+                {user ? (
+                  <ArrowRight
+                    aria-hidden="true"
+                    className="ml-2 transition-transform duration-200 group-hover:translate-x-0.5"
+                    size={16}
+                  />
+                ) : null}
               </Link>
               {user ? (
                 <Button className="min-h-11 px-4" onClick={onSignOut} variant="outline">
+                  <LogOut aria-hidden="true" />
                   Sign out
                 </Button>
               ) : null}

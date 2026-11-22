@@ -1,14 +1,18 @@
 import {
+  Activity,
   ArrowRight,
   Check,
+  Pause,
   PhoneCall,
+  Play,
   RotateCcw,
   TicketCheck,
   UserRound,
   UsersRound,
 } from 'lucide-react'
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { usePrefersReducedMotion } from '@/lib/use-prefers-reduced-motion'
 import { TicketStatus } from './ticket-status'
 import { Button } from './ui/button'
 
@@ -18,6 +22,7 @@ type DemoTicket = {
 }
 
 type PreviewView = 'operator' | 'customer'
+type QueueDemoProps = { autoPlay?: boolean }
 
 const initialTickets: DemoTicket[] = [
   { id: 'demo-ticket-1', number: 'A101' },
@@ -72,11 +77,13 @@ function QueueStep({
   )
 }
 
-export function QueueDemo() {
+export function QueueDemo({ autoPlay = true }: QueueDemoProps = {}) {
+  const prefersReducedMotion = usePrefersReducedMotion()
   const [waiting, setWaiting] = useState(copyInitialTickets)
   const [current, setCurrent] = useState<DemoTicket | null>(null)
   const [served, setServed] = useState<DemoTicket[]>([])
   const [view, setView] = useState<PreviewView>('operator')
+  const [isPlaying, setIsPlaying] = useState(autoPlay)
   const [announcement, setAnnouncement] = useState('Demo ready. Three sample tickets are waiting.')
 
   const next = waiting[0] ?? null
@@ -100,6 +107,38 @@ export function QueueDemo() {
           ? 'One ticket is being served before yours.'
           : 'You’re in the queue. Keep this ticket handy and refresh for status updates.'
 
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setIsPlaying(false)
+      return
+    }
+    if (!isPlaying) return
+
+    const timeout = window.setTimeout(() => {
+      if (current) {
+        if (waiting.length === 0) {
+          setWaiting(copyInitialTickets())
+          setServed([])
+          setAnnouncement(`Ticket ${current.number} is served. The sample queue is starting again.`)
+        } else {
+          setServed((tickets) => [...tickets, current])
+          setAnnouncement(`Ticket ${current.number} is marked served.`)
+        }
+        setCurrent(null)
+      } else if (next) {
+        setWaiting((tickets) => tickets.slice(1))
+        setCurrent(next)
+        setAnnouncement(`Ticket ${next.number} is now called.`)
+      } else {
+        setWaiting(copyInitialTickets())
+        setServed([])
+        setAnnouncement('The sample queue is starting again.')
+      }
+    }, 1350)
+
+    return () => window.clearTimeout(timeout)
+  }, [current, isPlaying, next, prefersReducedMotion, waiting.length])
+
   function callNext() {
     if (!next || current) return
     setWaiting((tickets) => tickets.slice(1))
@@ -115,10 +154,28 @@ export function QueueDemo() {
   }
 
   function resetDemo() {
+    setIsPlaying(false)
     setWaiting(copyInitialTickets())
     setCurrent(null)
     setServed([])
     setAnnouncement('Demo reset. Three sample tickets are waiting.')
+  }
+
+  function toggleSamplePlayback() {
+    if (isPlaying) {
+      setIsPlaying(false)
+      setAnnouncement('Sample paused.')
+      return
+    }
+
+    if (!next && !current) {
+      setWaiting(copyInitialTickets())
+      setServed([])
+      setAnnouncement('Sample restarted. Tickets are moving through the queue.')
+    } else {
+      setAnnouncement('Sample playing. Tickets are moving through the queue.')
+    }
+    setIsPlaying(true)
   }
 
   const customerOrder = [
@@ -162,34 +219,68 @@ export function QueueDemo() {
         <header className="flex flex-wrap items-center justify-between gap-4 border-b px-4 py-4 sm:px-6">
           <div>
             <p className="flex items-center gap-2 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              <span aria-hidden="true" className="size-2 rounded-full bg-brand-green" />
+              <Activity aria-hidden="true" className="text-brand-green" size={15} />
               Interactive sample
             </p>
             <h2 className="mt-1 text-lg font-semibold tracking-tight" id="queue-demo-heading">
               One queue, two views
             </h2>
           </div>
-          <fieldset className="flex items-center rounded-lg border bg-background p-1">
-            <legend className="sr-only">Preview as</legend>
-            <button
-              aria-pressed={view === 'customer'}
-              className={`inline-flex min-h-9 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${view === 'customer' ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setView('customer')}
-              type="button"
+          <div className="flex flex-wrap items-center gap-2">
+            <fieldset className="flex items-center rounded-lg border bg-muted p-1">
+              <legend className="sr-only">Preview as</legend>
+              <motion.button
+                aria-pressed={view === 'customer'}
+                className={`relative isolate inline-flex min-h-9 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${view === 'customer' ? 'text-background' : 'text-muted-foreground hover:text-foreground'}`}
+                onClick={() => setView('customer')}
+                type="button"
+                whileTap={{ scale: 0.97 }}
+              >
+                {view === 'customer' ? (
+                  <motion.span
+                    className="absolute inset-0 -z-10 rounded-md bg-foreground"
+                    layoutId="queue-role-selection"
+                    transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.7 }}
+                  />
+                ) : null}
+                <UserRound aria-hidden="true" className="shrink-0" size={16} />
+                Customer
+              </motion.button>
+              <motion.button
+                aria-pressed={view === 'operator'}
+                className={`relative isolate inline-flex min-h-9 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${view === 'operator' ? 'text-background' : 'text-muted-foreground hover:text-foreground'}`}
+                onClick={() => setView('operator')}
+                type="button"
+                whileTap={{ scale: 0.97 }}
+              >
+                {view === 'operator' ? (
+                  <motion.span
+                    className="absolute inset-0 -z-10 rounded-md bg-foreground"
+                    layoutId="queue-role-selection"
+                    transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.7 }}
+                  />
+                ) : null}
+                <UsersRound aria-hidden="true" className="shrink-0" size={16} />
+                Operator
+              </motion.button>
+            </fieldset>
+            <Button
+              aria-label={isPlaying ? 'Pause sample queue' : 'Play sample queue'}
+              className="min-h-10 gap-1.5 px-3"
+              disabled={prefersReducedMotion}
+              onClick={toggleSamplePlayback}
+              size="sm"
+              title={prefersReducedMotion ? 'Sample playback is off for reduced motion' : undefined}
+              variant="outline"
             >
-              <UserRound aria-hidden="true" size={16} />
-              Customer
-            </button>
-            <button
-              aria-pressed={view === 'operator'}
-              className={`inline-flex min-h-9 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${view === 'operator' ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setView('operator')}
-              type="button"
-            >
-              <UsersRound aria-hidden="true" size={16} />
-              Operator
-            </button>
-          </fieldset>
+              {isPlaying ? (
+                <Pause aria-hidden="true" size={15} />
+              ) : (
+                <Play aria-hidden="true" size={15} />
+              )}
+              <span>{isPlaying ? 'Pause' : 'Play sample'}</span>
+            </Button>
+          </div>
         </header>
 
         <AnimatePresence initial={false} mode="wait">
@@ -204,17 +295,17 @@ export function QueueDemo() {
             >
               <section
                 aria-labelledby="demo-current-heading"
-                className="flex min-h-[22rem] flex-col justify-between bg-foreground p-5 text-background sm:p-6"
+                className="flex min-h-[22rem] flex-col justify-between bg-foreground p-5 text-background sm:p-6 dark:bg-accent dark:text-foreground"
               >
                 <div>
                   <div className="flex items-center justify-between gap-3">
                     <h3
-                      className="text-sm font-medium text-background/70"
+                      className="text-sm font-medium text-background/70 dark:text-muted-foreground"
                       id="demo-current-heading"
                     >
                       Current ticket
                     </h3>
-                    <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-background/60">
+                    <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-background/60 dark:text-muted-foreground">
                       {current ? 'In service' : next ? 'Next to call' : 'Queue clear'}
                     </span>
                   </div>
@@ -229,7 +320,16 @@ export function QueueDemo() {
                         transition={{ duration: 0.16 }}
                       >
                         <p className="font-mono text-6xl font-semibold tabular-nums tracking-[-0.07em] sm:text-7xl">
-                          {(current ?? next)?.number}
+                          <AnimatePresence initial={false} mode="popLayout">
+                            <motion.span
+                              animate={{ opacity: 1, y: 0 }}
+                              initial={{ opacity: 0, y: 8 }}
+                              key={(current ?? next)?.number}
+                              transition={{ duration: 0.18, ease: 'easeOut' }}
+                            >
+                              {(current ?? next)?.number}
+                            </motion.span>
+                          </AnimatePresence>
                         </p>
                         <div className="mt-4">
                           <TicketStatus status={current ? 'PENDING' : 'NEXT_UP'} />
@@ -241,21 +341,21 @@ export function QueueDemo() {
                   </AnimatePresence>
                 </div>
 
-                <div className="mt-8 grid gap-2 sm:grid-cols-2">
+                <div className="mt-8 grid gap-2">
                   <Button
-                    className="min-h-11 justify-between bg-background px-4 text-foreground hover:bg-muted"
-                    disabled={current !== null || waiting.length === 0}
+                    className="min-h-11 w-full min-w-0 justify-between bg-background px-4 text-foreground hover:bg-muted dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
+                    disabled={isPlaying || current !== null || waiting.length === 0}
                     onClick={callNext}
                   >
-                    <span className="inline-flex items-center gap-2">
-                      <PhoneCall aria-hidden="true" size={17} />
+                    <span className="inline-flex min-w-0 items-center gap-2">
+                      <PhoneCall aria-hidden="true" className="shrink-0" size={17} />
                       Call next
                     </span>
-                    <ArrowRight aria-hidden="true" size={16} />
+                    <ArrowRight aria-hidden="true" className="shrink-0" size={16} />
                   </Button>
                   <Button
-                    className="min-h-11 border-background/30 bg-transparent px-4 text-background hover:bg-background/10 hover:text-background"
-                    disabled={current === null}
+                    className="min-h-11 w-full min-w-0 border-background/30 bg-transparent px-4 text-background hover:bg-background/10 hover:text-background dark:border-border dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground"
+                    disabled={isPlaying || current === null}
                     onClick={markServed}
                     variant="outline"
                   >
@@ -263,7 +363,7 @@ export function QueueDemo() {
                     Mark served
                   </Button>
                   <Button
-                    className="min-h-10 text-background hover:bg-background/10 hover:text-background sm:col-span-2"
+                    className="min-h-10 w-full min-w-0 text-background hover:bg-background/10 hover:text-background dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground"
                     onClick={resetDemo}
                     variant="ghost"
                   >
@@ -286,8 +386,18 @@ export function QueueDemo() {
                       Queue order
                     </h3>
                   </div>
-                  <span className="font-mono text-sm tabular-nums text-muted-foreground">
-                    {operatorOrder.length.toString().padStart(2, '0')} in line
+                  <span className="inline-flex items-center gap-1.5 font-mono text-sm tabular-nums text-muted-foreground">
+                    <AnimatePresence initial={false} mode="popLayout">
+                      <motion.span
+                        animate={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, y: 4 }}
+                        key={operatorOrder.length}
+                        transition={{ duration: 0.14, ease: 'easeOut' }}
+                      >
+                        {operatorOrder.length.toString().padStart(2, '0')}
+                      </motion.span>
+                    </AnimatePresence>
+                    <span className="font-sans">in line</span>
                   </span>
                 </div>
 
@@ -334,17 +444,17 @@ export function QueueDemo() {
             >
               <section
                 aria-labelledby="demo-customer-heading"
-                className="flex min-h-[22rem] flex-col justify-between bg-foreground p-5 text-background sm:p-6"
+                className="flex min-h-[22rem] flex-col justify-between bg-foreground p-5 text-background sm:p-6 dark:bg-accent dark:text-foreground"
               >
                 <div>
                   <div className="flex items-center justify-between gap-3">
                     <h3
-                      className="text-sm font-medium text-background/70"
+                      className="text-sm font-medium text-background/70 dark:text-muted-foreground"
                       id="demo-customer-heading"
                     >
                       Your ticket
                     </h3>
-                    <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-background/60">
+                    <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-background/60 dark:text-muted-foreground">
                       General service
                     </span>
                   </div>
@@ -361,10 +471,12 @@ export function QueueDemo() {
                     <TicketStatus status={customerStatus} />
                   </div>
                 </div>
-                <div className="mt-8 border-t border-background/20 pt-4">
-                  <p className="text-sm leading-6 text-background/80">{customerGuidance}</p>
+                <div className="mt-8 border-t border-background/20 pt-4 dark:border-border">
+                  <p className="text-sm leading-6 text-background/80 dark:text-muted-foreground">
+                    {customerGuidance}
+                  </p>
                   <button
-                    className="mt-4 inline-flex min-h-10 items-center gap-2 text-sm font-medium text-background underline-offset-4 hover:underline focus-visible:outline"
+                    className="mt-4 inline-flex min-h-10 items-center gap-2 text-sm font-medium text-background underline-offset-4 hover:underline focus-visible:outline dark:text-foreground"
                     onClick={() => setView('operator')}
                     type="button"
                   >
@@ -387,8 +499,18 @@ export function QueueDemo() {
                       Queue progress
                     </h3>
                   </div>
-                  <span className="font-mono text-sm tabular-nums text-muted-foreground">
-                    {customerOrder.length.toString().padStart(2, '0')} tickets
+                  <span className="inline-flex items-center gap-1.5 font-mono text-sm tabular-nums text-muted-foreground">
+                    <AnimatePresence initial={false} mode="popLayout">
+                      <motion.span
+                        animate={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, y: 4 }}
+                        key={customerOrder.length}
+                        transition={{ duration: 0.14, ease: 'easeOut' }}
+                      >
+                        {customerOrder.length.toString().padStart(2, '0')}
+                      </motion.span>
+                    </AnimatePresence>
+                    <span className="font-sans">tickets</span>
                   </span>
                 </div>
                 {customerOrder.length > 0 ? (

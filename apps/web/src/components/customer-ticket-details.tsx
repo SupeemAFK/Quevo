@@ -1,6 +1,7 @@
-import { RefreshCw } from 'lucide-react'
-import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'motion/react'
+import { CalendarDays, Layers3, MapPin, RefreshCw, Ticket as TicketIcon } from 'lucide-react'
+import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import type { components } from '@/client/api/schema'
+import { usePrefersReducedMotion } from '@/lib/use-prefers-reduced-motion'
 import { FeedbackMessage, LoadingMessage } from './feedback-message'
 import { TicketStatus } from './ticket-status'
 import { Button } from './ui/button'
@@ -24,7 +25,7 @@ const statusGuidance: Record<string, string> = {
 }
 
 export function CustomerTicketDetails({ ticket, refreshing, feedback, onRefresh }: Props) {
-  const prefersReducedMotion = useReducedMotion() ?? false
+  const prefersReducedMotion = usePrefersReducedMotion()
   const guidance =
     statusGuidance[ticket.status] ?? 'Refresh this page to check your ticket status again.'
 
@@ -33,8 +34,12 @@ export function CustomerTicketDetails({ ticket, refreshing, feedback, onRefresh 
       <div className="space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-2xl">
-            <p className="text-sm font-semibold text-muted-foreground">{ticket.serviceName}</p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+              <Layers3 aria-hidden="true" size={16} />
+              {ticket.serviceName}
+            </p>
+            <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+              <RefreshCw aria-hidden="true" size={14} />
               Status updates load when you open this page. Refresh to check again.
             </p>
           </div>
@@ -56,17 +61,27 @@ export function CustomerTicketDetails({ ticket, refreshing, feedback, onRefresh 
 
         <section
           aria-labelledby="ticket-number-heading"
-          className="rounded-lg border bg-card p-5 sm:p-8"
+          className="relative overflow-hidden rounded-xl border bg-card p-5 shadow-sm before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-brand-green sm:p-8"
         >
-          <p className="text-sm font-medium text-muted-foreground" id="ticket-number-heading">
+          <p
+            className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground"
+            id="ticket-number-heading"
+          >
+            <TicketIcon aria-hidden="true" size={16} />
             Your ticket number
           </p>
-          <p
-            className="mt-2 break-words font-mono text-6xl font-semibold tabular-nums tracking-[-0.06em] sm:text-7xl"
-            data-testid="ticket-number"
-          >
-            {ticket.ticketNumber}
-          </p>
+          <AnimatePresence initial={false} mode="popLayout">
+            <motion.p
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-2 break-words font-mono text-6xl font-semibold tabular-nums tracking-[-0.06em] sm:text-7xl"
+              data-testid="ticket-number"
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 6 }}
+              key={ticket.ticketNumber}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.18, ease: 'easeOut' }}
+            >
+              {ticket.ticketNumber}
+            </motion.p>
+          </AnimatePresence>
 
           <div className="mt-7 border-t pt-5">
             <div className="flex flex-wrap items-center gap-3">
@@ -91,11 +106,17 @@ export function CustomerTicketDetails({ ticket, refreshing, feedback, onRefresh 
 
           <dl className="mt-7 grid grid-cols-1 gap-x-6 gap-y-4 border-t pt-5 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-muted-foreground">Branch</dt>
+              <dt className="flex items-center gap-1.5 text-muted-foreground">
+                <MapPin aria-hidden="true" size={14} />
+                Branch
+              </dt>
               <dd className="mt-1 font-medium">{ticket.branchName}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Business date</dt>
+              <dt className="flex items-center gap-1.5 text-muted-foreground">
+                <CalendarDays aria-hidden="true" size={14} />
+                Business date
+              </dt>
               <dd className="mt-1 font-medium">{ticket.businessDate}</dd>
             </div>
           </dl>

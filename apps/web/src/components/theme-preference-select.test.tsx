@@ -18,14 +18,17 @@ describe('ThemePreferenceSelect', () => {
       </ThemeProvider>,
     )
 
-    const select = screen.getByRole('combobox', { name: 'Color theme' })
-    expect(select).toHaveValue('system')
-    await user.selectOptions(select, 'dark')
-    expect(select).toHaveValue('dark')
+    const systemButton = screen.getByRole('button', { name: 'Use system theme' })
+    const lightButton = screen.getByRole('button', { name: 'Use light theme' })
+    const darkButton = screen.getByRole('button', { name: 'Use dark theme' })
+    expect(systemButton).toHaveAttribute('aria-pressed', 'true')
+    await user.click(darkButton)
+    expect(darkButton).toHaveAttribute('aria-pressed', 'true')
     expect(document.documentElement).toHaveClass('dark')
     expect(window.localStorage.getItem('quevo-theme')).toBe('dark')
 
-    await user.selectOptions(select, 'light')
+    await user.click(lightButton)
+    expect(lightButton).toHaveAttribute('aria-pressed', 'true')
     expect(document.documentElement).not.toHaveClass('dark')
     expect(window.localStorage.getItem('quevo-theme')).toBe('light')
   })
@@ -38,7 +41,10 @@ describe('ThemePreferenceSelect', () => {
       </ThemeProvider>,
     )
 
-    expect(await screen.findByRole('combobox', { name: 'Color theme' })).toHaveValue('dark')
+    expect(await screen.findByRole('button', { name: 'Use dark theme' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
     expect(document.documentElement).toHaveClass('dark')
   })
 })

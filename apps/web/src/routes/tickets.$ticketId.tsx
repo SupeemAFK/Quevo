@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, redirect } from '@tanstack/react-router'
+import { RefreshCw, Ticket } from 'lucide-react'
 import { useState } from 'react'
 import { AuthenticatedShell } from '@/components/authenticated-shell'
 import { CustomerTicketDetails } from '@/components/customer-ticket-details'
@@ -46,7 +47,13 @@ function CustomerTicketPage() {
     <AuthenticatedShell currentSection="customer" user={user}>
       <section className="mx-auto max-w-4xl p-0 sm:p-2">
         <header className="mb-7">
-          <PageHeading className="text-3xl font-semibold tracking-tight">Your ticket</PageHeading>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            Customer
+          </p>
+          <PageHeading className="flex items-center gap-3 text-3xl font-semibold tracking-tight">
+            <Ticket aria-hidden="true" size={25} />
+            Your ticket
+          </PageHeading>
         </header>
 
         {ticketQuery.isPending ? (
@@ -67,6 +74,12 @@ function CustomerTicketPage() {
               onClick={() => void refreshStatus()}
               variant="outline"
             >
+              <RefreshCw
+                aria-hidden="true"
+                className={
+                  ticketQuery.isFetching ? 'animate-spin motion-reduce:animate-none' : undefined
+                }
+              />
               {ticketQuery.isFetching ? 'Refreshing…' : 'Try again'}
             </Button>
           </div>

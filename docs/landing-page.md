@@ -4,12 +4,12 @@ The `/` route introduces Quevo with a single sign-in action and a secondary link
 
 ## Layout
 
-- `#top` pairs the value statement and two clear actions with a layered queue preview.
-- `#queue-demo` is the only demonstration. Its customer/operator switch shows the same sample tickets as a digital ticket or an operator queue. Sample state stays in local React state.
-- `#workflows` presents three short product highlights with queue-specific interface snippets.
-- The header and footer provide a link to the role explanation.
+- `#top` pairs the value statement and two clear actions with a layered queue preview and a short three-step path from choosing a service to being called.
+- `#queue-demo` is the only demonstration. Its animated customer/operator switch shows the same sample tickets as a digital ticket or an operator queue. Counts, ticket changes, status, and ordered rows respond to the local controls; sample state stays in local React state. The sample cycles continuously on load, offers pause/replay, and stays still for reduced-motion preferences.
+- `#workflows` explains the customer and operator steps with small queue-specific interface snippets, staggered reveals, and a moving ticket-progress marker.
+- The header and footer link to the workflow explanation and sample, with a sign-in action.
 
-The page follows the black-and-white system in [the visual system](design/visual-system.md). Green marks active or successful states; primary controls use neutral black and white. Typography, dividers, and a single layered product preview establish the visual hierarchy without decorative backgrounds or scroll-triggered animation.
+The page follows the black-and-white system in [the visual system](design/visual-system.md). Green marks active or successful states; primary controls use neutral black and white. Lucide icons label meaningful roles and actions. Typography, dividers, a short sequence rail, and one layered product preview establish the visual hierarchy. Theme preference is a compact System/Light/Dark icon group with persistent selection. Section links scroll smoothly unless reduced motion is preferred.
 
 The mobile navigation supports keyboard operation and the page provides a skip link. Native anchors handle page sections; TanStack links handle application routes.
 

@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
+import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { useState } from 'react'
+import { LandingFooter } from '@/components/landing-footer'
 import { LandingHero } from '@/components/landing-hero'
 import { LandingNavigation } from '@/components/landing-navigation'
 import { LandingWorkflows } from '@/components/landing-workflows'
@@ -57,40 +58,7 @@ function Home() {
         <LandingWorkflows />
       </main>
 
-      <footer className="border-t bg-background">
-        <div className="mx-auto flex max-w-content flex-col gap-4 px-page py-6 sm:flex-row sm:items-center sm:justify-between">
-          <Link
-            aria-label="Quevo home"
-            className="inline-flex min-h-11 items-center font-semibold tracking-tight focus-visible:outline"
-            to="/"
-          >
-            Quevo
-          </Link>
-          <nav aria-label="Footer">
-            <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
-              <li>
-                <a
-                  className="rounded-sm text-muted-foreground hover:text-foreground focus-visible:outline"
-                  href="#top"
-                >
-                  Home
-                </a>
-              </li>
-              <li>
-                <a
-                  className="rounded-sm text-muted-foreground hover:text-foreground focus-visible:outline"
-                  href="#workflows"
-                >
-                  How it works
-                </a>
-              </li>
-            </ul>
-          </nav>
-          <span className="text-sm text-muted-foreground">
-            Queue management for walk-in service.
-          </span>
-        </div>
-      </footer>
+      <LandingFooter user={user} />
     </div>
   )
 }

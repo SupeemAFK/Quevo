@@ -2,6 +2,8 @@
 
 The operator workspace puts the current ticket and next action first, with the ordered waiting list beside it on wide screens and directly below it on mobile. Service and branch context stays visible. Operators with one authorized queue do not see a redundant selector; operators with multiple queues can switch with a compact mobile select or the desktop service navigation.
 
+Lucide icons distinguish service context, refresh, call, start, skip, and completion actions. Waiting counts and ticket/status changes use short transitions so the queue feels responsive without delaying an action.
+
 ## Backend-owned lifecycle
 
 The UI follows the existing API transitions and does not optimistically change ticket state:

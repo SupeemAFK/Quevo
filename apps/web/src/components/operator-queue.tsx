@@ -1,6 +1,20 @@
-import { AnimatePresence, LayoutGroup, MotionConfig, motion, useReducedMotion } from 'motion/react'
+import {
+  Check,
+  CircleCheck,
+  Layers3,
+  ListOrdered,
+  MapPin,
+  PhoneCall,
+  Play,
+  RefreshCw,
+  SkipForward,
+  Ticket,
+  UsersRound,
+} from 'lucide-react'
+import { AnimatePresence, LayoutGroup, MotionConfig, motion } from 'motion/react'
 import { useEffect, useRef } from 'react'
 import type { components } from '@/client/api/schema'
+import { usePrefersReducedMotion } from '@/lib/use-prefers-reduced-motion'
 import { FeedbackMessage, LoadingMessage } from './feedback-message'
 import { TicketStatus } from './ticket-status'
 import { Button } from './ui/button'
@@ -33,7 +47,7 @@ export function OperatorQueue({
   const nextActionRef = useRef<HTMLButtonElement>(null)
   const emptyCurrentRef = useRef<HTMLParagraphElement>(null)
   const lastMessageRef = useRef('')
-  const prefersReducedMotion = useReducedMotion() ?? false
+  const prefersReducedMotion = usePrefersReducedMotion()
   const motionTransition = prefersReducedMotion
     ? { duration: 0 }
     : { duration: 0.18, ease: 'easeOut' as const }
@@ -83,22 +97,39 @@ export function OperatorQueue({
             <header className="flex flex-wrap items-end justify-between gap-5">
               <div className="min-w-0">
                 <h2
-                  className="text-sm font-medium text-muted-foreground"
+                  className="flex items-center gap-2 text-sm font-medium text-muted-foreground"
                   id="current-ticket-heading"
                 >
+                  <Ticket aria-hidden="true" size={16} />
                   Current ticket
                 </h2>
-                <p className="mt-1 truncate text-xl font-semibold tracking-tight">
+                <p className="mt-1 flex items-center gap-2 truncate text-xl font-semibold tracking-tight">
+                  <Layers3
+                    aria-hidden="true"
+                    className="shrink-0 text-muted-foreground"
+                    size={18}
+                  />
                   {detail.queue.serviceName}
                 </p>
-                <p className="mt-1 truncate text-sm text-muted-foreground">
+                <p className="mt-1 flex items-center gap-1.5 truncate text-sm text-muted-foreground">
+                  <MapPin aria-hidden="true" size={14} />
                   {detail.queue.branchName}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-4">
                 <p className="text-right">
-                  <span className="block text-2xl font-semibold tabular-nums leading-none">
-                    {waiting.length}
+                  <span className="flex items-center justify-end gap-1.5 text-2xl font-semibold tabular-nums leading-none">
+                    <UsersRound aria-hidden="true" className="text-muted-foreground" size={16} />
+                    <AnimatePresence initial={false} mode="popLayout">
+                      <motion.span
+                        animate={{ opacity: 1, y: 0 }}
+                        initial={prefersReducedMotion ? false : { opacity: 0, y: 4 }}
+                        key={waiting.length}
+                        transition={motionTransition}
+                      >
+                        {waiting.length}
+                      </motion.span>
+                    </AnimatePresence>
                   </span>
                   <span className="mt-1 block text-sm text-muted-foreground">waiting</span>
                 </p>
@@ -108,6 +139,10 @@ export function OperatorQueue({
                   variant="outline"
                   onClick={handleRefresh}
                 >
+                  <RefreshCw
+                    aria-hidden="true"
+                    className={refreshing ? 'animate-spin motion-reduce:animate-none' : undefined}
+                  />
                   {refreshing ? 'Refreshing…' : 'Refresh queue'}
                 </Button>
               </div>
@@ -149,6 +184,7 @@ export function OperatorQueue({
                             onClick={() => handleAction('start')}
                             ref={nextActionRef}
                           >
+                            <Play aria-hidden="true" />
                             Start service
                           </Button>
                           <Button
@@ -157,6 +193,7 @@ export function OperatorQueue({
                             variant="outline"
                             onClick={() => handleAction('skip')}
                           >
+                            <SkipForward aria-hidden="true" />
                             Skip ticket
                           </Button>
                         </>
@@ -167,6 +204,7 @@ export function OperatorQueue({
                           onClick={() => handleAction('complete')}
                           ref={nextActionRef}
                         >
+                          <Check aria-hidden="true" />
                           Complete service
                         </Button>
                       ) : null}
@@ -194,6 +232,7 @@ export function OperatorQueue({
                       onClick={() => handleAction('call-next')}
                       ref={nextActionRef}
                     >
+                      <PhoneCall aria-hidden="true" />
                       Call next
                     </Button>
                   </motion.div>
@@ -206,7 +245,12 @@ export function OperatorQueue({
                     key="queue-empty"
                     transition={motionTransition}
                   >
-                    <p className="font-semibold" ref={emptyCurrentRef} tabIndex={-1}>
+                    <p
+                      className="flex items-center gap-2 font-semibold"
+                      ref={emptyCurrentRef}
+                      tabIndex={-1}
+                    >
+                      <CircleCheck aria-hidden="true" className="text-muted-foreground" size={19} />
                       No customers are waiting.
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">
@@ -243,7 +287,11 @@ export function OperatorQueue({
             className="min-w-0 lg:border-l lg:pl-7"
           >
             <div className="flex flex-wrap items-baseline justify-between gap-3">
-              <h2 className="text-lg font-semibold tracking-tight" id="waiting-tickets-heading">
+              <h2
+                className="flex items-center gap-2 text-lg font-semibold tracking-tight"
+                id="waiting-tickets-heading"
+              >
+                <ListOrdered aria-hidden="true" size={19} />
                 Waiting list
               </h2>
               <span className="text-sm font-medium tabular-nums text-muted-foreground">

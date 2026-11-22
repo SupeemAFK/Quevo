@@ -17,6 +17,8 @@ The tokens in `apps/web/src/styles.css` are semantic and switch with Light, Dark
 | Primary action | `#111111` | `#FAFAFA` | Primary controls |
 | Primary action text | `#FFFFFF` | `#111111` | Text on primary controls |
 
+The navigation theme control uses three labeled icon buttons: System (monitor), Light (sun), and Dark (moon). The selected choice is visibly pressed, the choice persists, and all options remain keyboard accessible.
+
 The web foundation remains shadcn/ui, Tailwind CSS, Geist Sans and Geist Mono, Motion for React, and Lucide. Do not add another component or animation library for visual polish.
 
 ## Component rules
@@ -43,7 +45,7 @@ Error and warning colors are reserved for those semantic messages. Ticket transi
 
 ## Motion
 
-Use Motion only where it explains a state change: ticket status, queue reordering, or a short control transition. Keep actions immediate, avoid decorative looping or scroll-triggered effects, and respect reduced motion. The landing preview is a local interactive sample; it does not read or change a real queue.
+Use Motion where it explains an interaction: the landing role switch, selected service/queue, ticket status, queue reordering, animated counts, or short control/feedback transitions. Keep actions immediate, limit looping movement to the live sample and ticket progress marker, and respect reduced motion. Landing content reveals as its section enters view. Status text remains visible immediately while its icon transitions. The landing preview is a local interactive sample; it cycles through the same three tickets, can be paused, and does not read or change a real queue. Playback is disabled when reduced motion is requested.
 
 ## Contrast
 

@@ -4,6 +4,8 @@ Queue movement follows API-backed query updates. The operator UI does not optimi
 
 The existing Motion for React dependency also provides a short customer ticket status transition after a successful manual refresh. The customer ticket page continues to communicate that updates are manual. Button press feedback is brief and does not delay actions.
 
+The landing role switch transfers its selected background between Customer and Operator. Customer service selections and operator queue navigation respond to hover and press, while operator waiting counts and status icons acknowledge confirmed changes. Feedback enters briefly; queue controls use small loading indicators during requests. Lucide labels and status text stay present if animation is reduced.
+
 `MotionConfig` respects the operating system's reduced-motion preference. Reduced motion removes layout and fade movement while leaving ticket text, status labels, and actions immediately available. See [Motion's reduced-motion guidance](https://motion.dev/docs/react-accessibility).
 
 ## Validation
