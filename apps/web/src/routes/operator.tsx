@@ -74,63 +74,92 @@ function OperatorPage() {
   return (
     <AuthenticatedShell currentSection="operator" user={user}>
       <div className="space-y-8">
-        <header className="mb-8">
+        <header>
           <div>
             <h1 className="text-3xl font-semibold tracking-tight">Operator queue</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Call customers and keep service moving.
+              Review the waiting list and guide each ticket through service.
             </p>
           </div>
         </header>
         {queues.isPending ? (
-          <p role="status">Loading your queues…</p>
+          <p
+            className="rounded-xl border bg-card px-5 py-4 text-sm text-muted-foreground"
+            role="status"
+          >
+            Loading your queues…
+          </p>
         ) : queues.isError ? (
-          <div className="space-y-4">
-            <p role="alert" className="text-sm text-destructive">
+          <div className="space-y-4 rounded-xl border border-status-danger/30 bg-status-danger-surface p-5">
+            <p className="text-sm text-status-danger" role="alert">
               {queues.error.message}
             </p>
-            <Button variant="outline" onClick={() => queues.refetch()}>
+            <Button className="min-h-11 px-4" variant="outline" onClick={() => queues.refetch()}>
               Try again
             </Button>
           </div>
         ) : queues.data.length === 0 ? (
-          <p className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
-            No queues are assigned to you.
-          </p>
+          <section className="rounded-xl border border-dashed bg-card p-6">
+            <h2 className="font-semibold">No assigned queues</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              No queues are assigned to you. Contact your branch administrator for access.
+            </p>
+          </section>
         ) : (
-          <div className="grid gap-6 md:grid-cols-[15rem_1fr]">
-            <nav aria-label="Assigned queues" className="space-y-2">
-              <h2 className="mb-3 text-sm font-medium">Your queues</h2>
-              {queues.data.map((item) => (
-                <button
-                  key={item.serviceId}
-                  type="button"
-                  aria-pressed={selected?.serviceId === item.serviceId}
-                  onClick={() => {
-                    setSelectedService(item.serviceId)
-                    setMessage('')
-                    command.reset()
-                  }}
-                  className={`w-full rounded-lg border p-4 text-left ${selected?.serviceId === item.serviceId ? 'border-primary bg-muted' : 'bg-card hover:bg-muted/50'}`}
-                >
-                  <span className="block font-medium">{item.serviceName}</span>
-                  <span className="mt-1 block text-sm text-muted-foreground">
-                    {item.branchName}
-                  </span>
-                  <span className="mt-3 block text-sm tabular-nums">
-                    {item.waitingCount ?? 0} waiting
-                  </span>
-                </button>
-              ))}
+          <div className="grid items-start gap-5 lg:grid-cols-[minmax(15rem,18rem)_minmax(0,1fr)] lg:gap-7">
+            <nav aria-label="Assigned queues" className="rounded-2xl border bg-card p-4 sm:p-5">
+              <div className="mb-4">
+                <h2 className="text-base font-semibold">Your queues</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Choose a service to manage.</p>
+              </div>
+              <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                {queues.data.map((item) => (
+                  <li key={item.serviceId}>
+                    <button
+                      type="button"
+                      aria-pressed={selected?.serviceId === item.serviceId}
+                      onClick={() => {
+                        setSelectedService(item.serviceId)
+                        setMessage('')
+                        command.reset()
+                      }}
+                      className={`min-h-28 w-full rounded-xl border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${selected?.serviceId === item.serviceId ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'bg-background hover:bg-muted/50'}`}
+                    >
+                      <span className="flex items-start justify-between gap-2">
+                        <span className="min-w-0">
+                          <span className="block truncate font-semibold">{item.serviceName}</span>
+                          <span className="mt-1 block truncate text-sm text-muted-foreground">
+                            {item.branchName}
+                          </span>
+                        </span>
+                        {selected?.serviceId === item.serviceId ? (
+                          <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">
+                            Selected
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className="mt-4 flex items-center justify-between gap-2 border-t pt-3 text-sm">
+                        <span className="text-muted-foreground">Waiting</span>
+                        <span className="font-semibold tabular-nums">{item.waitingCount ?? 0}</span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </nav>
             {queue.isPending ? (
-              <p role="status">Loading queue…</p>
+              <p
+                className="rounded-xl border bg-card px-5 py-4 text-sm text-muted-foreground"
+                role="status"
+              >
+                Loading queue…
+              </p>
             ) : queue.isError ? (
-              <div className="space-y-4">
-                <p role="alert" className="text-sm text-destructive">
+              <div className="space-y-4 rounded-xl border border-status-danger/30 bg-status-danger-surface p-5">
+                <p className="text-sm text-status-danger" role="alert">
                   {queue.error.message}
                 </p>
-                <Button variant="outline" onClick={() => queue.refetch()}>
+                <Button className="min-h-11 px-4" variant="outline" onClick={() => queue.refetch()}>
                   Try again
                 </Button>
               </div>

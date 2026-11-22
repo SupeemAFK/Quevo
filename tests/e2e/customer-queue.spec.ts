@@ -57,7 +57,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await recoveredTicketLink.click()
   await expect(page.getByTestId('ticket-number')).toHaveText('1')
 
-  const operator = await browser.newPage()
+  const operator = await browser.newPage({ viewport: { width: 390, height: 844 } })
   await operator.goto('/login')
   await operator.waitForLoadState('networkidle')
   await operator.getByLabel('Email').fill('operator@quevo.local')
@@ -71,6 +71,15 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
     'page',
   )
   await expect(operator.getByRole('heading', { name: 'Operator queue' })).toBeVisible()
+  const selectedQueue = operator
+    .getByRole('navigation', { name: 'Assigned queues' })
+    .getByRole('button')
+  await expect(selectedQueue).toHaveAttribute('aria-pressed', 'true')
+  await expect(selectedQueue).toContainText('Quevo Demo Branch')
+  await expect(operator.getByText('1 ticket', { exact: true })).toBeVisible()
+  expect(
+    await operator.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+  ).toBe(true)
   await expect(operator.getByText('Ticket 1', { exact: true })).toBeVisible()
   await operator.getByRole('button', { name: 'Call next' }).click()
   await expect(operator.getByTestId('operator-current-ticket')).toHaveText('1')

@@ -40,6 +40,7 @@ describe('OperatorQueue', () => {
         detail={{ ...detail, current: { ...ticket, status: 'PENDING' } }}
       />,
     )
+    expect(screen.getByText('Called', { exact: true })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Start service' }))
     await user.click(screen.getByRole('button', { name: 'Skip ticket' }))
     expect(onAction).toHaveBeenCalledWith('start')
@@ -52,6 +53,7 @@ describe('OperatorQueue', () => {
         detail={{ ...detail, current: { ...ticket, status: 'OPERATING' } }}
       />,
     )
+    expect(screen.getByText('In service', { exact: true })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Complete service' }))
     expect(onAction).toHaveBeenCalledWith('complete')
     expect(screen.queryByRole('button', { name: 'Skip ticket' })).not.toBeInTheDocument()
@@ -70,5 +72,43 @@ describe('OperatorQueue', () => {
     )
     expect(screen.getByText('No customers are waiting in this queue.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Call next' })).toBeDisabled()
+  })
+
+  it('makes the selected queue context and waiting order easy to scan', () => {
+    render(
+      <OperatorQueue
+        detail={{ ...detail, waiting: [ticket, { ...ticket, id: 'ticket-2', ticketNumber: '2' }] }}
+        busy={false}
+        message=""
+        error=""
+        onAction={vi.fn()}
+        onRefresh={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('Service · Branch')).toBeInTheDocument()
+    expect(screen.getByText('2 tickets', { exact: true })).toBeInTheDocument()
+    expect(screen.getByRole('list', { name: 'Customers waiting in order' })).toBeInTheDocument()
+    expect(screen.getByText('Ticket 1')).toBeInTheDocument()
+    expect(screen.getByText('Ticket 2')).toBeInTheDocument()
+    expect(screen.getAllByText('Waiting', { exact: true })).toHaveLength(2)
+  })
+
+  it('disables queue actions while a request is pending and retains the current ticket', () => {
+    render(
+      <OperatorQueue
+        detail={{ ...detail, current: { ...ticket, status: 'PENDING' } }}
+        busy
+        message=""
+        error=""
+        onAction={vi.fn()}
+        onRefresh={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByTestId('operator-current-ticket')).toHaveTextContent('1')
+    expect(screen.getByRole('button', { name: 'Refresh queue' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Start service' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Skip ticket' })).toBeDisabled()
   })
 })
