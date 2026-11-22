@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { AuthenticatedShell } from '@/components/authenticated-shell'
 import { FeedbackMessage, LoadingMessage } from '@/components/feedback-message'
 import { OperatorQueue } from '@/components/operator-queue'
+import { OperatorServiceNavigation } from '@/components/operator-service-navigation'
 import { PageHeading } from '@/components/page-heading'
 import { Button } from '@/components/ui/button'
 import { getCurrentUser } from '@/lib/auth'
@@ -15,6 +16,10 @@ import {
 } from '@/lib/operator-queue'
 
 type Action = 'call-next' | 'start' | 'complete' | 'skip'
+
+function queueKey(queue: { branchId: string; serviceId: string }) {
+  return `${queue.branchId}:${queue.serviceId}`
+}
 
 export const Route = createFileRoute('/operator')({
   beforeLoad: async () => {
@@ -30,11 +35,12 @@ function OperatorPage() {
   const { user } = Route.useRouteContext()
   const queryClient = useQueryClient()
   const queues = useQuery(operatorQueuesOptions(user.id))
-  const [selectedService, setSelectedService] = useState('')
+  const [selectedQueueID, setSelectedQueueID] = useState('')
   const [message, setMessage] = useState('')
   const [refreshing, setRefreshing] = useState(false)
   const selected =
-    queues.data?.find((queue) => queue.serviceId === selectedService) ?? queues.data?.[0]
+    queues.data?.find((queue) => queueKey(queue) === selectedQueueID) ?? queues.data?.[0]
+  const multipleQueues = (queues.data?.length ?? 0) > 1
   const queue = useQuery(
     operatorQueueOptions(user.id, selected?.branchId ?? '', selected?.serviceId ?? ''),
   )
@@ -80,27 +86,32 @@ function OperatorPage() {
     },
   })
 
+  function selectQueue(id: string) {
+    setSelectedQueueID(id)
+    setMessage('')
+    command.reset()
+  }
+
   return (
     <AuthenticatedShell currentSection="operator" user={user}>
       <div className="space-y-8">
         <header>
-          <div>
-            <PageHeading className="text-3xl font-semibold tracking-tight">
-              Operator queue
-            </PageHeading>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Review the waiting list and guide each ticket through service.
-            </p>
-          </div>
+          <PageHeading className="text-3xl font-semibold tracking-tight">
+            Operator queue
+          </PageHeading>
+          <p className="mt-2 max-w-2xl text-muted-foreground">
+            Call the next customer, manage the service in progress, and follow the waiting order.
+          </p>
         </header>
+
         {queues.isPending ? (
           <LoadingMessage>Loading your queues…</LoadingMessage>
         ) : queues.isError ? (
           <div className="space-y-4">
             <FeedbackMessage kind="error">{queues.error.message}</FeedbackMessage>
             <Button
-              aria-disabled={queues.isFetching}
-              className="min-h-11 px-4 aria-disabled:pointer-events-none aria-disabled:opacity-50"
+              className="min-h-11 px-4"
+              disabled={queues.isFetching}
               variant="outline"
               onClick={() => {
                 if (!queues.isFetching) void queues.refetch()
@@ -110,86 +121,63 @@ function OperatorPage() {
             </Button>
           </div>
         ) : queues.data.length === 0 ? (
-          <section className="rounded-lg border bg-card p-5">
-            <h2 className="font-medium">No assigned queues</h2>
+          <section className="border-y py-5">
+            <h2 className="font-semibold">No assigned queues</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               No queues are assigned to you. Contact your branch administrator for access.
             </p>
           </section>
         ) : (
-          <div className="grid items-start gap-5 lg:grid-cols-[minmax(15rem,18rem)_minmax(0,1fr)] lg:gap-7">
-            <nav aria-label="Assigned queues" className="p-0">
-              <div className="mb-4">
-                <h2 className="text-base font-semibold">Your queues</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Choose a service to manage.</p>
-              </div>
-              <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
-                {queues.data.map((item) => (
-                  <li key={item.serviceId}>
-                    <button
-                      type="button"
-                      aria-pressed={selected?.serviceId === item.serviceId}
-                      onClick={() => {
-                        setSelectedService(item.serviceId)
-                        setMessage('')
-                        command.reset()
-                      }}
-                      className={`min-h-28 w-full rounded-lg border p-4 text-left transition-colors duration-200 hover:border-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${selected?.serviceId === item.serviceId ? 'border-brand-accent bg-background' : 'bg-background'}`}
-                    >
-                      <span className="flex items-start justify-between gap-2">
-                        <span className="min-w-0">
-                          <span className="block truncate font-semibold">{item.serviceName}</span>
-                          <span className="mt-1 block truncate text-sm text-muted-foreground">
-                            {item.branchName}
-                          </span>
-                        </span>
-                        {selected?.serviceId === item.serviceId ? (
-                          <span className="shrink-0 text-xs font-medium text-foreground">
-                            Selected
-                          </span>
-                        ) : null}
-                      </span>
-                      <span className="mt-4 flex items-center justify-between gap-2 border-t pt-3 text-sm">
-                        <span className="text-muted-foreground">Waiting</span>
-                        <span className="font-semibold tabular-nums">{item.waitingCount ?? 0}</span>
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-            {queue.isPending ? (
-              <LoadingMessage>Loading queue…</LoadingMessage>
-            ) : queue.isError ? (
-              <div className="space-y-4">
-                <FeedbackMessage kind="error">{queue.error.message}</FeedbackMessage>
-                <Button
-                  aria-disabled={queue.isFetching}
-                  className="min-h-11 px-4 aria-disabled:pointer-events-none aria-disabled:opacity-50"
-                  variant="outline"
-                  onClick={() => {
-                    if (!queue.isFetching) void queue.refetch()
-                  }}
-                >
-                  {queue.isFetching ? 'Retrying…' : 'Try again'}
-                </Button>
-              </div>
-            ) : queue.data ? (
-              <OperatorQueue
-                detail={queue.data}
-                busy={command.isPending}
-                refreshing={refreshing}
-                pendingAction={command.isPending ? (command.variables ?? null) : null}
-                message={message}
-                error={
-                  command.error ? `${command.error.message} Refresh the queue and try again.` : ''
-                }
-                onAction={(action) => command.mutate(action)}
-                onRefresh={() => {
-                  void refresh()
-                }}
+          <div
+            className={
+              multipleQueues
+                ? 'grid min-w-0 gap-7 lg:grid-cols-[minmax(13rem,16rem)_minmax(0,1fr)]'
+                : 'min-w-0'
+            }
+          >
+            {multipleQueues && selected ? (
+              <OperatorServiceNavigation
+                onSelect={(item) => selectQueue(queueKey(item))}
+                queues={queues.data}
+                selectedQueueKey={queueKey(selected)}
               />
             ) : null}
+
+            <div className="min-w-0">
+              {queue.isPending ? (
+                <LoadingMessage>Loading queue…</LoadingMessage>
+              ) : queue.isError ? (
+                <div className="space-y-4">
+                  <FeedbackMessage kind="error">{queue.error.message}</FeedbackMessage>
+                  <Button
+                    className="min-h-11 px-4"
+                    disabled={queue.isFetching}
+                    variant="outline"
+                    onClick={() => {
+                      if (!queue.isFetching) void queue.refetch()
+                    }}
+                  >
+                    {queue.isFetching ? 'Retrying…' : 'Try again'}
+                  </Button>
+                </div>
+              ) : queue.data ? (
+                <OperatorQueue
+                  detail={queue.data}
+                  busy={command.isPending}
+                  refreshing={refreshing}
+                  pendingAction={command.isPending ? (command.variables ?? null) : null}
+                  message={message}
+                  error={
+                    command.error ? `${command.error.message} Refresh the queue and try again.` : ''
+                  }
+                  onAction={(action) => command.mutate(action)}
+                  onRefresh={() => {
+                    command.reset()
+                    void refresh()
+                  }}
+                />
+              ) : null}
+            </div>
           </div>
         )}
       </div>

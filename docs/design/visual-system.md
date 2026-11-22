@@ -1,29 +1,64 @@
 # Quevo visual system
 
-Quevo uses **Ink & Vermilion** across public and authenticated screens. Use spacing and typography to organize the interface; keep surfaces flat and use vermilion for the brand, a selected control, or a meaningful progress indicator.
+Quevo uses a black-and-white interface with a restrained green accent. The page should read clearly before motion: typography, alignment, and neutral borders establish hierarchy. Green identifies a selected service and meaningful active or successful states. Primary actions use neutral black and white.
 
-## Core tokens
+## Theme tokens
 
-| Token | Value | Use |
-| --- | --- | --- |
-| Background | `#F7F6F2` | App canvas |
-| Surface | `#FFFFFF` | Forms, queue panels, and interactive demo |
-| Primary text | `#20201E` | Headings, body copy, primary controls |
-| Secondary text | `#66645F` | Supporting copy and metadata |
-| Border | `#DCDAD4` | Dividers, outlines, and control boundaries |
-| Brand accent | `#E34B35` | Quevo mark, large headline emphasis, selected borders, and progress |
-| Primary button | `#20201E` / `#FFFFFF` | Ink background with white label |
+The tokens in `apps/web/src/styles.css` are semantic and switch with Light, Dark, or System preference. System follows `prefers-color-scheme`; an explicit choice is stored in `localStorage` and applied before the page paints.
 
-Tokens live in `apps/web/src/styles.css` and map to the existing shadcn/ui theme variables. Functional controls stay in shadcn/ui; page composition uses Tailwind; meaningful state transitions use Motion for React; icons use Lucide. Geist Variable is the UI font. Geist Mono is used for ticket identifiers and numbered queue sequences.
+| Token | Light | Dark | Use |
+| --- | --- | --- | --- |
+| Background | `#FFFFFF` | `#111111` | Page canvas |
+| Surface | `#FAFAFA` | `#1C1C1C` | Bounded content and controls |
+| Foreground | `#111111` | `#FAFAFA` | Headings and primary copy |
+| Muted text | `#737373` | `#A3A3A3` | Supporting copy and metadata |
+| Border | `#E5E5E5` | `#333333` | Dividers and control outlines |
+| Green accent | `#16803C` | `#4ADE80` | Selected service and active/success status |
+| Primary action | `#111111` | `#FAFAFA` | Primary controls |
+| Primary action text | `#FFFFFF` | `#111111` | Text on primary controls |
+
+The web foundation remains shadcn/ui, Tailwind CSS, Geist Sans and Geist Mono, Motion for React, and Lucide. Do not add another component or animation library for visual polish.
 
 ## Component rules
 
-- Use warm neutral backgrounds and white surfaces. Do not use translucent colored fills, decorative gradients, glows, background grids, or ornamental rings.
-- Reserve vermilion for recognizable brand moments and selected or progressing states. Use ink or muted text for small labels so text contrast remains accessible.
-- Render generic metadata such as “Sample data” as muted text or a subtle outline. Render ticket statuses with their label and a clear outline; semantic text color may reinforce the state but does not replace the label.
-- Keep cards for bounded interactive content, such as a ticket, form, queue, or demo. Describe editorial sections with spacing, rules, and type rather than putting every section in a card.
-- Use `rounded-md` or `rounded-lg` for controls and panels. Avoid unnecessary elevation and motion. Respect `prefers-reduced-motion` and keep focus indicators visible with sufficient contrast.
+- Use white/black and neutral grays for page structure. Use neutral layering only where it clarifies the product preview. Avoid decorative backgrounds, gradients, glows, or visual effects.
+- Reserve green for selected service, activity markers, and meaningful active/success states. Primary controls stay black/white. Do not color headline text green.
+- Use plain text for metadata. Ticket statuses may use a neutral outline with a visible text label.
+- Use bounded surfaces only where they improve focus, such as the queue preview, ticket, form, or operator current-ticket area.
+- Keep controls keyboard accessible, use visible focus, and keep primary touch targets at least 44px tall.
+- Use Geist Mono for ticket identifiers and queue ordinals.
+- Customer queue position and estimated wait time are unavailable from the API and must not be derived from ticket numbers.
 
-## Status colors
+## Ticket states
 
-Waiting and called use accessible blue text; in-service uses amber; completed uses green; skipped and unknown states use muted neutral text. Each state remains written out in the interface, so color is supplementary.
+| API state | Label | Treatment |
+| --- | --- | --- |
+| `WAITING` | Waiting | Neutral |
+| `PENDING` | Called | Green text, label retained |
+| `OPERATING` | In service | Green text, label retained |
+| `COMPLETED` | Completed | Green text, label retained |
+| `SKIPPED` | Skipped | Neutral |
+
+Error and warning colors are reserved for those semantic messages. Ticket transitions and authorization remain owned by the API.
+
+## Motion
+
+Use Motion only where it explains a state change: ticket status, queue reordering, or a short control transition. Keep actions immediate, avoid decorative looping or scroll-triggered effects, and respect reduced motion. The landing preview is a local interactive sample; it does not read or change a real queue.
+
+## Contrast
+
+The required color pairs meet WCAG AA for normal text:
+
+| Pair | Contrast |
+| --- | ---: |
+| `#111111` on `#FFFFFF` | 18.88:1 |
+| White text on `#111111` | 18.88:1 |
+| `#111111` text on `#FAFAFA` | 18.09:1 |
+| `#737373` on `#FFFFFF` | 4.74:1 |
+| `#16803C` on `#FFFFFF` | 5.02:1 |
+| `#FAFAFA` on `#111111` | 18.09:1 |
+| `#A3A3A3` on `#111111` | 7.49:1 |
+| `#4ADE80` on `#111111` | 10.84:1 |
+| `#111111` button text on `#4ADE80` | 10.84:1 |
+
+Keep status meaning available in text and pair asynchronous errors with alert semantics.

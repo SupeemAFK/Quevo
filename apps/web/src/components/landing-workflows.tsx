@@ -1,169 +1,129 @@
-import { Link } from '@tanstack/react-router'
-import { ArrowUpRight } from 'lucide-react'
-import { motion } from 'motion/react'
-import { LandingReveal } from './landing-reveal'
-import { Button } from './ui/button'
+import { ArrowRight, ListOrdered, PhoneCall, RefreshCw, TicketCheck } from 'lucide-react'
 
-const lifecycle = [
-  { label: 'Join', description: 'Choose an active service and receive a ticket.' },
-  { label: 'Wait', description: 'Your ticket stays in line until an operator calls it.' },
-  { label: 'Called', description: 'The operator brings the next waiting ticket forward.' },
-  { label: 'In service', description: 'The operator starts serving the current ticket.' },
-  { label: 'Complete or skip', description: 'The operator records the result of the visit.' },
-]
+const highlights = [
+  {
+    icon: TicketCheck,
+    audience: 'For customers',
+    title: 'Keep your place with you.',
+    description: 'Join an active service and keep your ticket details close on your phone.',
+    visual: 'ticket',
+  },
+  {
+    icon: ListOrdered,
+    audience: 'For operators',
+    title: 'Know who is next.',
+    description: 'See the waiting order and focus on the person currently being served.',
+    visual: 'order',
+  },
+  {
+    icon: RefreshCw,
+    audience: 'At every step',
+    title: 'Make the status easy to check.',
+    description: 'Customers can refresh their ticket when they want the latest queue status.',
+    visual: 'status',
+  },
+] as const
+
+function HighlightVisual({ visual }: { visual: (typeof highlights)[number]['visual'] }) {
+  if (visual === 'ticket') {
+    return (
+      <div className="flex min-h-12 items-center justify-between gap-3 border-y py-2.5">
+        <span className="text-sm font-medium">Your ticket</span>
+        <span className="h-px flex-1 bg-border" />
+        <span className="text-sm text-muted-foreground">Status at a glance</span>
+      </div>
+    )
+  }
+
+  if (visual === 'order') {
+    return (
+      <div className="flex min-h-12 items-center gap-3 border-y py-2.5 text-sm">
+        <span className="font-mono font-semibold tabular-nums">01</span>
+        <span className="h-px flex-1 bg-border" />
+        <span className="inline-flex items-center gap-2 text-muted-foreground">
+          <PhoneCall aria-hidden="true" size={15} />
+          Call next
+        </span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex min-h-12 items-center justify-between gap-3 border-y py-2.5 text-sm">
+      <span className="text-muted-foreground">Ticket status</span>
+      <span className="inline-flex items-center gap-2 font-medium text-muted-foreground">
+        <RefreshCw aria-hidden="true" size={15} />
+        Refresh when needed
+      </span>
+    </div>
+  )
+}
 
 export function LandingWorkflows() {
   return (
     <section
       aria-labelledby="workflows-heading"
-      className="scroll-mt-24 mx-auto max-w-content px-page py-section"
+      className="mx-auto max-w-content px-page py-section"
       id="workflows"
       tabIndex={-1}
     >
-      <LandingReveal className="max-w-2xl">
-        <p className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-          One visit, two clear views
-        </p>
-        <h2 className="mt-3 text-section font-semibold tracking-tight" id="workflows-heading">
-          Simple steps for customers and operators.
-        </h2>
-        <p className="mt-4 leading-7 text-muted-foreground">
-          Quevo follows the ticket from joining the line through service, with the right actions for
-          each role.
-        </p>
-      </LandingReveal>
-
-      <div className="mt-10 grid gap-5 lg:grid-cols-2">
-        <motion.article
-          className="landing-feature-card p-0 pb-7 pt-6 sm:pb-8"
-          initial={{ opacity: 0, y: 22 }}
-          transition={{ delay: 0.06, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          viewport={{ amount: 0.24, once: true }}
-          whileInView={{ opacity: 1, y: 0 }}
-        >
-          <span aria-hidden="true" className="landing-feature-icon landing-feature-icon-customer">
-            01
-          </span>
-          <p className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            For customers
+      <div className="grid gap-4 border-b pb-8 md:grid-cols-[1fr_0.7fr] md:items-end">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+            Made for real service days
           </p>
-          <h3 className="mt-3 text-xl font-semibold tracking-tight">
-            Get a ticket for your visit.
-          </h3>
-          <ol className="mt-6 space-y-4">
-            <li className="flex items-start gap-3">
-              <span className="mt-0.5 w-5 shrink-0 font-mono text-sm font-semibold text-foreground">
-                1
-              </span>
-              <span className="leading-6">Sign in and choose an active branch service.</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="mt-0.5 w-5 shrink-0 font-mono text-sm font-semibold text-foreground">
-                2
-              </span>
-              <span className="leading-6">Join the queue and receive your ticket number.</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="mt-0.5 w-5 shrink-0 font-mono text-sm font-semibold text-foreground">
-                3
-              </span>
-              <span className="leading-6">Return to your ticket to see its current status.</span>
-            </li>
-          </ol>
-          <Button asChild className="mt-7 min-h-11 px-4" variant="outline">
-            <Link to="/login">
-              Customer sign in
-              <ArrowUpRight aria-hidden="true" />
-            </Link>
-          </Button>
-        </motion.article>
-
-        <motion.article
-          className="landing-feature-card p-0 pb-7 pt-6 sm:pb-8"
-          initial={{ opacity: 0, y: 22 }}
-          transition={{ delay: 0.16, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          viewport={{ amount: 0.24, once: true }}
-          whileInView={{ opacity: 1, y: 0 }}
-        >
-          <span aria-hidden="true" className="landing-feature-icon landing-feature-icon-operator">
-            02
-          </span>
-          <p className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            For operators
-          </p>
-          <h3 className="mt-3 text-xl font-semibold tracking-tight">
-            Keep the assigned queue moving.
-          </h3>
-          <ol className="mt-6 space-y-4">
-            <li className="flex items-start gap-3">
-              <span className="mt-0.5 w-5 shrink-0 font-mono text-sm font-semibold text-foreground">
-                1
-              </span>
-              <span className="leading-6">Open an assigned branch and service queue.</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="mt-0.5 w-5 shrink-0 font-mono text-sm font-semibold text-foreground">
-                2
-              </span>
-              <span className="leading-6">Call the next waiting ticket and start service.</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="mt-0.5 w-5 shrink-0 font-mono text-sm font-semibold text-foreground">
-                3
-              </span>
-              <span className="leading-6">Complete or skip the current ticket.</span>
-            </li>
-          </ol>
-          <Button asChild className="mt-7 min-h-11 px-4" variant="outline">
-            <Link to="/login">
-              Operator sign in
-              <ArrowUpRight aria-hidden="true" />
-            </Link>
-          </Button>
-        </motion.article>
+          <h2
+            className="mt-3 max-w-2xl text-section font-semibold leading-tight tracking-[-0.045em]"
+            id="workflows-heading"
+          >
+            A calmer visit starts with a clear next step.
+          </h2>
+        </div>
+        <p className="max-w-md leading-6 text-muted-foreground md:justify-self-end">
+          Quevo gives customers and service teams a shared view of the queue, from the first ticket
+          to the final call.
+        </p>
       </div>
 
-      <LandingReveal delay={0.12}>
-        <section
-          aria-labelledby="lifecycle-heading"
-          className="landing-lifecycle mt-14 pt-6 sm:pt-8"
-        >
-          <div className="max-w-2xl">
-            <h3 className="text-lg font-semibold" id="lifecycle-heading">
-              The ticket lifecycle
-            </h3>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Each step has a clear status, from the first place in line through the operator’s
-              final action.
-            </p>
-          </div>
-          <ol
-            aria-label="Queue ticket lifecycle"
-            className="mt-6 grid gap-x-5 sm:grid-cols-2 lg:grid-cols-5"
+      <div className="grid gap-x-7 sm:grid-cols-2 lg:grid-cols-3">
+        {highlights.map(({ icon: Icon, audience, title, description, visual }, index) => (
+          <article
+            className="group flex min-w-0 flex-col border-b py-6 sm:py-8 lg:border-b-0 lg:border-l lg:pl-6 first:lg:border-l-0 first:lg:pl-0"
+            key={audience}
           >
-            {lifecycle.map((step, index) => (
-              <motion.li
-                className="landing-lifecycle-step flex items-start gap-3 border-t py-4"
-                key={step.label}
-                initial={{ opacity: 0, y: 12 }}
-                transition={{ delay: index * 0.07, duration: 0.4, ease: 'easeOut' }}
-                viewport={{ amount: 0.3, once: true }}
-                whileInView={{ opacity: 1, y: 0 }}
-              >
-                <span aria-hidden="true" className="w-5 shrink-0 font-mono text-sm text-foreground">
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                <span>
-                  <span className="block font-semibold">{step.label}</span>
-                  <span className="mt-1 block text-sm leading-5 text-muted-foreground">
-                    {step.description}
-                  </span>
-                </span>
-              </motion.li>
-            ))}
-          </ol>
-        </section>
-      </LandingReveal>
+            <div className="flex items-center justify-between gap-3">
+              <Icon
+                aria-hidden="true"
+                className="text-muted-foreground transition-colors group-hover:text-foreground"
+                size={20}
+              />
+              <span className="flex items-center gap-2 font-mono text-xs tabular-nums text-muted-foreground">
+                <span>0{index + 1}</span>
+                <span aria-hidden="true">/</span>
+                <span className="font-sans font-medium tracking-wide">{audience}</span>
+              </span>
+            </div>
+            <h3 className="mt-6 text-xl font-semibold tracking-tight">{title}</h3>
+            <p className="mt-2 min-h-12 max-w-sm text-sm leading-6 text-muted-foreground">
+              {description}
+            </p>
+            <div className="mt-6">
+              <HighlightVisual visual={visual} />
+            </div>
+          </article>
+        ))}
+      </div>
+      <a
+        className="group mt-7 inline-flex min-h-11 items-center gap-2 text-sm font-medium underline-offset-4 hover:underline focus-visible:outline"
+        href="#queue-demo"
+      >
+        Explore both views
+        <ArrowRight
+          aria-hidden="true"
+          className="transition-transform group-hover:translate-x-0.5"
+          size={16}
+        />
+      </a>
     </section>
   )
 }

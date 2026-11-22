@@ -75,45 +75,50 @@ export function OperatorQueue({
   return (
     <MotionConfig reducedMotion="user">
       <LayoutGroup id={`operator-queue-${detail.queue.serviceId}`}>
-        <div className="space-y-5">
+        <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(16rem,0.75fr)] lg:gap-7">
           <section
-            aria-labelledby="current-ticket"
-            className="overflow-hidden rounded-lg border bg-card"
+            aria-labelledby="current-ticket-heading"
+            className="min-w-0 rounded-lg border bg-card p-5 sm:p-7"
           >
-            <header className="flex flex-wrap items-center justify-between gap-4 border-b bg-card p-5 sm:p-6">
-              <div>
-                <h2 className="text-lg font-semibold tracking-tight" id="current-ticket">
+            <header className="flex flex-wrap items-end justify-between gap-5">
+              <div className="min-w-0">
+                <h2
+                  className="text-sm font-medium text-muted-foreground"
+                  id="current-ticket-heading"
+                >
                   Current ticket
                 </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {detail.queue.serviceName} <span aria-hidden="true">·</span>{' '}
+                <p className="mt-1 truncate text-xl font-semibold tracking-tight">
+                  {detail.queue.serviceName}
+                </p>
+                <p className="mt-1 truncate text-sm text-muted-foreground">
                   {detail.queue.branchName}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg border bg-background px-3 py-2 text-right">
-                  <span className="block text-xs font-medium text-muted-foreground">Waiting</span>
-                  <span className="block text-lg font-semibold tabular-nums leading-tight">
+              <div className="flex shrink-0 items-center gap-4">
+                <p className="text-right">
+                  <span className="block text-2xl font-semibold tabular-nums leading-none">
                     {waiting.length}
                   </span>
-                </div>
+                  <span className="mt-1 block text-sm text-muted-foreground">waiting</span>
+                </p>
                 <Button
-                  aria-disabled={busy || refreshing}
-                  className="min-h-11 px-4 aria-disabled:pointer-events-none aria-disabled:opacity-50"
+                  className="min-h-11 px-4"
+                  disabled={busy || refreshing}
                   variant="outline"
                   onClick={handleRefresh}
                 >
-                  Refresh queue
+                  {refreshing ? 'Refreshing…' : 'Refresh queue'}
                 </Button>
               </div>
             </header>
 
-            <div className="p-5 sm:p-7">
+            <div className="mt-7 border-t pt-7">
               <AnimatePresence initial={false}>
                 {current ? (
                   <motion.div
                     animate={{ opacity: 1 }}
-                    className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between"
+                    className="flex min-w-0 flex-col gap-6 sm:flex-row sm:items-end sm:justify-between"
                     exit={motionExit}
                     initial={motionInitial}
                     key={current.id}
@@ -121,43 +126,44 @@ export function OperatorQueue({
                     layoutId={`ticket-${current.id}`}
                     transition={motionTransition}
                   >
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Now serving</p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        {current.status === 'OPERATING' ? 'Now serving' : 'Called ticket'}
+                      </p>
                       <p
-                        className="mt-1 font-mono text-6xl font-semibold tabular-nums tracking-tight sm:text-7xl"
+                        className="mt-2 break-words font-mono text-6xl font-semibold tabular-nums tracking-[-0.06em] sm:text-7xl"
                         data-testid="operator-current-ticket"
                       >
                         {current.ticketNumber}
                       </p>
-                      <div className="mt-3">
+                      <div className="mt-4">
                         <TicketStatus status={current.status} />
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex shrink-0 flex-wrap gap-3">
                       {current.status === 'PENDING' ? (
                         <>
                           <Button
-                            aria-disabled={busy}
-                            className="min-h-11 px-5 aria-disabled:pointer-events-none aria-disabled:opacity-50"
+                            className="min-h-11 px-5"
+                            disabled={busy}
                             onClick={() => handleAction('start')}
                             ref={nextActionRef}
                           >
                             Start service
                           </Button>
                           <Button
-                            aria-disabled={busy}
+                            className="min-h-11 px-5"
+                            disabled={busy}
                             variant="outline"
-                            className="min-h-11 px-5 aria-disabled:pointer-events-none aria-disabled:opacity-50"
                             onClick={() => handleAction('skip')}
                           >
                             Skip ticket
                           </Button>
                         </>
-                      ) : null}
-                      {current.status === 'OPERATING' ? (
+                      ) : current.status === 'OPERATING' ? (
                         <Button
-                          aria-disabled={busy}
-                          className="min-h-11 px-5 aria-disabled:pointer-events-none aria-disabled:opacity-50"
+                          className="min-h-11 px-5"
+                          disabled={busy}
                           onClick={() => handleAction('complete')}
                           ref={nextActionRef}
                         >
@@ -166,82 +172,92 @@ export function OperatorQueue({
                       ) : null}
                     </div>
                   </motion.div>
-                ) : (
+                ) : waiting.length > 0 ? (
                   <motion.div
                     animate={{ opacity: 1 }}
-                    className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between"
+                    className="flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:justify-between"
                     exit={motionExit}
                     initial={motionInitial}
-                    key="no-current-ticket"
+                    key="ready-for-next"
                     transition={motionTransition}
                   >
                     <div>
-                      <p className="font-semibold" ref={emptyCurrentRef} tabIndex={-1}>
-                        You have no current ticket.
-                      </p>
+                      <p className="font-semibold">Ready for the next customer</p>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {waiting.length > 0
-                          ? 'Call the next customer when you are ready.'
-                          : 'New customers will appear here when they join this queue.'}
+                        {waiting.length} {waiting.length === 1 ? 'ticket is' : 'tickets are'}{' '}
+                        waiting.
                       </p>
                     </div>
                     <Button
-                      aria-disabled={busy || waiting.length === 0}
-                      className="min-h-11 w-full px-5 sm:w-auto aria-disabled:pointer-events-none aria-disabled:opacity-50"
-                      disabled={waiting.length === 0}
+                      className="min-h-11 w-full px-5 sm:w-auto"
+                      disabled={busy}
                       onClick={() => handleAction('call-next')}
                       ref={nextActionRef}
                     >
                       Call next
                     </Button>
                   </motion.div>
+                ) : (
+                  <motion.div
+                    animate={{ opacity: 1 }}
+                    className="py-1"
+                    exit={motionExit}
+                    initial={motionInitial}
+                    key="queue-empty"
+                    transition={motionTransition}
+                  >
+                    <p className="font-semibold" ref={emptyCurrentRef} tabIndex={-1}>
+                      No customers are waiting.
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      New tickets will appear here when customers join this queue.
+                    </p>
+                  </motion.div>
                 )}
               </AnimatePresence>
-
-              {pendingAction ? (
-                <div className="mt-5">
-                  <LoadingMessage>{pendingMessage[pendingAction]}</LoadingMessage>
-                </div>
-              ) : refreshing ? (
-                <div className="mt-5">
-                  <LoadingMessage>Refreshing queue…</LoadingMessage>
-                </div>
-              ) : null}
-              {message ? (
-                <div className="mt-5">
-                  <FeedbackMessage kind="success">{message}</FeedbackMessage>
-                </div>
-              ) : null}
-              {error ? (
-                <div className="mt-5">
-                  <FeedbackMessage kind="error">{error}</FeedbackMessage>
-                </div>
-              ) : null}
             </div>
+
+            {pendingAction ? (
+              <div className="mt-6">
+                <LoadingMessage>{pendingMessage[pendingAction]}</LoadingMessage>
+              </div>
+            ) : refreshing ? (
+              <div className="mt-6">
+                <LoadingMessage>Refreshing queue…</LoadingMessage>
+              </div>
+            ) : null}
+            {message ? (
+              <div className="mt-6">
+                <FeedbackMessage kind="success">{message}</FeedbackMessage>
+              </div>
+            ) : null}
+            {error ? (
+              <div className="mt-6">
+                <FeedbackMessage kind="error">{error}</FeedbackMessage>
+              </div>
+            ) : null}
           </section>
 
           <section
-            aria-labelledby="waiting-tickets"
-            className="rounded-lg border bg-card p-5 sm:p-6"
+            aria-labelledby="waiting-tickets-heading"
+            className="min-w-0 lg:border-l lg:pl-7"
           >
             <div className="flex flex-wrap items-baseline justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold tracking-tight" id="waiting-tickets">
-                  Waiting list
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Customers are served in this order.
-                </p>
-              </div>
+              <h2 className="text-lg font-semibold tracking-tight" id="waiting-tickets-heading">
+                Waiting list
+              </h2>
               <span className="text-sm font-medium tabular-nums text-muted-foreground">
                 {waiting.length} {waiting.length === 1 ? 'ticket' : 'tickets'}
               </span>
             </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Customers are served in this order.
+            </p>
             <AnimatePresence initial={false} mode="wait">
               {waiting.length === 0 ? (
                 <motion.p
                   animate={{ opacity: 1 }}
-                  className="mt-4 rounded-md border bg-background p-5 text-sm text-muted-foreground"
+                  className="mt-5 text-sm text-muted-foreground"
                   exit={motionExit}
                   initial={motionInitial}
                   key="empty-waiting-list"
@@ -253,7 +269,7 @@ export function OperatorQueue({
                 <motion.ol
                   animate={{ opacity: 1 }}
                   aria-label="Customers waiting in order"
-                  className="mt-4 divide-y"
+                  className="mt-4 divide-y border-y"
                   exit={motionExit}
                   initial={motionInitial}
                   key="waiting-list"
@@ -267,6 +283,8 @@ export function OperatorQueue({
                       exit={motionExit}
                       initial={motionInitial}
                       key={ticket.id}
+                      aria-posinset={index + 1}
+                      aria-setsize={waiting.length}
                       layout={!prefersReducedMotion}
                       layoutId={`ticket-${ticket.id}`}
                       transition={motionTransition}

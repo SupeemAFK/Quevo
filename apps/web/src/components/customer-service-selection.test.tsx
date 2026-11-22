@@ -22,84 +22,101 @@ vi.mock('@tanstack/react-router', () => ({
   ),
 }))
 
+type Service = components['schemas']['queue.ServiceResponse']
 type ActiveTicket = components['schemas']['queue.TicketResponse']
 
+const generalService: Service = {
+  id: 'service-1',
+  branchId: 'branch-1',
+  branchName: 'Demo Branch',
+  name: 'General Service',
+}
+
+const passportService: Service = {
+  id: 'service-2',
+  branchId: 'branch-2',
+  branchName: 'City Branch',
+  name: 'Passport Service',
+}
+
+const activeTicket: ActiveTicket = {
+  id: 'ticket-1',
+  branchId: 'branch-1',
+  branchName: 'Demo Branch',
+  businessDate: '2026-11-22',
+  joinedAt: '2026-11-22T10:00:00Z',
+  serviceId: 'service-1',
+  serviceName: 'General Service',
+  status: 'WAITING',
+  ticketNumber: '12',
+}
+
 describe('CustomerServiceSelection', () => {
-  it('supports keyboard service selection and queue joining', async () => {
+  it('preselects the only service and lets the customer join without an extra selection', async () => {
     const user = userEvent.setup()
     const onJoin = vi.fn()
-    const services = [
-      {
-        id: 'service-1',
-        branchId: 'branch-1',
-        branchName: 'Demo Branch',
-        name: 'General Service',
-      },
-    ]
     render(
       <CustomerServiceSelection
         activeTickets={[]}
         error=""
         joining={false}
         onJoin={onJoin}
-        services={services}
+        services={[generalService]}
       />,
     )
 
-    await user.tab()
-    expect(screen.getByRole('button', { name: 'General Service at Demo Branch' })).toHaveFocus()
-    await user.keyboard(' ')
-    expect(screen.getByRole('button', { name: 'General Service at Demo Branch' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    )
+    expect(screen.getByText('General Service')).toBeInTheDocument()
+    expect(screen.getByText('Demo Branch')).toBeInTheDocument()
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Join queue' })).toBeEnabled()
     await user.tab()
     expect(screen.getByRole('button', { name: 'Join queue' })).toHaveFocus()
     await user.keyboard('{Enter}')
 
-    expect(onJoin).toHaveBeenCalledWith(services[0])
+    expect(onJoin).toHaveBeenCalledWith(generalService)
   })
 
-  it('requires a service selection before joining', async () => {
+  it('offers multiple services as keyboard-operable radio choices', async () => {
     const user = userEvent.setup()
     const onJoin = vi.fn()
-    const services = [
-      {
-        id: 'service-1',
-        branchId: 'branch-1',
-        branchName: 'Demo Branch',
-        name: 'General Service',
-      },
-    ]
-
     render(
       <CustomerServiceSelection
         activeTickets={[]}
         error=""
         joining={false}
         onJoin={onJoin}
-        services={services}
+        services={[generalService, passportService]}
       />,
     )
 
-    await user.click(screen.getByRole('button', { name: 'Join queue' }))
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'Select a service before joining the queue.',
-    )
-    expect(onJoin).not.toHaveBeenCalled()
-
-    await user.click(screen.getByRole('button', { name: 'General Service at Demo Branch' }))
-    expect(screen.getByRole('button', { name: 'General Service at Demo Branch' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    )
-    expect(screen.getByText('Selected')).toBeInTheDocument()
+    const general = screen.getByRole('radio', { name: /General Service.*Demo Branch/ })
+    const passport = screen.getByRole('radio', { name: /Passport Service.*City Branch/ })
+    expect(general).not.toBeChecked()
+    expect(passport).not.toBeChecked()
+    await user.click(passport)
+    expect(passport).toBeChecked()
+    expect(screen.getByRole('button', { name: 'Join queue' })).toBeEnabled()
     await user.click(screen.getByRole('button', { name: 'Join queue' }))
 
-    expect(onJoin).toHaveBeenCalledWith(services[0])
+    expect(onJoin).toHaveBeenCalledWith(passportService)
   })
 
-  it('shows a clear empty state when no active service is available', () => {
+  it('explains that a service must be chosen before the join action is available', () => {
+    render(
+      <CustomerServiceSelection
+        activeTickets={[]}
+        error=""
+        joining={false}
+        onJoin={vi.fn()}
+        services={[generalService, passportService]}
+      />,
+    )
+
+    expect(screen.getByText('Choose an available service to continue.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Join queue' })).toBeDisabled()
+  })
+
+  it('shows a useful empty state when no active service is available', () => {
     render(
       <CustomerServiceSelection
         activeTickets={[]}
@@ -116,33 +133,14 @@ describe('CustomerServiceSelection', () => {
     expect(screen.getByRole('button', { name: 'Join queue' })).toBeDisabled()
   })
 
-  it('keeps active tickets distinct and links directly to their ticket view', () => {
-    const ticket: ActiveTicket = {
-      id: 'ticket-1',
-      branchId: 'branch-1',
-      branchName: 'Demo Branch',
-      businessDate: '2026-11-22',
-      joinedAt: '2026-11-22T10:00:00Z',
-      serviceId: 'service-1',
-      serviceName: 'General Service',
-      status: 'WAITING',
-      ticketNumber: '12',
-    }
-
+  it('keeps active tickets distinct and links directly to each ticket view', () => {
     render(
       <CustomerServiceSelection
-        activeTickets={[ticket]}
+        activeTickets={[activeTicket]}
         error=""
         joining={false}
         onJoin={vi.fn()}
-        services={[
-          {
-            id: 'service-1',
-            branchId: 'branch-1',
-            branchName: 'Demo Branch',
-            name: 'General Service',
-          },
-        ]}
+        services={[generalService, passportService]}
       />,
     )
 
@@ -154,33 +152,75 @@ describe('CustomerServiceSelection', () => {
         name: 'View ticket 12 (General Service at Demo Branch). Status: Waiting',
       }),
     ).toHaveAttribute('href', '/tickets/ticket-1')
-    expect(screen.getByRole('button', { name: 'Join queue' })).toBeEnabled()
+    expect(screen.getByRole('radio', { name: /General Service.*Demo Branch/ })).toBeDisabled()
+    expect(screen.getByRole('radio', { name: /Passport Service.*City Branch/ })).toBeEnabled()
   })
 
-  it('communicates pending work and prevents a second selection or submission', () => {
+  it('prevents joining a service that already has an active ticket', () => {
+    render(
+      <CustomerServiceSelection
+        activeTickets={[activeTicket]}
+        error=""
+        joining={false}
+        onJoin={vi.fn()}
+        services={[generalService]}
+      />,
+    )
+
+    expect(screen.getByText(/already have an active ticket/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Join queue' })).toBeDisabled()
+    expect(screen.getByRole('link', { name: /View ticket 12/ })).toBeEnabled()
+  })
+
+  it('guards against rapid duplicate join events before the pending state rerenders', async () => {
+    const user = userEvent.setup()
+    const onJoin = vi.fn()
+    render(
+      <CustomerServiceSelection
+        activeTickets={[]}
+        error=""
+        joining={false}
+        onJoin={onJoin}
+        services={[generalService]}
+      />,
+    )
+
+    await user.dblClick(screen.getByRole('button', { name: 'Join queue' }))
+
+    expect(onJoin).toHaveBeenCalledOnce()
+  })
+
+  it('shows an API duplicate-join error while retaining the active ticket link', () => {
+    render(
+      <CustomerServiceSelection
+        activeTickets={[activeTicket]}
+        error="You already have an active ticket for this service today."
+        joining={false}
+        onJoin={vi.fn()}
+        services={[generalService]}
+      />,
+    )
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'You already have an active ticket for this service today.',
+    )
+    expect(screen.getByRole('link', { name: /View ticket 12/ })).toBeInTheDocument()
+  })
+
+  it('communicates pending work and disables controls against a second submission', () => {
+    const onJoin = vi.fn()
     render(
       <CustomerServiceSelection
         activeTickets={[]}
         error=""
         joining
-        onJoin={vi.fn()}
-        services={[
-          {
-            id: 'service-1',
-            branchId: 'branch-1',
-            branchName: 'Demo Branch',
-            name: 'General Service',
-          },
-        ]}
+        onJoin={onJoin}
+        services={[generalService]}
       />,
     )
 
     expect(screen.getByRole('status')).toHaveTextContent('Joining queue…')
-    expect(screen.getByRole('button', { name: 'Join queue' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Join queue' })).toHaveAttribute(
-      'aria-disabled',
-      'true',
-    )
-    expect(screen.getByRole('button', { name: 'General Service at Demo Branch' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Joining queue…' })).toBeDisabled()
+    expect(onJoin).not.toHaveBeenCalled()
   })
 })

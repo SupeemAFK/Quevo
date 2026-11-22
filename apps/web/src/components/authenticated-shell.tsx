@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { Identity } from '@/lib/auth'
 import { signOut } from '@/lib/auth'
 import { FeedbackMessage } from './feedback-message'
+import { ThemePreferenceSelect } from './theme-preference-select'
 import { Button } from './ui/button'
 
 type Props = {
@@ -50,7 +51,7 @@ export function AuthenticatedShell({ user, currentSection, children }: Props) {
               className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-md text-lg font-semibold tracking-tight focus-visible:outline"
               to="/"
             >
-              <span aria-hidden="true" className="font-bold text-brand-accent">
+              <span aria-hidden="true" className="font-bold text-brand-green">
                 Q
               </span>
               Quevo
@@ -60,16 +61,20 @@ export function AuthenticatedShell({ user, currentSection, children }: Props) {
                 aria-current={
                   currentSection === (isCustomer ? 'customer' : 'operator') ? 'page' : undefined
                 }
-                className="inline-flex min-h-11 items-center rounded-md px-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline aria-[current=page]:text-foreground"
+                className="inline-flex min-h-11 items-center rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline aria-[current=page]:font-semibold aria-[current=page]:text-foreground"
                 to={queuePath}
               >
                 {queueLabel}
               </Link>
             </nav>
           </div>
-          <div className="ml-auto flex shrink-0 items-center gap-3">
-            <span className="hidden max-w-40 truncate text-right text-sm text-muted-foreground sm:inline">
-              {user.displayName} · {roleLabel}
+          <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-3">
+            <ThemePreferenceSelect />
+            <span className="max-w-[min(42vw,12rem)] text-right text-sm leading-tight text-muted-foreground sm:max-w-48">
+              <span className="block break-words font-medium text-foreground">
+                {user.displayName}
+              </span>
+              <span className="hidden text-xs sm:block">{roleLabel}</span>
             </span>
             <Button
               className="min-h-11 px-4"

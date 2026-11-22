@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import type { Identity } from '@/lib/auth'
 import { FeedbackMessage } from './feedback-message'
+import { ThemePreferenceSelect } from './theme-preference-select'
 import { Button } from './ui/button'
 
 type Props = {
@@ -12,10 +13,7 @@ type Props = {
   signOutError: string
 }
 
-const sections = [
-  { href: '#queue-demo', label: 'Try the queue demo' },
-  { href: '#workflows', label: 'How it works' },
-]
+const sections = [{ href: '#workflows', label: 'How it works' }]
 
 export function LandingNavigation({ user, onSignOut, signOutError }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -51,7 +49,7 @@ export function LandingNavigation({ user, onSignOut, signOutError }: Props) {
   }, [menuOpen])
 
   return (
-    <header className="landing-navigation-bar sticky top-0 z-40 border-b bg-background">
+    <header className="sticky top-0 z-40 border-b bg-background">
       <div className="relative mx-auto flex min-h-16 max-w-content items-center justify-between gap-4 px-page">
         <Link
           aria-label="Quevo home"
@@ -109,16 +107,21 @@ export function LandingNavigation({ user, onSignOut, signOutError }: Props) {
               </li>
             ))}
             <li className="flex flex-col gap-2 border-t border-border pt-3 md:flex-row md:border-0 md:pt-0">
-              <Button asChild className="min-h-11 px-4">
-                <Link onClick={closeMenu} to={user ? appPath : '/login'}>
-                  {user ? appLabel : 'Sign in'}
-                </Link>
-              </Button>
+              <Link
+                className="flex min-h-11 items-center rounded-md px-4 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline"
+                onClick={closeMenu}
+                to={user ? appPath : '/login'}
+              >
+                {user ? appLabel : 'Sign in'}
+              </Link>
               {user ? (
                 <Button className="min-h-11 px-4" onClick={onSignOut} variant="outline">
                   Sign out
                 </Button>
               ) : null}
+            </li>
+            <li className="border-t border-border pt-2 md:border-0 md:pt-0">
+              <ThemePreferenceSelect />
             </li>
           </ul>
           {signOutError ? (

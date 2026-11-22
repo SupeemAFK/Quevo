@@ -1,25 +1,21 @@
 # Public landing page
 
-The `/` route introduces Quevo to visitors and keeps the existing `/login` conversion path. Signed-in visitors see a direct link to the queue for their role and retain the sign-out action.
+The `/` route introduces Quevo with a single sign-in action and a secondary link to its interactive sample. Signed-in visitors see a link to the queue for their role and retain sign-out.
 
-## Sections and navigation
+## Layout
 
-- `#top` is the product hero.
-- `#queue-demo` is a local interactive walkthrough.
-- `#workflows` describes the customer and operator steps and ticket lifecycle.
-- The closing action links to `/login`; footer links return to those page sections.
+- `#top` pairs the value statement and two clear actions with a layered queue preview.
+- `#queue-demo` is the only demonstration. Its customer/operator switch shows the same sample tickets as a digital ticket or an operator queue. Sample state stays in local React state.
+- `#workflows` presents three short product highlights with queue-specific interface snippets.
+- The header and footer provide a link to the role explanation.
 
-## Visual design and motion
+The page follows the black-and-white system in [the visual system](design/visual-system.md). Green marks active or successful states; primary controls use neutral black and white. Typography, dividers, and a single layered product preview establish the visual hierarchy without decorative backgrounds or scroll-triggered animation.
 
-The page follows the Ink & Vermilion system documented in [the visual system](design/visual-system.md). The hero uses editorial typography and a flat queue overview built from interface elements: a sample ticket, a short queue path, and queue details. The preview is labeled as sample data and does not represent a live branch. The interactive demo remains the source of truth for trying the queue transitions.
-
-Motion is used to make the page feel responsive without delaying its content: the hero enters in a short sequence, sections reveal once as they enter view, and queue items animate when the local demo changes. Route content uses a brief entrance transition. These effects use the existing Motion dependency and follow the operating system's reduced-motion preference. Keep animation short and remove it when it does not clarify a state change or hierarchy.
-
-The mobile navigation button exposes its expanded state and controls the same section links as the desktop header. A skip link takes keyboard users directly to the main content. Use native anchors for sections and TanStack links for application routes.
+The mobile navigation supports keyboard operation and the page provides a skip link. Native anchors handle page sections; TanStack links handle application routes.
 
 ## Demo data boundary
 
-The queue demo creates three fixed sample tickets in React component state. Call, serve, and reset actions do not call the API, read a user session, persist data, or alter a branch queue. It labels the data as a sample, announces each state change, and disables actions when their next transition is unavailable. Motion uses the user's reduced-motion preference; the text and controls remain usable without animation.
+The queue preview starts with three labeled sample tickets in React component state. Call, serve, and reset actions do not call the API, read a user session, persist data, or alter a branch queue. Each action is announced, unavailable transitions are disabled, and queue updates use short Motion transitions that respect reduced motion.
 
 ## Product claims
 
@@ -27,4 +23,4 @@ The page describes the implemented Sprint 1 flow: customers choose an active ser
 
 ## Verification
 
-`tests/e2e/home.spec.ts` checks page metadata, section copy, the sample-ticket label and lifecycle, no API calls from the demo, skip-link and mobile-menu keyboard operation, reduced-motion operation, and layout widths of 320, 375, 768, and 1280 CSS pixels. Component tests cover the menu's expanded state and the demo's call, serve, empty, and reset states. Check the accessibility tree and perform a screen-reader pass during release review; the route has one page heading, named navigation landmarks, labeled queue sections, and a polite announcement for each demo action.
+`tests/e2e/home.spec.ts` checks page metadata, the hero queue preview, the customer/operator switch, theme preference control, no API calls from the sample demo, keyboard operation, reduced-motion behavior, and layout widths of 320, 375, 768, and 1280 CSS pixels. Component tests cover the menu and the demo's role-specific ticket state, call, serve, empty, and reset states. Screen-reader review with target assistive technologies remains part of release review.

@@ -4,21 +4,25 @@ type TicketStatusPresentation = {
 }
 
 const statusPresentations: Record<string, TicketStatusPresentation> = {
+  NEXT_UP: {
+    label: 'Next up',
+    className: 'text-brand-green',
+  },
   WAITING: {
     label: 'Waiting',
-    className: 'border-status-info/40 text-status-info',
+    className: 'text-muted-foreground',
   },
   PENDING: {
     label: 'Called',
-    className: 'border-status-info/40 text-status-info',
+    className: 'text-brand-green',
   },
   OPERATING: {
     label: 'In service',
-    className: 'border-status-warning/40 text-status-warning',
+    className: 'text-brand-green',
   },
   COMPLETED: {
     label: 'Completed',
-    className: 'border-status-success/40 text-status-success',
+    className: 'text-status-success',
   },
   SKIPPED: {
     label: 'Skipped',
@@ -38,7 +42,7 @@ export function TicketStatus({ status }: { status: string }) {
 
   return (
     <span
-      className={`inline-flex min-h-7 items-center rounded-md border px-2.5 py-1 text-sm font-medium ${presentation.className}`}
+      className={`inline-flex min-h-7 items-center rounded-md border border-border px-2.5 py-1 text-sm font-medium ${presentation.className}`}
     >
       {presentation.label}
     </span>

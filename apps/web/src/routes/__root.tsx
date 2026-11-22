@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-router'
 import { MotionConfig, motion } from 'motion/react'
 import { useEffect, useRef } from 'react'
+import { ThemeProvider } from '../components/theme-provider'
 
 import appCss from '../styles.css?url'
 
@@ -44,21 +45,24 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   }, [pathname])
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script src="/theme-init.js" />
         <HeadContent />
       </head>
       <body>
-        <MotionConfig reducedMotion="user">
-          <motion.div
-            animate={{ opacity: 1, y: 0 }}
-            initial={{ opacity: 0, y: 8 }}
-            key={pathname}
-            transition={{ duration: 0.24, ease: 'easeOut' }}
-          >
-            {children}
-          </motion.div>
-        </MotionConfig>
+        <ThemeProvider>
+          <MotionConfig reducedMotion="user">
+            <motion.div
+              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 8 }}
+              key={pathname}
+              transition={{ duration: 0.24, ease: 'easeOut' }}
+            >
+              {children}
+            </motion.div>
+          </MotionConfig>
+        </ThemeProvider>
         <Scripts />
       </body>
     </html>

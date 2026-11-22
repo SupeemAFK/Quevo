@@ -17,12 +17,12 @@ test('landing page explains Quevo and its sample queue stays local', async ({ pa
   await expect(
     page.getByRole('heading', {
       level: 1,
-      name: 'A lighter wait. A clearer next step.',
+      name: 'Your place in line. Made clear.',
     }),
   ).toBeVisible()
-  await expect(page.getByRole('complementary', { name: 'Sample queue preview' })).toContainText(
-    'Sample queue',
-  )
+  const queuePreview = page.getByRole('region', { name: 'Queue preview' })
+  await expect(queuePreview).toContainText('General service')
+  await expect(queuePreview.getByRole('list', { name: 'Sample tickets waiting' })).toHaveCount(1)
   await expect(page.getByRole('link', { name: 'Skip to main content' })).toHaveAttribute(
     'href',
     '#main-content',
@@ -31,14 +31,19 @@ test('landing page explains Quevo and its sample queue stays local', async ({ pa
     'href',
     '/login',
   )
-  await expect(page.getByText('For customers', { exact: true })).toBeVisible()
-  await expect(page.getByText('For operators', { exact: true })).toBeVisible()
-  const lifecycle = page.getByRole('list', { name: 'Queue ticket lifecycle' })
-  for (const status of ['Join', 'Wait', 'Called', 'In service', 'Complete or skip']) {
-    await expect(lifecycle).toContainText(status)
-  }
+  await expect(page.getByText('For customers')).toBeVisible()
+  await expect(page.getByText('For operators')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Customer' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
+  await page.getByRole('button', { name: 'Customer', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Your ticket' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Your ticket' }).getByText('A102')).toBeVisible()
+  await page.getByRole('button', { name: 'Operator', exact: true }).click()
+  await expect(page.getByRole('combobox', { name: 'Color theme' })).toHaveValue('system')
 
-  await page.getByRole('link', { name: 'Try the queue demo' }).first().click()
+  await page.getByRole('link', { name: 'Explore the sample' }).click()
   await expect(page).toHaveURL(/#queue-demo$/)
   await expect(page.locator('#queue-demo')).toBeFocused()
   const callNextButton = page.getByRole('button', { name: 'Call next' })
@@ -72,10 +77,10 @@ test('mobile navigation is keyboard operable and the page fits required widths',
     'true',
   )
   await page.keyboard.press('Tab')
-  await expect(page.getByRole('link', { name: 'Try the queue demo' }).first()).toBeFocused()
+  await expect(page.getByRole('link', { name: 'How it works' }).first()).toBeFocused()
   await page.keyboard.press('Enter')
-  await expect(page).toHaveURL(/#queue-demo$/)
-  await expect(page.locator('#queue-demo')).toBeFocused()
+  await expect(page).toHaveURL(/#workflows$/)
+  await expect(page.locator('#workflows')).toBeFocused()
 
   for (const width of [320, 375, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 })
@@ -94,4 +99,29 @@ test('mobile navigation is keyboard operable and the page fits required widths',
   await page.getByRole('button', { name: 'Call next' }).focus()
   await page.keyboard.press('Enter')
   await expect(page.getByRole('status')).toHaveText('Ticket A101 is now called.')
+})
+
+test('theme preference follows the system by default and persists explicit choices', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await page.goto('/')
+
+  const theme = page.getByRole('combobox', { name: 'Color theme' })
+  await expect(theme).toHaveValue('system')
+  await expect(page.locator('html')).toHaveClass(/dark/)
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(17, 17, 17)')
+
+  await theme.selectOption('light')
+  await expect(page.locator('html')).not.toHaveClass(/dark/)
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(255, 255, 255)')
+  await page.reload()
+  await expect(page.getByRole('combobox', { name: 'Color theme' })).toHaveValue('light')
+  await expect(page.locator('html')).not.toHaveClass(/dark/)
+
+  await page.getByRole('combobox', { name: 'Color theme' }).selectOption('system')
+  await expect(page.locator('html')).toHaveClass(/dark/)
+  await page.reload()
+  await expect(page.getByRole('combobox', { name: 'Color theme' })).toHaveValue('system')
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(17, 17, 17)')
 })

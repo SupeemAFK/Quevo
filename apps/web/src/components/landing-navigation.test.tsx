@@ -4,6 +4,7 @@ import type { AnchorHTMLAttributes, ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import type { Identity } from '@/lib/auth'
 import { LandingNavigation } from './landing-navigation'
+import { ThemeProvider } from './theme-provider'
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
@@ -28,22 +29,22 @@ const operator: Identity = {
   role: 'OPERATOR',
 }
 
+function renderWithTheme(children: ReactNode) {
+  return render(<ThemeProvider>{children}</ThemeProvider>)
+}
+
 describe('LandingNavigation', () => {
   it('provides section links and opens the existing sign-in route', () => {
-    render(<LandingNavigation onSignOut={vi.fn()} signOutError="" user={null} />)
+    renderWithTheme(<LandingNavigation onSignOut={vi.fn()} signOutError="" user={null} />)
 
     expect(screen.getByRole('navigation', { name: 'Primary' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Try the queue demo' })).toHaveAttribute(
-      'href',
-      '#queue-demo',
-    )
     expect(screen.getByRole('link', { name: 'How it works' })).toHaveAttribute('href', '#workflows')
     expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/login')
   })
 
   it('exposes and closes the mobile menu with keyboard-operable controls', async () => {
     const user = userEvent.setup()
-    render(<LandingNavigation onSignOut={vi.fn()} signOutError="" user={null} />)
+    renderWithTheme(<LandingNavigation onSignOut={vi.fn()} signOutError="" user={null} />)
     const menuButton = screen.getByRole('button', { name: 'Open navigation menu' })
     expect(menuButton).toHaveAttribute('aria-controls', 'landing-navigation')
 
@@ -71,7 +72,7 @@ describe('LandingNavigation', () => {
   it('shows only the signed-in customer destination and preserves sign out', async () => {
     const user = userEvent.setup()
     const onSignOut = vi.fn()
-    render(<LandingNavigation onSignOut={onSignOut} signOutError="" user={customer} />)
+    renderWithTheme(<LandingNavigation onSignOut={onSignOut} signOutError="" user={customer} />)
 
     expect(screen.getByRole('link', { name: 'Open customer queue' })).toHaveAttribute(
       'href',
@@ -83,7 +84,7 @@ describe('LandingNavigation', () => {
   })
 
   it('shows the operator destination and announces sign-out errors', () => {
-    render(
+    renderWithTheme(
       <LandingNavigation
         onSignOut={vi.fn()}
         signOutError="Could not sign out. Please try again."

@@ -21,12 +21,16 @@ const ticket: Ticket = {
 
 describe('CustomerTicketDetails', () => {
   it.each([
-    ['WAITING', 'Waiting'],
-    ['PENDING', 'Called'],
-    ['OPERATING', 'In service'],
-    ['COMPLETED', 'Completed'],
-    ['SKIPPED', 'Skipped'],
-  ])('shows the %s status as %s', (status, label) => {
+    ['WAITING', 'Waiting', "You're in the queue. Keep this page open or check back for updates."],
+    ['PENDING', 'Called', "It's your turn. Please go to the service desk now."],
+    ['OPERATING', 'In service', 'Your service is in progress. Stay with the operator.'],
+    ['COMPLETED', 'Completed', 'Your service is complete.'],
+    [
+      'SKIPPED',
+      'Skipped',
+      'This ticket was skipped. Please speak with the service desk for guidance.',
+    ],
+  ])('shows the %s status as %s with useful guidance', (status, label, guidance) => {
     render(
       <CustomerTicketDetails
         feedback={null}
@@ -38,6 +42,7 @@ describe('CustomerTicketDetails', () => {
 
     expect(screen.getByTestId('ticket-number')).toHaveTextContent('12')
     expect(screen.getByText(label)).toBeInTheDocument()
+    expect(screen.getByText(guidance)).toBeInTheDocument()
     expect(ticketStatusLabel(status)).toBe(label)
     expect(screen.getByText('General Service')).toBeInTheDocument()
     expect(screen.getByText('Demo Branch')).toBeInTheDocument()
@@ -75,10 +80,7 @@ describe('CustomerTicketDetails', () => {
     render(<CustomerTicketDetails feedback={null} onRefresh={vi.fn()} refreshing ticket={ticket} />)
 
     expect(screen.getByTestId('ticket-number')).toHaveTextContent('12')
-    expect(screen.getByRole('button', { name: 'Refresh status' })).toHaveAttribute(
-      'aria-disabled',
-      'true',
-    )
+    expect(screen.getByRole('button', { name: 'Refreshing…' })).toBeDisabled()
     expect(screen.getByRole('status')).toHaveTextContent('Refreshing ticket status…')
   })
 

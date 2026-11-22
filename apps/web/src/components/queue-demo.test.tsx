@@ -17,7 +17,11 @@ describe('QueueDemo', () => {
       within(waiting)
         .getAllByRole('listitem')
         .map((item) => item.textContent?.trim()),
-    ).toEqual(['A101Waiting', 'A102Waiting', 'A103Waiting'])
+    ).toEqual([
+      expect.stringContaining('A101'),
+      expect.stringContaining('A102'),
+      expect.stringContaining('A103'),
+    ])
 
     await user.click(screen.getByRole('button', { name: 'Call next' }))
     expect(within(current).getByText('A101')).toBeInTheDocument()
@@ -27,11 +31,11 @@ describe('QueueDemo', () => {
 
     await user.click(screen.getByRole('button', { name: 'Mark served' }))
     expect(screen.getByRole('region', { name: 'Served in this demo' })).toHaveTextContent(
-      'A101·Served',
+      'A101Served',
     )
     expect(screen.getByRole('status')).toHaveTextContent('Ticket A101 is marked served.')
     await user.click(screen.getByRole('button', { name: 'Call next' }))
-    expect(within(current).getByText('A102')).toBeInTheDocument()
+    expect(await within(current).findByText('A102')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Reset demo' }))
     await waitFor(() => expect(within(waiting).getAllByRole('listitem')).toHaveLength(3))
@@ -39,8 +43,12 @@ describe('QueueDemo', () => {
       within(waiting)
         .getAllByRole('listitem')
         .map((item) => item.textContent?.trim()),
-    ).toEqual(['A101Waiting', 'A102Waiting', 'A103Waiting'])
-    expect(screen.queryByText('A101 · Served')).not.toBeInTheDocument()
+    ).toEqual([
+      expect.stringContaining('A101'),
+      expect.stringContaining('A102'),
+      expect.stringContaining('A103'),
+    ])
+    expect(screen.queryByRole('region', { name: 'Served in this demo' })).not.toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent(
       'Demo reset. Three sample tickets are waiting.',
     )
@@ -58,5 +66,27 @@ describe('QueueDemo', () => {
     expect(screen.getByText('No sample tickets are waiting.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Call next' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Mark served' })).toBeDisabled()
+  })
+
+  it('shows the customer ticket progress as the operator moves the queue', async () => {
+    const user = userEvent.setup()
+    render(<QueueDemo />)
+
+    await user.click(screen.getByRole('button', { name: 'Call next' }))
+    await user.click(screen.getByRole('button', { name: 'Mark served' }))
+    await user.click(screen.getByRole('button', { name: 'Call next' }))
+    await user.click(screen.getByRole('button', { name: 'Customer' }))
+
+    const customerTicket = await screen.findByRole('region', { name: 'Your ticket' })
+    expect(within(customerTicket).getByText('A102')).toBeInTheDocument()
+    expect(within(customerTicket).getByText('In service')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'See the operator view' }))
+    await user.click(await screen.findByRole('button', { name: 'Mark served' }))
+    await user.click(screen.getByRole('button', { name: 'Customer' }))
+
+    expect(
+      within(await screen.findByRole('region', { name: 'Your ticket' })).getByText('Completed'),
+    ).toBeInTheDocument()
   })
 })

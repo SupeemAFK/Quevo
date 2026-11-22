@@ -4,6 +4,7 @@ import type { AnchorHTMLAttributes, ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Identity } from '@/lib/auth'
 import { AuthenticatedShell } from './authenticated-shell'
+import { ThemeProvider } from './theme-provider'
 
 const mocks = vi.hoisted(() => ({
   invalidate: vi.fn(),
@@ -42,6 +43,10 @@ const operator: Identity = {
   role: 'OPERATOR',
 }
 
+function renderWithTheme(children: ReactNode) {
+  return render(<ThemeProvider>{children}</ThemeProvider>)
+}
+
 describe('AuthenticatedShell', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -49,7 +54,7 @@ describe('AuthenticatedShell', () => {
   })
 
   it('shows the customer queue as the current role-appropriate destination', () => {
-    render(
+    renderWithTheme(
       <AuthenticatedShell currentSection="customer" user={customer}>
         <h1>Customer page</h1>
       </AuthenticatedShell>,
@@ -65,6 +70,7 @@ describe('AuthenticatedShell', () => {
       'page',
     )
     expect(screen.queryByRole('link', { name: 'Operator queue' })).not.toBeInTheDocument()
+    expect(screen.getByText('Demo Customer')).toBeInTheDocument()
     expect(navigation).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Skip to main content' })).toHaveAttribute(
       'href',
@@ -74,7 +80,7 @@ describe('AuthenticatedShell', () => {
 
   it('shows the operator queue and signs out to the public landing page', async () => {
     const user = userEvent.setup()
-    render(
+    renderWithTheme(
       <AuthenticatedShell currentSection="operator" user={operator}>
         <h1>Operator page</h1>
       </AuthenticatedShell>,
@@ -99,7 +105,7 @@ describe('AuthenticatedShell', () => {
   it('announces a failed sign-out attempt', async () => {
     const user = userEvent.setup()
     mocks.signOut.mockRejectedValueOnce(new Error('service unavailable'))
-    render(
+    renderWithTheme(
       <AuthenticatedShell currentSection="customer" user={customer}>
         <h1>Customer page</h1>
       </AuthenticatedShell>,

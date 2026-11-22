@@ -44,14 +44,9 @@ function CustomerTicketPage() {
 
   return (
     <AuthenticatedShell currentSection="customer" user={user}>
-      <section className="mx-auto max-w-3xl p-0 sm:p-2">
+      <section className="mx-auto max-w-4xl p-0 sm:p-2">
         <header className="mb-7">
-          <p className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            Customer ticket
-          </p>
-          <PageHeading className="mt-2 text-3xl font-semibold tracking-tight">
-            Your ticket
-          </PageHeading>
+          <PageHeading className="text-3xl font-semibold tracking-tight">Your ticket</PageHeading>
         </header>
 
         {ticketQuery.isPending ? (

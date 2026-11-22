@@ -94,7 +94,7 @@ describe('OperatorQueue', () => {
     expect(screen.queryByRole('button', { name: 'Skip ticket' })).not.toBeInTheDocument()
   })
 
-  it('shows an empty queue and disables calling when nobody is waiting', () => {
+  it('shows a concise empty state without an unavailable call action', () => {
     render(
       <OperatorQueue
         detail={{ ...detail, waiting: [] }}
@@ -107,8 +107,9 @@ describe('OperatorQueue', () => {
         onRefresh={vi.fn()}
       />,
     )
-    expect(screen.getByText('No customers are waiting in this queue.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Call next' })).toBeDisabled()
+    expect(screen.getByText('No customers are waiting.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Call next' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Refresh queue' })).toBeEnabled()
   })
 
   it('makes the selected queue context and waiting order easy to scan', () => {
@@ -125,22 +126,16 @@ describe('OperatorQueue', () => {
       />,
     )
 
-    expect(
-      screen.getByText(
-        (_content, element) =>
-          element?.tagName === 'P' && element.textContent === 'Service · Branch',
-      ),
-    ).toBeInTheDocument()
+    expect(screen.getByText('Service', { exact: true })).toBeInTheDocument()
+    expect(screen.getByText('Branch', { exact: true })).toBeInTheDocument()
     expect(screen.getByText('2 tickets', { exact: true })).toBeInTheDocument()
-    expect(screen.getByRole('list', { name: 'Customers waiting in order' })).toBeInTheDocument()
+    const waitingList = screen.getByRole('list', { name: 'Customers waiting in order' })
+    expect(waitingList).toBeInTheDocument()
     expect(screen.getByText('Ticket 1')).toBeInTheDocument()
     expect(screen.getByText('Ticket 2')).toBeInTheDocument()
-    expect(
-      within(screen.getByRole('list', { name: 'Customers waiting in order' })).getAllByText(
-        'Waiting',
-        { exact: true },
-      ),
-    ).toHaveLength(2)
+    expect(within(waitingList).getAllByRole('listitem')[0]).toHaveAttribute('aria-posinset', '1')
+    expect(within(waitingList).getAllByRole('listitem')[1]).toHaveAttribute('aria-posinset', '2')
+    expect(within(waitingList).getAllByText('Waiting', { exact: true })).toHaveLength(2)
   })
 
   it('disables queue actions while a request is pending and retains the current ticket', () => {
@@ -158,18 +153,9 @@ describe('OperatorQueue', () => {
     )
 
     expect(screen.getByTestId('operator-current-ticket')).toHaveTextContent('1')
-    expect(screen.getByRole('button', { name: 'Refresh queue' })).toHaveAttribute(
-      'aria-disabled',
-      'true',
-    )
-    expect(screen.getByRole('button', { name: 'Start service' })).toHaveAttribute(
-      'aria-disabled',
-      'true',
-    )
-    expect(screen.getByRole('button', { name: 'Skip ticket' })).toHaveAttribute(
-      'aria-disabled',
-      'true',
-    )
+    expect(screen.getByRole('button', { name: 'Refreshing…' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Start service' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Skip ticket' })).toBeDisabled()
     expect(screen.getByRole('status')).toHaveTextContent('Starting service…')
   })
 
@@ -189,10 +175,7 @@ describe('OperatorQueue', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('Refreshing queue…')
     expect(screen.getAllByRole('status')).toHaveLength(1)
-    expect(screen.getByRole('button', { name: 'Refresh queue' })).toHaveAttribute(
-      'aria-disabled',
-      'true',
-    )
+    expect(screen.getByRole('button', { name: 'Refreshing…' })).toBeDisabled()
   })
 
   it('uses one status announcement for success and an alert for errors', () => {
@@ -320,6 +303,6 @@ describe('OperatorQueue', () => {
     rerender(
       <OperatorQueue {...props} detail={{ ...detail, waiting: [] }} message="Service completed." />,
     )
-    expect(screen.getByText('You have no current ticket.')).toHaveFocus()
+    expect(screen.getByText('No customers are waiting.')).toHaveFocus()
   })
 })

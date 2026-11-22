@@ -45,7 +45,8 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await secondDevice.getByRole('button', { name: 'Sign in' }).click()
   await expect(secondDevice.getByRole('link', { name: 'Open customer queue' })).toBeVisible()
   await secondDevice.goto('/customer')
-  await secondDevice.getByRole('button', { name: 'General Service at Quevo Demo Branch' }).click()
+  await expect(secondDevice.getByText('General Service')).toBeVisible()
+  await expect(secondDevice.getByRole('button', { name: 'Join queue' })).toBeEnabled()
   await secondDevice.getByRole('button', { name: 'Join queue' }).click()
   await expect(secondDevice.getByRole('heading', { name: 'Your ticket' })).toBeVisible()
   await expect(secondDevice.getByTestId('ticket-number')).toHaveText('1')
@@ -69,17 +70,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await expect(secondDevice.getByTestId('ticket-number')).toHaveText('1')
   await secondDevice.close()
 
-  await activateWithKeyboard(
-    page,
-    page.getByRole('button', { name: 'General Service at Quevo Demo Branch' }),
-    'Space',
-  )
-  await expectMinimumTouchTarget(
-    page.getByRole('button', { name: 'General Service at Quevo Demo Branch' }),
-  )
-  await expect(
-    page.getByRole('button', { name: 'General Service at Quevo Demo Branch' }),
-  ).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByText('General Service')).toBeVisible()
   await activateWithKeyboard(page, page.getByRole('button', { name: 'Join queue' }))
   await expectMinimumTouchTarget(page.getByRole('button', { name: 'Join queue' }))
   await expect(page.getByRole('alert')).toHaveText(
@@ -119,14 +110,11 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await expect(operator.getByRole('heading', { name: 'Operator queue' })).toBeFocused()
   await expectNoHorizontalOverflow(operator)
   await expectMinimumTouchTarget(operator.getByRole('button', { name: 'Refresh queue' }))
-  const selectedQueue = operator
-    .getByRole('navigation', { name: 'Assigned queues' })
-    .getByRole('button')
-  await expect(selectedQueue).toHaveAttribute('aria-pressed', 'true')
-  await expect(selectedQueue).toContainText('Quevo Demo Branch')
+  await expect(operator.getByRole('navigation', { name: 'Assigned queues' })).toHaveCount(0)
+  await expect(operator.getByText('General Service')).toBeVisible()
+  await expect(operator.getByText('Quevo Demo Branch')).toBeVisible()
   await expect(operator.getByText('1 ticket', { exact: true })).toBeVisible()
   await expect(operator.getByText('Ticket 1', { exact: true })).toBeVisible()
-  await activateWithKeyboard(operator, selectedQueue)
   await expectMinimumTouchTarget(operator.getByRole('button', { name: 'Call next' }))
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Call next' }))
   await expect(operator.getByTestId('operator-current-ticket')).toHaveText('1')
@@ -141,19 +129,14 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
     operator.getByRole('button', { name: 'Complete service' }),
   )
   await expect(operator.getByText('Service completed.')).toBeVisible()
-  await expect(operator.getByText('You have no current ticket.')).toBeVisible()
-  await expect(operator.getByText('You have no current ticket.')).toBeFocused()
+  await expect(operator.getByText('No customers are waiting.')).toBeVisible()
+  await expect(operator.getByText('No customers are waiting.')).toBeFocused()
 
   await activateWithKeyboard(
     page,
     page.getByRole('navigation', { name: 'Application' }).getByRole('link', {
       name: 'Customer queue',
     }),
-  )
-  await activateWithKeyboard(
-    page,
-    page.getByRole('button', { name: 'General Service at Quevo Demo Branch' }),
-    'Space',
   )
   await activateWithKeyboard(page, page.getByRole('button', { name: 'Join queue' }))
   await expect(page.getByTestId('ticket-number')).toHaveText('2')
@@ -163,7 +146,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await expect(operator.getByTestId('operator-current-ticket')).toHaveText('2')
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Skip ticket' }))
   await expect(operator.getByText('Ticket skipped.')).toBeVisible()
-  await expect(operator.getByText('You have no current ticket.')).toBeFocused()
+  await expect(operator.getByText('No customers are waiting.')).toBeFocused()
 
   await operator.emulateMedia({ reducedMotion: 'reduce' })
   expect(
@@ -174,11 +157,6 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
     page.getByRole('navigation', { name: 'Application' }).getByRole('link', {
       name: 'Customer queue',
     }),
-  )
-  await activateWithKeyboard(
-    page,
-    page.getByRole('button', { name: 'General Service at Quevo Demo Branch' }),
-    'Space',
   )
   await activateWithKeyboard(page, page.getByRole('button', { name: 'Join queue' }))
   await expect(page.getByTestId('ticket-number')).toHaveText('3')
@@ -200,11 +178,6 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
       name: 'Customer queue',
     }),
   )
-  await activateWithKeyboard(
-    page,
-    page.getByRole('button', { name: 'General Service at Quevo Demo Branch' }),
-    'Space',
-  )
   await activateWithKeyboard(page, page.getByRole('button', { name: 'Join queue' }))
   await expect(page.getByTestId('ticket-number')).toHaveText('4')
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Refresh queue' }))
@@ -213,6 +186,6 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await expect(operator.getByTestId('operator-current-ticket')).toHaveText('4')
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Skip ticket' }))
   await expect(operator.getByText('Ticket skipped.')).toBeVisible()
-  await expect(operator.getByText('You have no current ticket.')).toBeFocused()
+  await expect(operator.getByText('No customers are waiting.')).toBeFocused()
   await operator.close()
 })
