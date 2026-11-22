@@ -27,6 +27,7 @@ export function AuthenticatedShell({ user, currentSection, children }: Props) {
       queryClient.removeQueries({ queryKey: ['customer'] })
       queryClient.removeQueries({ queryKey: ['operator'] })
       await router.navigate({ to: '/' })
+      await router.invalidate()
     } catch {
       setSignOutError('Could not sign out. Please try again.')
     }

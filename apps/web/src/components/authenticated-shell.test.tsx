@@ -6,6 +6,7 @@ import type { Identity } from '@/lib/auth'
 import { AuthenticatedShell } from './authenticated-shell'
 
 const mocks = vi.hoisted(() => ({
+  invalidate: vi.fn(),
   navigate: vi.fn(),
   removeQueries: vi.fn(),
   signOut: vi.fn(),
@@ -25,7 +26,7 @@ vi.mock('@tanstack/react-router', () => ({
       {children}
     </a>
   ),
-  useRouter: () => ({ navigate: mocks.navigate }),
+  useRouter: () => ({ invalidate: mocks.invalidate, navigate: mocks.navigate }),
 }))
 
 vi.mock('@/lib/auth', () => ({ signOut: mocks.signOut }))
@@ -89,6 +90,10 @@ describe('AuthenticatedShell', () => {
     expect(mocks.removeQueries).toHaveBeenNthCalledWith(1, { queryKey: ['customer'] })
     expect(mocks.removeQueries).toHaveBeenNthCalledWith(2, { queryKey: ['operator'] })
     expect(mocks.navigate).toHaveBeenCalledWith({ to: '/' })
+    expect(mocks.invalidate).toHaveBeenCalledOnce()
+    expect(mocks.invalidate.mock.invocationCallOrder[0]).toBeGreaterThan(
+      mocks.navigate.mock.invocationCallOrder[0],
+    )
   })
 
   it('announces a failed sign-out attempt', async () => {
