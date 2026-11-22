@@ -28,7 +28,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const pathname = useRouterState({
+    select: (state) => state.resolvedLocation?.pathname ?? state.location.pathname,
+  })
   const previousPathname = useRef(pathname)
 
   useEffect(() => {
