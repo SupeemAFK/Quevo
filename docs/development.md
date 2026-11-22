@@ -82,3 +82,7 @@ cd ../web && bun run generate:api
 ```
 
 The API emits OpenAPI 3.1 at `apps/api/internal/apidocs/swagger.json`, serves it at `/openapi.json`, and hosts Swagger UI at `/swagger/`. `openapi-typescript` writes `apps/web/src/client/api/schema.d.ts`, and `openapi-fetch` uses those types for API requests. TanStack Query calls the typed request through a TanStack Start server function so the API URL stays server-side.
+
+## Web visual tokens
+
+The web app uses the shared semantic palette, type scale, spacing, and focus tokens documented in [the UI design system](ui-design-system.md). Add page and component styles through those tokens so customer, operator, and public routes keep the same visual language.
