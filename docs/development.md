@@ -86,3 +86,5 @@ The API emits OpenAPI 3.1 at `apps/api/internal/apidocs/swagger.json`, serves it
 ## Web visual tokens
 
 The web app uses the shared semantic palette, type scale, spacing, and focus tokens documented in [the UI design system](ui-design-system.md). Add page and component styles through those tokens so customer, operator, and public routes keep the same visual language.
+
+The public home route and its isolated sample queue are documented in [the landing page guide](landing-page.md).
