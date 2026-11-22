@@ -48,7 +48,7 @@ describe('CustomerServiceSelection', () => {
 
     await user.tab()
     expect(screen.getByRole('button', { name: 'General Service at Demo Branch' })).toHaveFocus()
-    await user.keyboard('{Space}')
+    await user.keyboard(' ')
     expect(screen.getByRole('button', { name: 'General Service at Demo Branch' })).toHaveAttribute(
       'aria-pressed',
       'true',

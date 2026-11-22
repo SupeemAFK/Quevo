@@ -54,12 +54,15 @@ export function OperatorQueue({
     if (lastMessageRef.current === message) return
     lastMessageRef.current = message
     const nextAction = nextActionRef.current
-    if (nextAction && !nextAction.disabled) {
+    const hasActionToFocus = current
+      ? Boolean(nextAction && !nextAction.disabled)
+      : waiting.length > 0
+    if (hasActionToFocus && nextAction && !nextAction.disabled) {
       nextAction.focus()
     } else {
       emptyCurrentRef.current?.focus()
     }
-  }, [message])
+  }, [current, message, waiting.length])
 
   function handleAction(action: Action) {
     if (!busy) onAction(action)
