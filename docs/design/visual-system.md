@@ -1,6 +1,6 @@
 # Quevo visual system
 
-Quevo uses a black-and-white interface with a restrained green accent. The page should read clearly before motion: typography, alignment, and neutral borders establish hierarchy. Green identifies a selected service and meaningful active or successful states. Primary actions use neutral black and white.
+Quevo uses a black-and-white interface with a restrained green accent. The page should read clearly before motion: typography, alignment, and neutral borders establish hierarchy. Green identifies a selected service and persistent active or completed ticket states. Transient success confirmations stay neutral so they do not compete with a ticket's status. Primary actions use neutral black and white.
 
 ## Theme tokens
 

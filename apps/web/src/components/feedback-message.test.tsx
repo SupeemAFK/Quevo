@@ -6,7 +6,11 @@ describe('FeedbackMessage', () => {
   it('announces success politely exactly once through its status role', () => {
     render(<FeedbackMessage kind="success">Ticket status updated.</FeedbackMessage>)
 
-    expect(screen.getByRole('status')).toHaveTextContent('Ticket status updated.')
+    const message = screen.getByRole('status')
+    expect(message).toHaveTextContent('Ticket status updated.')
+    expect(message).toHaveClass('border-border', 'text-foreground')
+    expect(message).not.toHaveClass('border-status-success/50', 'text-status-success')
+    expect(message.querySelector('svg')).toHaveClass('text-muted-foreground')
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 

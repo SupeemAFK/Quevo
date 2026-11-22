@@ -92,6 +92,21 @@ describe('CustomerTicketDetails', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Ticket status updated.')
   })
 
+  it('keeps the ticket surface neutral so its status badge carries the state color', () => {
+    render(
+      <CustomerTicketDetails
+        feedback={null}
+        onRefresh={vi.fn()}
+        refreshing={false}
+        ticket={ticket}
+      />,
+    )
+
+    const ticketSection = screen.getByRole('region', { name: /your ticket number/i })
+    expect(ticketSection).toHaveClass('border', 'bg-card')
+    expect(ticketSection).not.toHaveClass('before:bg-brand-green')
+  })
+
   it('keeps ticket details visible and announces loading during a refresh', () => {
     render(<CustomerTicketDetails feedback={null} onRefresh={vi.fn()} refreshing ticket={ticket} />)
 

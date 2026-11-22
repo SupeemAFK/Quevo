@@ -11,7 +11,7 @@ type FeedbackProps = {
 }
 
 const feedbackStyles = {
-  success: 'border-status-success/50 bg-card text-status-success',
+  success: 'border-border bg-card text-foreground',
   error: 'border-status-danger/50 bg-card text-status-danger',
 } satisfies Record<FeedbackKind, string>
 
@@ -27,7 +27,11 @@ export function FeedbackMessage({ kind, children }: FeedbackProps) {
       role={kind === 'error' ? 'alert' : 'status'}
       transition={{ duration: reducedMotion ? 0 : 0.16, ease: 'easeOut' }}
     >
-      <Icon aria-hidden="true" className="mr-2 inline-block align-[-3px]" size={16} />
+      <Icon
+        aria-hidden="true"
+        className={`mr-2 inline-block align-[-3px] ${kind === 'success' ? 'text-muted-foreground' : ''}`}
+        size={16}
+      />
       {children}
     </motion.p>
   )

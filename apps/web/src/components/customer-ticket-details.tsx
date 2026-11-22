@@ -61,7 +61,7 @@ export function CustomerTicketDetails({ ticket, refreshing, feedback, onRefresh 
 
         <section
           aria-labelledby="ticket-number-heading"
-          className="relative overflow-hidden rounded-xl border bg-card p-5 shadow-sm before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-brand-green sm:p-8"
+          className="rounded-xl border bg-card p-5 shadow-sm sm:p-8"
         >
           <p
             className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground"
