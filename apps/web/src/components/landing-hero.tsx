@@ -40,7 +40,11 @@ export function LandingHero({ user }: LandingHeroProps) {
               id="hero-heading"
             >
               A lighter wait.
-              <span className="block text-brand-accent">A clearer next step.</span>
+              <span className="block text-brand-accent">
+                A clearer
+                <br />
+                next step.
+              </span>
             </PageHeading>
           </motion.div>
 
