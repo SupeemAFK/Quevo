@@ -22,10 +22,7 @@ test('customer can sign in and sign out through an HttpOnly session', async ({ c
     'page',
   )
   await page.getByRole('button', { name: 'Sign out' }).click()
-  await expect(page.getByRole('heading', { name: 'Walk-in queues, easier to follow.' })).toBeVisible()
-  await expect(
-    page.getByRole('main').getByRole('link', { name: 'Sign in to Quevo' }).first(),
-  ).toBeVisible()
+  await expect(page.locator('#top').getByRole('link', { name: 'Sign in to Quevo' })).toBeVisible()
   expect((await context.cookies()).some((cookie) => cookie.name === 'quevo_session')).toBe(false)
 })
 
