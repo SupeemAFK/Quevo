@@ -75,7 +75,9 @@ describe('CustomerServiceSelection', () => {
       />,
     )
 
-    expect(screen.getByText('No active services are available right now.')).toBeInTheDocument()
+    expect(
+      screen.getByText('No active services are available right now. Check again later.'),
+    ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Join queue' })).toBeDisabled()
   })
 
@@ -138,8 +140,7 @@ describe('CustomerServiceSelection', () => {
       />,
     )
 
-    expect(screen.getByRole('button', { name: 'Join queue' })).toHaveTextContent('Joining queue')
-    expect(screen.getByRole('button', { name: 'Join queue' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Joining queue…' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'General Service at Demo Branch' })).toBeDisabled()
   })
 })
