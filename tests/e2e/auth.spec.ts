@@ -16,7 +16,7 @@ test('customer can sign in and sign out through an HttpOnly session', async ({ c
   expect(await page.evaluate(() => document.cookie)).not.toContain('quevo_session')
 
   await page.getByRole('button', { name: 'Sign out' }).click()
-  await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toBeVisible()
   expect((await context.cookies()).some((cookie) => cookie.name === 'quevo_session')).toBe(false)
 })
 

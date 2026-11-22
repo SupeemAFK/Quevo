@@ -19,7 +19,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await secondDevice.getByLabel('Email').fill('customer@quevo.local')
   await secondDevice.getByLabel('Password').fill(customerPassword)
   await secondDevice.getByRole('button', { name: 'Sign in' }).click()
-  await expect(secondDevice.getByText('Signed in as Demo Customer')).toBeVisible()
+  await expect(secondDevice.getByRole('link', { name: 'Open customer queue' })).toBeVisible()
   await secondDevice.goto('/customer')
   await secondDevice.getByRole('button', { name: 'General Service at Quevo Demo Branch' }).click()
   await secondDevice.getByRole('button', { name: 'Join queue' }).click()
