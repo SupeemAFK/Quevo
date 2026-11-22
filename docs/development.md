@@ -96,3 +96,5 @@ Customer service selection, active-ticket recovery, status labels, and manual st
 Operator queue selection, current-ticket actions, and waiting-list presentation are documented in [the operator dashboard guide](operator-dashboard.md).
 
 Shared loading, error, and success semantics are documented in [the workflow feedback guide](feedback-patterns.md).
+
+Confirmed queue state transitions and reduced-motion handling are documented in [the operator queue motion guide](operator-motion.md).

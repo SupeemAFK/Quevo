@@ -179,4 +179,68 @@ describe('OperatorQueue', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Refresh the queue and try again.')
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
+
+  it('keeps ticket content and actions available when reduced motion is preferred', () => {
+    const matchMedia = vi.spyOn(window, 'matchMedia').mockImplementation((media) => {
+      const eventListener = vi.fn()
+      return {
+        matches: media === '(prefers-reduced-motion: reduce)',
+        media,
+        onchange: null,
+        addListener: eventListener,
+        removeListener: eventListener,
+        addEventListener: eventListener,
+        removeEventListener: eventListener,
+        dispatchEvent: vi.fn(() => true),
+      } as unknown as MediaQueryList
+    })
+
+    render(
+      <OperatorQueue
+        detail={{ ...detail, current: { ...ticket, status: 'PENDING' } }}
+        busy={false}
+        refreshing={false}
+        pendingAction={null}
+        message=""
+        error=""
+        onAction={vi.fn()}
+        onRefresh={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByTestId('operator-current-ticket')).toHaveTextContent('1')
+    expect(screen.getByText('Called', { exact: true })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Start service' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Skip ticket' })).toBeEnabled()
+    matchMedia.mockRestore()
+  })
+
+  it('keeps API-provided queue state unchanged when an action fails', async () => {
+    const user = userEvent.setup()
+    const onAction = vi.fn()
+    const props = {
+      detail,
+      busy: false,
+      refreshing: false,
+      pendingAction: null,
+      message: '',
+      onAction,
+      onRefresh: vi.fn(),
+    }
+    const { rerender } = render(<OperatorQueue {...props} error="" />)
+
+    await user.click(screen.getByRole('button', { name: 'Call next' }))
+    expect(onAction).toHaveBeenCalledWith('call-next')
+    rerender(
+      <OperatorQueue
+        {...props}
+        error="Could not call the next customer. Refresh the queue and try again."
+      />,
+    )
+
+    expect(screen.getByText('Ticket 1')).toBeInTheDocument()
+    expect(screen.queryByTestId('operator-current-ticket')).not.toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent('Refresh the queue and try again.')
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
 })
