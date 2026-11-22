@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { ArrowRight, ChevronRight } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import type { components } from '@/client/api/schema'
+import { FeedbackMessage, LoadingMessage } from './feedback-message'
 import { TicketStatus, ticketStatusLabel } from './ticket-status'
 import { Button } from './ui/button'
 
@@ -87,7 +88,7 @@ export function CustomerServiceSelection({
         {services.length === 0 ? (
           <section
             aria-labelledby="services-empty-heading"
-            className="rounded-xl border border-dashed bg-muted/40 p-5"
+            className="rounded-xl border border-dashed bg-muted/30 p-5"
           >
             <h2 className="font-medium" id="services-empty-heading">
               No active services
@@ -131,28 +132,15 @@ export function CustomerServiceSelection({
           </fieldset>
         )}
 
-        {selectionError ? (
-          <p
-            className="rounded-lg border border-status-danger/30 bg-status-danger-surface px-4 py-3 text-sm text-status-danger"
-            role="alert"
-          >
-            {selectionError}
-          </p>
-        ) : null}
-        {error ? (
-          <p
-            className="rounded-lg border border-status-danger/30 bg-status-danger-surface px-4 py-3 text-sm text-status-danger"
-            role="alert"
-          >
-            {error}
-          </p>
-        ) : null}
+        {joining ? <LoadingMessage>Joining queue…</LoadingMessage> : null}
+        {selectionError ? <FeedbackMessage kind="error">{selectionError}</FeedbackMessage> : null}
+        {error ? <FeedbackMessage kind="error">{error}</FeedbackMessage> : null}
         <Button
           className="min-h-12 w-full px-5 sm:w-auto"
           disabled={joining || services.length === 0}
           type="submit"
         >
-          {joining ? 'Joining queue…' : 'Join queue'}
+          Join queue
           {!joining ? <ArrowRight aria-hidden="true" /> : null}
         </Button>
       </form>

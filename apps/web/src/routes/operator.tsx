@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
 import { AuthenticatedShell } from '@/components/authenticated-shell'
+import { FeedbackMessage, LoadingMessage } from '@/components/feedback-message'
 import { OperatorQueue } from '@/components/operator-queue'
 import { Button } from '@/components/ui/button'
 import { getCurrentUser } from '@/lib/auth'
@@ -30,6 +31,7 @@ function OperatorPage() {
   const queues = useQuery(operatorQueuesOptions(user.id))
   const [selectedService, setSelectedService] = useState('')
   const [message, setMessage] = useState('')
+  const [refreshing, setRefreshing] = useState(false)
   const selected =
     queues.data?.find((queue) => queue.serviceId === selectedService) ?? queues.data?.[0]
   const queue = useQuery(
@@ -37,10 +39,16 @@ function OperatorPage() {
   )
 
   async function refresh() {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: operatorQueuesOptions(user.id).queryKey }),
-      queryClient.invalidateQueries({ queryKey: ['operator', user.id, 'queue'] }),
-    ])
+    setMessage('')
+    setRefreshing(true)
+    try {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: operatorQueuesOptions(user.id).queryKey }),
+        queryClient.invalidateQueries({ queryKey: ['operator', user.id, 'queue'] }),
+      ])
+    } finally {
+      setRefreshing(false)
+    }
   }
 
   const command = useMutation({
@@ -83,24 +91,22 @@ function OperatorPage() {
           </div>
         </header>
         {queues.isPending ? (
-          <p
-            className="rounded-xl border bg-card px-5 py-4 text-sm text-muted-foreground"
-            role="status"
-          >
-            Loading your queues…
-          </p>
+          <LoadingMessage>Loading your queues…</LoadingMessage>
         ) : queues.isError ? (
-          <div className="space-y-4 rounded-xl border border-status-danger/30 bg-status-danger-surface p-5">
-            <p className="text-sm text-status-danger" role="alert">
-              {queues.error.message}
-            </p>
-            <Button className="min-h-11 px-4" variant="outline" onClick={() => queues.refetch()}>
-              Try again
+          <div className="space-y-4">
+            <FeedbackMessage kind="error">{queues.error.message}</FeedbackMessage>
+            <Button
+              className="min-h-11 px-4"
+              variant="outline"
+              disabled={queues.isFetching}
+              onClick={() => void queues.refetch()}
+            >
+              {queues.isFetching ? 'Retrying…' : 'Try again'}
             </Button>
           </div>
         ) : queues.data.length === 0 ? (
-          <section className="rounded-xl border border-dashed bg-card p-6">
-            <h2 className="font-semibold">No assigned queues</h2>
+          <section className="rounded-xl border border-dashed bg-muted/30 p-5">
+            <h2 className="font-medium">No assigned queues</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               No queues are assigned to you. Contact your branch administrator for access.
             </p>
@@ -148,27 +154,29 @@ function OperatorPage() {
               </ul>
             </nav>
             {queue.isPending ? (
-              <p
-                className="rounded-xl border bg-card px-5 py-4 text-sm text-muted-foreground"
-                role="status"
-              >
-                Loading queue…
-              </p>
+              <LoadingMessage>Loading queue…</LoadingMessage>
             ) : queue.isError ? (
-              <div className="space-y-4 rounded-xl border border-status-danger/30 bg-status-danger-surface p-5">
-                <p className="text-sm text-status-danger" role="alert">
-                  {queue.error.message}
-                </p>
-                <Button className="min-h-11 px-4" variant="outline" onClick={() => queue.refetch()}>
-                  Try again
+              <div className="space-y-4">
+                <FeedbackMessage kind="error">{queue.error.message}</FeedbackMessage>
+                <Button
+                  className="min-h-11 px-4"
+                  variant="outline"
+                  disabled={queue.isFetching}
+                  onClick={() => void queue.refetch()}
+                >
+                  {queue.isFetching ? 'Retrying…' : 'Try again'}
                 </Button>
               </div>
             ) : queue.data ? (
               <OperatorQueue
                 detail={queue.data}
                 busy={command.isPending}
+                refreshing={refreshing}
+                pendingAction={command.isPending ? (command.variables ?? null) : null}
                 message={message}
-                error={command.error?.message ?? ''}
+                error={
+                  command.error ? `${command.error.message} Refresh the queue and try again.` : ''
+                }
                 onAction={(action) => command.mutate(action)}
                 onRefresh={() => {
                   void refresh()

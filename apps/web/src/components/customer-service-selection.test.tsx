@@ -140,7 +140,9 @@ describe('CustomerServiceSelection', () => {
       />,
     )
 
-    expect(screen.getByRole('button', { name: 'Joining queue…' })).toBeDisabled()
+    expect(screen.getByRole('status')).toHaveTextContent('Joining queue…')
+    expect(screen.getByRole('button', { name: 'Join queue' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Join queue' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'General Service at Demo Branch' })).toBeDisabled()
   })
 })

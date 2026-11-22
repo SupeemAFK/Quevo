@@ -1,4 +1,5 @@
 import { type FormEvent, useState } from 'react'
+import { FeedbackMessage, LoadingMessage } from '@/components/feedback-message'
 import { Button } from '@/components/ui/button'
 import type { Identity, LoginInput } from '@/lib/auth'
 
@@ -10,21 +11,24 @@ type LoginFormProps = {
 export function LoginForm({ signIn, onSuccess }: LoginFormProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [message, setMessage] = useState('')
+  const [feedback, setFeedback] = useState<{
+    kind: 'success' | 'error'
+    message: string
+  } | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setMessage('')
+    setFeedback(null)
     setIsSubmitting(true)
     setPassword('')
 
     try {
       await signIn({ email, password })
-      setMessage('Signed in successfully.')
+      setFeedback({ kind: 'success', message: 'Signed in successfully.' })
       onSuccess?.()
     } catch {
-      setMessage('Sign in failed. Check your email and password.')
+      setFeedback({ kind: 'error', message: 'Sign in failed. Check your email and password.' })
     } finally {
       setIsSubmitting(false)
     }
@@ -65,11 +69,14 @@ export function LoginForm({ signIn, onSuccess }: LoginFormProps) {
       </div>
 
       <Button disabled={isSubmitting} type="submit">
-        {isSubmitting ? 'Signing in…' : 'Sign in'}
+        Sign in
       </Button>
-      <p aria-live="polite" className="min-h-5 text-sm text-muted-foreground" role="status">
-        {message}
-      </p>
+      <div className="min-h-5">
+        {isSubmitting ? <LoadingMessage>Signing in…</LoadingMessage> : null}
+        {feedback ? (
+          <FeedbackMessage kind={feedback.kind}>{feedback.message}</FeedbackMessage>
+        ) : null}
+      </div>
     </form>
   )
 }

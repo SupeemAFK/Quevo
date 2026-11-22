@@ -1,5 +1,6 @@
 import { RefreshCw } from 'lucide-react'
 import type { components } from '@/client/api/schema'
+import { FeedbackMessage, LoadingMessage } from './feedback-message'
 import { TicketStatus } from './ticket-status'
 import { Button } from './ui/button'
 
@@ -33,7 +34,7 @@ export function CustomerTicketDetails({ ticket, refreshing, feedback, onRefresh 
             aria-hidden="true"
             className={refreshing ? 'animate-spin motion-reduce:animate-none' : undefined}
           />
-          {refreshing ? 'Refreshing status…' : 'Refresh status'}
+          Refresh status
         </Button>
       </div>
 
@@ -66,14 +67,8 @@ export function CustomerTicketDetails({ ticket, refreshing, feedback, onRefresh 
         </dl>
       </section>
 
-      {feedback ? (
-        <p
-          className={`rounded-lg border px-4 py-3 text-sm ${feedback.kind === 'error' ? 'border-status-danger/30 bg-status-danger-surface text-status-danger' : 'border-status-success/30 bg-status-success-surface text-status-success'}`}
-          role={feedback.kind === 'error' ? 'alert' : 'status'}
-        >
-          {feedback.message}
-        </p>
-      ) : null}
+      {refreshing ? <LoadingMessage>Refreshing ticket status…</LoadingMessage> : null}
+      {feedback ? <FeedbackMessage kind={feedback.kind}>{feedback.message}</FeedbackMessage> : null}
     </div>
   )
 }

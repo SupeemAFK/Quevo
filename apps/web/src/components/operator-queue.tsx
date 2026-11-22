@@ -1,4 +1,5 @@
 import type { components } from '@/client/api/schema'
+import { FeedbackMessage, LoadingMessage } from './feedback-message'
 import { TicketStatus } from './ticket-status'
 import { Button } from './ui/button'
 
@@ -8,14 +9,31 @@ type Action = 'call-next' | 'start' | 'complete' | 'skip'
 type Props = {
   detail: QueueDetail
   busy: boolean
+  refreshing: boolean
+  pendingAction: Action | null
   message: string
   error: string
   onAction: (action: Action) => void
   onRefresh: () => void
 }
 
-export function OperatorQueue({ detail, busy, message, error, onAction, onRefresh }: Props) {
+export function OperatorQueue({
+  detail,
+  busy,
+  refreshing,
+  pendingAction,
+  message,
+  error,
+  onAction,
+  onRefresh,
+}: Props) {
   const { current, waiting } = detail
+  const pendingMessage: Record<Action, string> = {
+    'call-next': 'Calling the next customer…',
+    start: 'Starting service…',
+    complete: 'Completing service…',
+    skip: 'Skipping ticket…',
+  }
   return (
     <div className="space-y-5">
       <section
@@ -38,7 +56,12 @@ export function OperatorQueue({ detail, busy, message, error, onAction, onRefres
                 {waiting.length}
               </span>
             </div>
-            <Button className="min-h-11 px-4" variant="outline" disabled={busy} onClick={onRefresh}>
+            <Button
+              className="min-h-11 px-4"
+              variant="outline"
+              disabled={busy || refreshing}
+              onClick={onRefresh}
+            >
               Refresh queue
             </Button>
           </div>
@@ -55,7 +78,7 @@ export function OperatorQueue({ detail, busy, message, error, onAction, onRefres
                 >
                   {current.ticketNumber}
                 </p>
-                <div aria-label="Current ticket status" className="mt-3" role="status">
+                <div className="mt-3">
                   <TicketStatus status={current.status} />
                 </div>
               </div>
@@ -110,21 +133,24 @@ export function OperatorQueue({ detail, busy, message, error, onAction, onRefres
             </div>
           )}
 
+          {pendingAction ? (
+            <div className="mt-5">
+              <LoadingMessage>{pendingMessage[pendingAction]}</LoadingMessage>
+            </div>
+          ) : refreshing ? (
+            <div className="mt-5">
+              <LoadingMessage>Refreshing queue…</LoadingMessage>
+            </div>
+          ) : null}
           {message ? (
-            <p
-              className="mt-5 rounded-lg border border-status-success/30 bg-status-success-surface px-4 py-3 text-sm text-status-success"
-              role="status"
-            >
-              {message}
-            </p>
+            <div className="mt-5">
+              <FeedbackMessage kind="success">{message}</FeedbackMessage>
+            </div>
           ) : null}
           {error ? (
-            <p
-              className="mt-5 rounded-lg border border-status-danger/30 bg-status-danger-surface px-4 py-3 text-sm text-status-danger"
-              role="alert"
-            >
-              {error}
-            </p>
+            <div className="mt-5">
+              <FeedbackMessage kind="error">{error}</FeedbackMessage>
+            </div>
           ) : null}
         </div>
       </section>
@@ -144,7 +170,7 @@ export function OperatorQueue({ detail, busy, message, error, onAction, onRefres
           </span>
         </div>
         {waiting.length === 0 ? (
-          <p className="mt-4 rounded-lg border border-dashed bg-muted/30 px-4 py-5 text-sm text-muted-foreground">
+          <p className="mt-4 rounded-xl border border-dashed bg-muted/30 p-5 text-sm text-muted-foreground">
             No customers are waiting in this queue.
           </p>
         ) : (

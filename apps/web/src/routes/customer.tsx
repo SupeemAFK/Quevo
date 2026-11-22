@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { AuthenticatedShell } from '@/components/authenticated-shell'
 import { CustomerServiceSelection } from '@/components/customer-service-selection'
+import { FeedbackMessage, LoadingMessage } from '@/components/feedback-message'
 import { Button } from '@/components/ui/button'
 import { getCurrentUser } from '@/lib/auth'
 import { customerQueueOptions, customerTicketOptions, joinQueue } from '@/lib/customer-queue'
@@ -60,16 +61,16 @@ function CustomerServicesPage() {
         </header>
 
         {queueQuery.isPending ? (
-          <p aria-live="polite" className="py-5 text-sm text-muted-foreground" role="status">
-            Loading your queue…
-          </p>
+          <LoadingMessage>Loading your queue…</LoadingMessage>
         ) : queueQuery.isError ? (
           <div className="space-y-4">
-            <p aria-live="polite" className="text-sm text-destructive" role="alert">
-              {queueQuery.error.message}
-            </p>
-            <Button onClick={() => queueQuery.refetch()} variant="outline">
-              Try again
+            <FeedbackMessage kind="error">{queueQuery.error.message}</FeedbackMessage>
+            <Button
+              disabled={queueQuery.isFetching}
+              onClick={() => void queueQuery.refetch()}
+              variant="outline"
+            >
+              {queueQuery.isFetching ? 'Retrying…' : 'Try again'}
             </Button>
           </div>
         ) : (

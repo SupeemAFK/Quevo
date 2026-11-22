@@ -3,6 +3,7 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
 import { AuthenticatedShell } from '@/components/authenticated-shell'
 import { CustomerTicketDetails } from '@/components/customer-ticket-details'
+import { FeedbackMessage, LoadingMessage } from '@/components/feedback-message'
 import { Button } from '@/components/ui/button'
 import { getCurrentUser } from '@/lib/auth'
 import { customerTicketOptions } from '@/lib/customer-queue'
@@ -50,9 +51,7 @@ function CustomerTicketPage() {
         </header>
 
         {ticketQuery.isPending ? (
-          <p aria-live="polite" className="py-6 text-sm text-muted-foreground" role="status">
-            Loading your ticket…
-          </p>
+          <LoadingMessage>Loading your ticket…</LoadingMessage>
         ) : ticketQuery.data ? (
           <CustomerTicketDetails
             feedback={feedback}
@@ -62,12 +61,7 @@ function CustomerTicketPage() {
           />
         ) : ticketQuery.isError ? (
           <div className="my-6 space-y-4">
-            <p
-              className="rounded-lg border border-status-danger/30 bg-status-danger-surface px-4 py-3 text-sm text-status-danger"
-              role="alert"
-            >
-              {ticketQuery.error.message}
-            </p>
+            <FeedbackMessage kind="error">{ticketQuery.error.message}</FeedbackMessage>
             <Button
               disabled={ticketQuery.isFetching}
               onClick={() => void refreshStatus()}

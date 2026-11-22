@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import type { Identity } from '@/lib/auth'
+import { FeedbackMessage } from './feedback-message'
 import { Button } from './ui/button'
 
 type Props = {
@@ -79,9 +80,9 @@ export function LandingNavigation({ user, onSignOut, signOutError }: Props) {
             </li>
           </ul>
           {signOutError ? (
-            <p className="mt-3 text-sm text-destructive" role="alert">
-              {signOutError}
-            </p>
+            <div className="mt-3">
+              <FeedbackMessage kind="error">{signOutError}</FeedbackMessage>
+            </div>
           ) : null}
         </nav>
       </div>

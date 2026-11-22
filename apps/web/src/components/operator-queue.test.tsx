@@ -29,7 +29,15 @@ describe('OperatorQueue', () => {
   it('shows only actions allowed by the current ticket state', async () => {
     const user = userEvent.setup()
     const onAction = vi.fn()
-    const props = { busy: false, message: '', error: '', onAction, onRefresh: vi.fn() }
+    const props = {
+      busy: false,
+      refreshing: false,
+      pendingAction: null,
+      message: '',
+      error: '',
+      onAction,
+      onRefresh: vi.fn(),
+    }
     const { rerender } = render(<OperatorQueue {...props} detail={detail} />)
     await user.click(screen.getByRole('button', { name: 'Call next' }))
     expect(onAction).toHaveBeenCalledWith('call-next')
@@ -64,6 +72,8 @@ describe('OperatorQueue', () => {
       <OperatorQueue
         detail={{ ...detail, waiting: [] }}
         busy={false}
+        refreshing={false}
+        pendingAction={null}
         message=""
         error=""
         onAction={vi.fn()}
@@ -79,6 +89,8 @@ describe('OperatorQueue', () => {
       <OperatorQueue
         detail={{ ...detail, waiting: [ticket, { ...ticket, id: 'ticket-2', ticketNumber: '2' }] }}
         busy={false}
+        refreshing={false}
+        pendingAction={null}
         message=""
         error=""
         onAction={vi.fn()}
@@ -109,6 +121,8 @@ describe('OperatorQueue', () => {
       <OperatorQueue
         detail={{ ...detail, current: { ...ticket, status: 'PENDING' } }}
         busy
+        refreshing
+        pendingAction="start"
         message=""
         error=""
         onAction={vi.fn()}
@@ -120,5 +134,49 @@ describe('OperatorQueue', () => {
     expect(screen.getByRole('button', { name: 'Refresh queue' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Start service' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Skip ticket' })).toBeDisabled()
+    expect(screen.getByRole('status')).toHaveTextContent('Starting service…')
+  })
+
+  it('announces a manual queue refresh once and prevents overlapping refreshes', () => {
+    render(
+      <OperatorQueue
+        detail={detail}
+        busy={false}
+        refreshing
+        pendingAction={null}
+        message=""
+        error=""
+        onAction={vi.fn()}
+        onRefresh={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('status')).toHaveTextContent('Refreshing queue…')
+    expect(screen.getAllByRole('status')).toHaveLength(1)
+    expect(screen.getByRole('button', { name: 'Refresh queue' })).toBeDisabled()
+  })
+
+  it('uses one status announcement for success and an alert for errors', () => {
+    const props = {
+      detail: { ...detail, current: { ...ticket, status: 'OPERATING' } },
+      busy: false,
+      refreshing: false,
+      pendingAction: null,
+      onAction: vi.fn(),
+      onRefresh: vi.fn(),
+      error: '',
+    }
+    const { rerender } = render(<OperatorQueue {...props} message="Service started." />)
+
+    expect(screen.getByRole('status')).toHaveTextContent('Service started.')
+    rerender(
+      <OperatorQueue
+        {...props}
+        message=""
+        error="Could not update ticket. Refresh the queue and try again."
+      />,
+    )
+    expect(screen.getByRole('alert')).toHaveTextContent('Refresh the queue and try again.')
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 })

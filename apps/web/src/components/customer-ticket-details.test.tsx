@@ -69,7 +69,15 @@ describe('CustomerTicketDetails', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Ticket status updated.')
   })
 
-  it('keeps ticket details visible while refreshing and announces failures', () => {
+  it('keeps ticket details visible and announces loading during a refresh', () => {
+    render(<CustomerTicketDetails feedback={null} onRefresh={vi.fn()} refreshing ticket={ticket} />)
+
+    expect(screen.getByTestId('ticket-number')).toHaveTextContent('12')
+    expect(screen.getByRole('button', { name: 'Refresh status' })).toBeDisabled()
+    expect(screen.getByRole('status')).toHaveTextContent('Refreshing ticket status…')
+  })
+
+  it('keeps ticket details visible after a refresh failure', () => {
     render(
       <CustomerTicketDetails
         feedback={{
@@ -77,13 +85,12 @@ describe('CustomerTicketDetails', () => {
           kind: 'error',
         }}
         onRefresh={vi.fn()}
-        refreshing
+        refreshing={false}
         ticket={ticket}
       />,
     )
 
     expect(screen.getByTestId('ticket-number')).toHaveTextContent('12')
-    expect(screen.getByRole('button', { name: 'Refreshing status…' })).toBeDisabled()
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Could not refresh ticket status. Please try again.',
     )

@@ -3,6 +3,7 @@ import { Link, useRouter } from '@tanstack/react-router'
 import { useState } from 'react'
 import type { Identity } from '@/lib/auth'
 import { signOut } from '@/lib/auth'
+import { FeedbackMessage } from './feedback-message'
 import { Button } from './ui/button'
 
 type Props = {
@@ -78,9 +79,9 @@ export function AuthenticatedShell({ user, currentSection, children }: Props) {
           </div>
         </div>
         {signOutError ? (
-          <p className="mx-auto max-w-content px-page pb-3 text-sm text-destructive" role="alert">
-            {signOutError}
-          </p>
+          <div className="mx-auto max-w-content px-page pb-3">
+            <FeedbackMessage kind="error">{signOutError}</FeedbackMessage>
+          </div>
         ) : null}
       </header>
       <main className="mx-auto max-w-content px-page py-8 sm:py-10" id="app-main">

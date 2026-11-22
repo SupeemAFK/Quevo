@@ -94,3 +94,5 @@ Authenticated route navigation, role-specific queue links, and sign-out behavior
 Customer service selection, active-ticket recovery, status labels, and manual status refresh are documented in [the customer ticket flow guide](customer-ticket-flow.md).
 
 Operator queue selection, current-ticket actions, and waiting-list presentation are documented in [the operator dashboard guide](operator-dashboard.md).
+
+Shared loading, error, and success semantics are documented in [the workflow feedback guide](feedback-patterns.md).
