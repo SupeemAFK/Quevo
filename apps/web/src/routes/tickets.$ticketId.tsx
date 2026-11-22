@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, redirect } from '@tanstack/react-router'
+import { useState } from 'react'
 import { AuthenticatedShell } from '@/components/authenticated-shell'
+import { CustomerTicketDetails } from '@/components/customer-ticket-details'
 import { Button } from '@/components/ui/button'
 import { getCurrentUser } from '@/lib/auth'
 import { customerTicketOptions } from '@/lib/customer-queue'
@@ -18,7 +20,24 @@ export const Route = createFileRoute('/tickets/$ticketId')({
 function CustomerTicketPage() {
   const { user } = Route.useRouteContext()
   const { ticketId } = Route.useParams()
-  const ticketQuery = useQuery(customerTicketOptions(user.id, ticketId))
+  const [feedback, setFeedback] = useState<{ message: string; kind: 'success' | 'error' } | null>(
+    null,
+  )
+  const ticketQuery = useQuery({
+    ...customerTicketOptions(user.id, ticketId),
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  })
+
+  async function refreshStatus() {
+    setFeedback(null)
+    const result = await ticketQuery.refetch()
+    setFeedback(
+      result.isError
+        ? { message: 'Could not refresh ticket status. Please try again.', kind: 'error' }
+        : { message: 'Ticket status updated.', kind: 'success' },
+    )
+  }
 
   return (
     <AuthenticatedShell currentSection="customer" user={user}>
@@ -34,35 +53,30 @@ function CustomerTicketPage() {
           <p aria-live="polite" className="py-6 text-sm text-muted-foreground" role="status">
             Loading your ticket…
           </p>
+        ) : ticketQuery.data ? (
+          <CustomerTicketDetails
+            feedback={feedback}
+            onRefresh={() => void refreshStatus()}
+            refreshing={ticketQuery.isFetching}
+            ticket={ticketQuery.data}
+          />
         ) : ticketQuery.isError ? (
           <div className="my-6 space-y-4">
-            <p aria-live="polite" className="text-sm text-destructive" role="alert">
+            <p
+              className="rounded-lg border border-status-danger/30 bg-status-danger-surface px-4 py-3 text-sm text-status-danger"
+              role="alert"
+            >
               {ticketQuery.error.message}
             </p>
-            <Button onClick={() => ticketQuery.refetch()} variant="outline">
-              Try again
+            <Button
+              disabled={ticketQuery.isFetching}
+              onClick={() => void refreshStatus()}
+              variant="outline"
+            >
+              {ticketQuery.isFetching ? 'Refreshing…' : 'Try again'}
             </Button>
           </div>
-        ) : (
-          <div className="my-6 rounded-lg border bg-muted/40 p-6">
-            <p className="text-sm text-muted-foreground">Ticket number</p>
-            <p className="mt-1 text-5xl font-semibold tracking-tight" data-testid="ticket-number">
-              {ticketQuery.data.ticketNumber}
-            </p>
-            <dl className="mt-6 grid grid-cols-[auto_1fr] gap-x-6 gap-y-3 text-sm">
-              <dt className="text-muted-foreground">Status</dt>
-              <dd className="font-medium" role="status">
-                {ticketQuery.data.status}
-              </dd>
-              <dt className="text-muted-foreground">Service</dt>
-              <dd>{ticketQuery.data.serviceName}</dd>
-              <dt className="text-muted-foreground">Branch</dt>
-              <dd>{ticketQuery.data.branchName}</dd>
-              <dt className="text-muted-foreground">Business date</dt>
-              <dd>{ticketQuery.data.businessDate}</dd>
-            </dl>
-          </div>
-        )}
+        ) : null}
       </section>
     </AuthenticatedShell>
   )

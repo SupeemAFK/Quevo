@@ -25,10 +25,12 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await secondDevice.getByRole('button', { name: 'Join queue' }).click()
   await expect(secondDevice.getByRole('heading', { name: 'Your ticket' })).toBeVisible()
   await expect(secondDevice.getByTestId('ticket-number')).toHaveText('1')
-  await expect(secondDevice.getByRole('status')).toHaveText('WAITING')
+  await expect(secondDevice.getByText('Waiting', { exact: true })).toBeVisible()
   await secondDevice.reload()
   await expect(secondDevice.getByTestId('ticket-number')).toHaveText('1')
-  await expect(secondDevice.getByRole('status')).toHaveText('WAITING')
+  await expect(secondDevice.getByText('Waiting', { exact: true })).toBeVisible()
+  await secondDevice.getByRole('button', { name: 'Refresh status' }).click()
+  await expect(secondDevice.getByRole('status')).toHaveText('Ticket status updated.')
   await secondDevice.getByRole('navigation', { name: 'Application' }).getByRole('link', {
     name: 'Customer queue',
   }).click()
@@ -36,7 +38,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
 
   await secondDevice.goto('/customer')
   const activeTicketLink = secondDevice.getByRole('link', {
-    name: 'View ticket 1 (General Service at Quevo Demo Branch)',
+    name: /View ticket 1 \(General Service at Quevo Demo Branch\)/,
   })
   await expect(activeTicketLink).toBeVisible()
   await activeTicketLink.click()
@@ -49,7 +51,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
     'You already have an active ticket for this service today.',
   )
   const recoveredTicketLink = page.getByRole('link', {
-    name: 'View ticket 1 (General Service at Quevo Demo Branch)',
+    name: /View ticket 1 \(General Service at Quevo Demo Branch\)/,
   })
   await expect(recoveredTicketLink).toBeVisible()
   await recoveredTicketLink.click()

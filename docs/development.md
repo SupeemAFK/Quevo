@@ -90,3 +90,5 @@ The web app uses the shared semantic palette, type scale, spacing, and focus tok
 The public home route and its isolated sample queue are documented in [the landing page guide](landing-page.md).
 
 Authenticated route navigation, role-specific queue links, and sign-out behavior are documented in [the application shell guide](app-shell.md).
+
+Customer service selection, active-ticket recovery, status labels, and manual status refresh are documented in [the customer ticket flow guide](customer-ticket-flow.md).
