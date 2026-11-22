@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, Link, redirect } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
+import { AuthenticatedShell } from '@/components/authenticated-shell'
 import { OperatorQueue } from '@/components/operator-queue'
 import { Button } from '@/components/ui/button'
 import { getCurrentUser } from '@/lib/auth'
@@ -71,82 +72,83 @@ function OperatorPage() {
   })
 
   return (
-    <main className="mx-auto min-h-svh max-w-5xl px-6 py-10 sm:py-14">
-      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Operator queue</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Call customers and keep service moving.
+    <AuthenticatedShell currentSection="operator" user={user}>
+      <div className="space-y-8">
+        <header className="mb-8">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight">Operator queue</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Call customers and keep service moving.
+            </p>
+          </div>
+        </header>
+        {queues.isPending ? (
+          <p role="status">Loading your queues…</p>
+        ) : queues.isError ? (
+          <div className="space-y-4">
+            <p role="alert" className="text-sm text-destructive">
+              {queues.error.message}
+            </p>
+            <Button variant="outline" onClick={() => queues.refetch()}>
+              Try again
+            </Button>
+          </div>
+        ) : queues.data.length === 0 ? (
+          <p className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
+            No queues are assigned to you.
           </p>
-        </div>
-        <Link className="text-sm underline-offset-4 hover:underline" to="/">
-          Back to Quevo
-        </Link>
-      </header>
-      {queues.isPending ? (
-        <p role="status">Loading your queues…</p>
-      ) : queues.isError ? (
-        <div className="space-y-4">
-          <p role="alert" className="text-sm text-destructive">
-            {queues.error.message}
-          </p>
-          <Button variant="outline" onClick={() => queues.refetch()}>
-            Try again
-          </Button>
-        </div>
-      ) : queues.data.length === 0 ? (
-        <p className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
-          No queues are assigned to you.
-        </p>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-[15rem_1fr]">
-          <nav aria-label="Assigned queues" className="space-y-2">
-            <h2 className="mb-3 text-sm font-medium">Your queues</h2>
-            {queues.data.map((item) => (
-              <button
-                key={item.serviceId}
-                type="button"
-                aria-pressed={selected?.serviceId === item.serviceId}
-                onClick={() => {
-                  setSelectedService(item.serviceId)
-                  setMessage('')
-                  command.reset()
+        ) : (
+          <div className="grid gap-6 md:grid-cols-[15rem_1fr]">
+            <nav aria-label="Assigned queues" className="space-y-2">
+              <h2 className="mb-3 text-sm font-medium">Your queues</h2>
+              {queues.data.map((item) => (
+                <button
+                  key={item.serviceId}
+                  type="button"
+                  aria-pressed={selected?.serviceId === item.serviceId}
+                  onClick={() => {
+                    setSelectedService(item.serviceId)
+                    setMessage('')
+                    command.reset()
+                  }}
+                  className={`w-full rounded-lg border p-4 text-left ${selected?.serviceId === item.serviceId ? 'border-primary bg-muted' : 'bg-card hover:bg-muted/50'}`}
+                >
+                  <span className="block font-medium">{item.serviceName}</span>
+                  <span className="mt-1 block text-sm text-muted-foreground">
+                    {item.branchName}
+                  </span>
+                  <span className="mt-3 block text-sm tabular-nums">
+                    {item.waitingCount ?? 0} waiting
+                  </span>
+                </button>
+              ))}
+            </nav>
+            {queue.isPending ? (
+              <p role="status">Loading queue…</p>
+            ) : queue.isError ? (
+              <div className="space-y-4">
+                <p role="alert" className="text-sm text-destructive">
+                  {queue.error.message}
+                </p>
+                <Button variant="outline" onClick={() => queue.refetch()}>
+                  Try again
+                </Button>
+              </div>
+            ) : queue.data ? (
+              <OperatorQueue
+                detail={queue.data}
+                busy={command.isPending}
+                message={message}
+                error={command.error?.message ?? ''}
+                onAction={(action) => command.mutate(action)}
+                onRefresh={() => {
+                  void refresh()
                 }}
-                className={`w-full rounded-lg border p-4 text-left ${selected?.serviceId === item.serviceId ? 'border-primary bg-muted' : 'bg-card hover:bg-muted/50'}`}
-              >
-                <span className="block font-medium">{item.serviceName}</span>
-                <span className="mt-1 block text-sm text-muted-foreground">{item.branchName}</span>
-                <span className="mt-3 block text-sm tabular-nums">
-                  {item.waitingCount ?? 0} waiting
-                </span>
-              </button>
-            ))}
-          </nav>
-          {queue.isPending ? (
-            <p role="status">Loading queue…</p>
-          ) : queue.isError ? (
-            <div className="space-y-4">
-              <p role="alert" className="text-sm text-destructive">
-                {queue.error.message}
-              </p>
-              <Button variant="outline" onClick={() => queue.refetch()}>
-                Try again
-              </Button>
-            </div>
-          ) : queue.data ? (
-            <OperatorQueue
-              detail={queue.data}
-              busy={command.isPending}
-              message={message}
-              error={command.error?.message ?? ''}
-              onAction={(action) => command.mutate(action)}
-              onRefresh={() => {
-                void refresh()
-              }}
-            />
-          ) : null}
-        </div>
-      )}
-    </main>
+              />
+            ) : null}
+          </div>
+        )}
+      </div>
+    </AuthenticatedShell>
   )
 }

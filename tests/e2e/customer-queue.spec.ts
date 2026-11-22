@@ -9,7 +9,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await page.getByLabel('Password').fill(customerPassword)
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  await expect(page.getByText('Signed in as Demo Customer')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Open customer queue' })).toBeVisible()
   await page.goto('/customer')
   await expect(page.getByRole('heading', { name: 'Join a queue' })).toBeVisible()
 
@@ -29,6 +29,10 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await secondDevice.reload()
   await expect(secondDevice.getByTestId('ticket-number')).toHaveText('1')
   await expect(secondDevice.getByRole('status')).toHaveText('WAITING')
+  await secondDevice.getByRole('navigation', { name: 'Application' }).getByRole('link', {
+    name: 'Customer queue',
+  }).click()
+  await expect(secondDevice.getByRole('heading', { name: 'Join a queue' })).toBeVisible()
 
   await secondDevice.goto('/customer')
   const activeTicketLink = secondDevice.getByRole('link', {
@@ -57,8 +61,13 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await operator.getByLabel('Email').fill('operator@quevo.local')
   await operator.getByLabel('Password').fill(process.env.QUEVO_E2E_OPERATOR_PASSWORD!)
   await operator.getByRole('button', { name: 'Sign in' }).click()
-  await expect(operator.getByText('Signed in as Demo Operator')).toBeVisible()
-  await operator.getByRole('link', { name: 'Open operator queue' }).click()
+  await expect(operator.getByRole('link', { name: 'Open operator queue' })).toBeVisible()
+  await operator.goto('/operator')
+  await expect(operator.getByRole('navigation', { name: 'Application' })).toBeVisible()
+  await expect(operator.getByRole('link', { name: 'Operator queue' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
   await expect(operator.getByRole('heading', { name: 'Operator queue' })).toBeVisible()
   await expect(operator.getByText('Ticket 1', { exact: true })).toBeVisible()
   await operator.getByRole('button', { name: 'Call next' }).click()

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { createFileRoute, Link, redirect } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { AuthenticatedShell } from '@/components/authenticated-shell'
 import { Button } from '@/components/ui/button'
 import { getCurrentUser } from '@/lib/auth'
 import { customerTicketOptions } from '@/lib/customer-queue'
@@ -20,12 +21,14 @@ function CustomerTicketPage() {
   const ticketQuery = useQuery(customerTicketOptions(user.id, ticketId))
 
   return (
-    <main className="grid min-h-svh place-items-center bg-background p-6">
-      <section className="w-full max-w-xl rounded-xl border bg-card p-8 text-card-foreground shadow-sm">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          Customer ticket
-        </p>
-        <h1 className="text-3xl font-semibold tracking-tight">Your ticket</h1>
+    <AuthenticatedShell currentSection="customer" user={user}>
+      <section className="mx-auto max-w-3xl rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
+        <header className="mb-7">
+          <p className="text-sm font-semibold uppercase tracking-[0.12em] text-primary">
+            Customer ticket
+          </p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight">Your ticket</h1>
+        </header>
 
         {ticketQuery.isPending ? (
           <p aria-live="polite" className="py-6 text-sm text-muted-foreground" role="status">
@@ -60,11 +63,7 @@ function CustomerTicketPage() {
             </dl>
           </div>
         )}
-
-        <Button asChild variant="outline">
-          <Link to="/">Back to Quevo</Link>
-        </Button>
       </section>
-    </main>
+    </AuthenticatedShell>
   )
 }

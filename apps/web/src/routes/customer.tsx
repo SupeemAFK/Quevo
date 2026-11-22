@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { AuthenticatedShell } from '@/components/authenticated-shell'
 import { CustomerServiceSelection } from '@/components/customer-service-selection'
 import { Button } from '@/components/ui/button'
 import { getCurrentUser } from '@/lib/auth'
@@ -46,15 +47,17 @@ function CustomerServicesPage() {
   })
 
   return (
-    <main className="grid min-h-svh place-items-center bg-background p-6">
-      <section className="w-full max-w-xl rounded-xl border bg-card p-8 text-card-foreground shadow-sm">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          Customer queue
-        </p>
-        <h1 className="text-3xl font-semibold tracking-tight">Join a queue</h1>
-        <p className="mb-7 mt-2 text-sm text-muted-foreground">
-          Choose an active service to receive your ticket number.
-        </p>
+    <AuthenticatedShell currentSection="customer" user={user}>
+      <section className="mx-auto max-w-3xl rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
+        <header className="mb-7">
+          <p className="text-sm font-semibold uppercase tracking-[0.12em] text-primary">
+            Customer queue
+          </p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight">Join a queue</h1>
+          <p className="mt-2 text-muted-foreground">
+            Choose an active service to receive your ticket number.
+          </p>
+        </header>
 
         {queueQuery.isPending ? (
           <p aria-live="polite" className="py-5 text-sm text-muted-foreground" role="status">
@@ -81,14 +84,7 @@ function CustomerServicesPage() {
             services={queueQuery.data.services}
           />
         )}
-
-        <Link
-          className="mt-7 inline-block text-sm text-primary underline-offset-4 hover:underline"
-          to="/"
-        >
-          Back to Quevo
-        </Link>
       </section>
-    </main>
+    </AuthenticatedShell>
   )
 }

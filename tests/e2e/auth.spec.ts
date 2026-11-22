@@ -9,12 +9,18 @@ test('customer can sign in and sign out through an HttpOnly session', async ({ c
   await page.getByLabel('Password').fill(customerPassword)
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  await expect(page.getByText('Signed in as Demo Customer')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Open customer queue' })).toBeVisible()
   const sessionCookie = (await context.cookies()).find((cookie) => cookie.name === 'quevo_session')
   expect(sessionCookie?.httpOnly).toBe(true)
   expect(sessionCookie?.sameSite).toBe('Lax')
   expect(await page.evaluate(() => document.cookie)).not.toContain('quevo_session')
 
+  await page.goto('/customer')
+  await expect(page.getByRole('navigation', { name: 'Application' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Customer queue' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
   await page.getByRole('button', { name: 'Sign out' }).click()
   await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible()
   expect((await context.cookies()).some((cookie) => cookie.name === 'quevo_session')).toBe(false)
