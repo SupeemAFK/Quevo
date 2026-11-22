@@ -63,8 +63,10 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await operator.getByLabel('Email').fill('operator@quevo.local')
   await operator.getByLabel('Password').fill(process.env.QUEVO_E2E_OPERATOR_PASSWORD!)
   await operator.getByRole('button', { name: 'Sign in' }).click()
-  await expect(operator.getByRole('link', { name: 'Open operator queue' })).toBeVisible()
-  await operator.goto('/operator')
+  await operator.getByRole('button', { name: 'Open navigation menu' }).click()
+  const openOperatorQueue = operator.getByRole('link', { name: 'Open operator queue' })
+  await expect(openOperatorQueue).toBeVisible()
+  await openOperatorQueue.click()
   await expect(operator.getByRole('navigation', { name: 'Application' })).toBeVisible()
   await expect(operator.getByRole('link', { name: 'Operator queue' })).toHaveAttribute(
     'aria-current',
