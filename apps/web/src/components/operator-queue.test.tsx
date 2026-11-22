@@ -86,7 +86,12 @@ describe('OperatorQueue', () => {
       />,
     )
 
-    expect(screen.getByText('Service · Branch')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        (_content, element) =>
+          element?.tagName === 'P' && element.textContent === 'Service · Branch',
+      ),
+    ).toBeInTheDocument()
     expect(screen.getByText('2 tickets', { exact: true })).toBeInTheDocument()
     expect(screen.getByRole('list', { name: 'Customers waiting in order' })).toBeInTheDocument()
     expect(screen.getByText('Ticket 1')).toBeInTheDocument()
