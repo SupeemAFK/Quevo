@@ -12,7 +12,7 @@ type TicketStatusPresentation = {
 const statusPresentations: Record<string, TicketStatusPresentation> = {
   NEXT_UP: {
     label: 'Next up',
-    className: 'text-brand-green',
+    className: 'border-brand-green/40 text-brand-green',
     Icon: ArrowRight,
   },
   WAITING: {
@@ -22,22 +22,22 @@ const statusPresentations: Record<string, TicketStatusPresentation> = {
   },
   PENDING: {
     label: 'Called',
-    className: 'text-brand-green',
+    className: 'border-status-info/40 text-status-info',
     Icon: Megaphone,
   },
   OPERATING: {
     label: 'In service',
-    className: 'text-brand-green',
+    className: 'border-brand-green/40 text-brand-green',
     Icon: CircleDot,
   },
   COMPLETED: {
     label: 'Completed',
-    className: 'text-status-success',
+    className: 'border-status-success/40 text-status-success',
     Icon: Check,
   },
   SKIPPED: {
     label: 'Skipped',
-    className: 'border-border text-muted-foreground',
+    className: 'border-status-warning/40 text-status-warning',
     Icon: SkipForward,
   },
 }

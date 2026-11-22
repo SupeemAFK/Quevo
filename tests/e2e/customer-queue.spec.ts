@@ -33,8 +33,8 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   const openCustomerQueue = page.getByRole('link', { name: 'Open customer queue' })
   await expect(openCustomerQueue).toBeVisible()
   await activateWithKeyboard(page, openCustomerQueue)
-  await expect(page.getByRole('heading', { name: 'Join a queue' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Join a queue' })).toBeFocused()
+  await expect(page.getByRole('heading', { name: 'Select a service' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Select a service' })).toBeFocused()
   await expectNoHorizontalOverflow(page)
 
   const secondDevice = await browser.newPage()
@@ -57,9 +57,9 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await secondDevice.getByRole('button', { name: 'Refresh status' }).click()
   await expect(secondDevice.getByRole('status')).toHaveText('Ticket status updated.')
   await secondDevice.getByRole('navigation', { name: 'Application' }).getByRole('link', {
-    name: 'Customer queue',
+    name: 'Choose a service',
   }).click()
-  await expect(secondDevice.getByRole('heading', { name: 'Join a queue' })).toBeVisible()
+  await expect(secondDevice.getByRole('heading', { name: 'Select a service' })).toBeVisible()
 
   await secondDevice.goto('/customer')
   const activeTicketLink = secondDevice.getByRole('link', {
@@ -68,6 +68,10 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await expect(activeTicketLink).toBeVisible()
   await activeTicketLink.click()
   await expect(secondDevice.getByTestId('ticket-number')).toHaveText('1')
+  const backToServices = secondDevice.getByRole('link', { name: 'Back to services' })
+  await expect(backToServices).toHaveAttribute('href', '/customer')
+  await backToServices.click()
+  await expect(secondDevice.getByRole('heading', { name: 'Select a service' })).toBeVisible()
   await secondDevice.close()
 
   await expect(page.getByText('General Service')).toBeVisible()
@@ -135,7 +139,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await activateWithKeyboard(
     page,
     page.getByRole('navigation', { name: 'Application' }).getByRole('link', {
-      name: 'Customer queue',
+      name: 'Choose a service',
     }),
   )
   await activateWithKeyboard(page, page.getByRole('button', { name: 'Join queue' }))
@@ -155,7 +159,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await activateWithKeyboard(
     page,
     page.getByRole('navigation', { name: 'Application' }).getByRole('link', {
-      name: 'Customer queue',
+      name: 'Choose a service',
     }),
   )
   await activateWithKeyboard(page, page.getByRole('button', { name: 'Join queue' }))
@@ -175,7 +179,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await activateWithKeyboard(
     page,
     page.getByRole('navigation', { name: 'Application' }).getByRole('link', {
-      name: 'Customer queue',
+      name: 'Choose a service',
     }),
   )
   await activateWithKeyboard(page, page.getByRole('button', { name: 'Join queue' }))

@@ -39,7 +39,7 @@ test('customer can sign in and sign out through an HttpOnly session', async ({ c
   await openCustomerQueue.focus()
   await page.keyboard.press('Enter')
   await expect(page.getByRole('navigation', { name: 'Application' })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Customer queue' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'Choose a service' })).toHaveAttribute(
     'aria-current',
     'page',
   )

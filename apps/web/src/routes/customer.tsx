@@ -58,10 +58,10 @@ function CustomerServicesPage() {
           </p>
           <PageHeading className="flex items-center gap-3 text-3xl font-semibold tracking-tight">
             <TicketCheck aria-hidden="true" size={26} />
-            Join a queue
+            Select a service
           </PageHeading>
           <p className="mt-2 text-muted-foreground">
-            Choose an active service to receive your ticket number.
+            Join an active service to receive your ticket number.
           </p>
         </header>
 

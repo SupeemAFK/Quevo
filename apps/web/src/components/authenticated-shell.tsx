@@ -5,6 +5,7 @@ import { useState } from 'react'
 import type { Identity } from '@/lib/auth'
 import { signOut } from '@/lib/auth'
 import { FeedbackMessage } from './feedback-message'
+import { QuevoMark } from './quevo-mark'
 import { ThemePreferenceSelect } from './theme-preference-select'
 import { Button } from './ui/button'
 
@@ -20,7 +21,7 @@ export function AuthenticatedShell({ user, currentSection, children }: Props) {
   const [signOutError, setSignOutError] = useState('')
   const isCustomer = user.role === 'CUSTOMER'
   const queuePath = isCustomer ? '/customer' : '/operator'
-  const queueLabel = isCustomer ? 'Customer queue' : 'Operator queue'
+  const queueLabel = isCustomer ? 'Choose a service' : 'Operator queue'
   const roleLabel = isCustomer ? 'Customer' : 'Operator'
 
   async function handleSignOut() {
@@ -52,9 +53,7 @@ export function AuthenticatedShell({ user, currentSection, children }: Props) {
               className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-md text-lg font-semibold tracking-tight focus-visible:outline"
               to="/"
             >
-              <span aria-hidden="true" className="font-bold text-brand-green">
-                Q
-              </span>
+              <QuevoMark className="size-6 shrink-0" />
               Quevo
             </Link>
             <nav aria-label="Application" className="flex items-center">

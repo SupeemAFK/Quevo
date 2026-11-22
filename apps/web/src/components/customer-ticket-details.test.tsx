@@ -21,33 +21,49 @@ const ticket: Ticket = {
 
 describe('CustomerTicketDetails', () => {
   it.each([
-    ['WAITING', 'Waiting', "You're in the queue. Keep this page open or check back for updates."],
-    ['PENDING', 'Called', "It's your turn. Please go to the service desk now."],
-    ['OPERATING', 'In service', 'Your service is in progress. Stay with the operator.'],
-    ['COMPLETED', 'Completed', 'Your service is complete.'],
+    [
+      'WAITING',
+      'Waiting',
+      "You're in the queue. Keep this page open or check back for updates.",
+      'text-muted-foreground',
+    ],
+    ['PENDING', 'Called', "It's your turn. Please go to the service desk now.", 'text-status-info'],
+    [
+      'OPERATING',
+      'In service',
+      'Your service is in progress. Stay with the operator.',
+      'text-brand-green',
+    ],
+    ['COMPLETED', 'Completed', 'Your service is complete.', 'text-status-success'],
     [
       'SKIPPED',
       'Skipped',
       'This ticket was skipped. Please speak with the service desk for guidance.',
+      'text-status-warning',
     ],
-  ])('shows the %s status as %s with useful guidance', (status, label, guidance) => {
-    render(
-      <CustomerTicketDetails
-        feedback={null}
-        onRefresh={vi.fn()}
-        refreshing={false}
-        ticket={{ ...ticket, status }}
-      />,
-    )
+  ])(
+    'shows the %s status as %s with useful guidance and semantic color',
+    (status, label, guidance, color) => {
+      render(
+        <CustomerTicketDetails
+          feedback={null}
+          onRefresh={vi.fn()}
+          refreshing={false}
+          ticket={{ ...ticket, status }}
+        />,
+      )
 
-    expect(screen.getByTestId('ticket-number')).toHaveTextContent('12')
-    expect(screen.getByText(label)).toBeInTheDocument()
-    expect(screen.getByText(guidance)).toBeInTheDocument()
-    expect(ticketStatusLabel(status)).toBe(label)
-    expect(screen.getByText('General Service')).toBeInTheDocument()
-    expect(screen.getByText('Demo Branch')).toBeInTheDocument()
-    expect(screen.getByText('2026-11-22')).toBeInTheDocument()
-  })
+      expect(screen.getByTestId('ticket-number')).toHaveTextContent('12')
+      const statusLabel = screen.getByText(label)
+      expect(statusLabel).toBeInTheDocument()
+      expect(statusLabel.closest('span.rounded-md')).toHaveClass(color)
+      expect(screen.getByText(guidance)).toBeInTheDocument()
+      expect(ticketStatusLabel(status)).toBe(label)
+      expect(screen.getByText('General Service')).toBeInTheDocument()
+      expect(screen.getByText('Demo Branch')).toBeInTheDocument()
+      expect(screen.getByText('2026-11-22')).toBeInTheDocument()
+    },
+  )
 
   it('requests an explicit refresh and shows success feedback', async () => {
     const user = userEvent.setup()

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { createFileRoute, redirect } from '@tanstack/react-router'
-import { RefreshCw, Ticket } from 'lucide-react'
+import { createFileRoute, Link, redirect } from '@tanstack/react-router'
+import { ArrowLeft, RefreshCw, Ticket } from 'lucide-react'
 import { useState } from 'react'
 import { AuthenticatedShell } from '@/components/authenticated-shell'
 import { CustomerTicketDetails } from '@/components/customer-ticket-details'
@@ -47,6 +47,13 @@ function CustomerTicketPage() {
     <AuthenticatedShell currentSection="customer" user={user}>
       <section className="mx-auto max-w-4xl p-0 sm:p-2">
         <header className="mb-7">
+          <Link
+            className="mb-4 inline-flex min-h-11 items-center gap-2 rounded-md text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline"
+            to="/customer"
+          >
+            <ArrowLeft aria-hidden="true" size={16} />
+            Back to services
+          </Link>
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             Customer
           </p>

@@ -53,7 +53,7 @@ describe('AuthenticatedShell', () => {
     mocks.signOut.mockResolvedValue(undefined)
   })
 
-  it('shows the customer queue as the current role-appropriate destination', () => {
+  it('shows the service selection as the customer destination with the Quevo mark', () => {
     renderWithTheme(
       <AuthenticatedShell currentSection="customer" user={customer}>
         <h1>Customer page</h1>
@@ -61,13 +61,17 @@ describe('AuthenticatedShell', () => {
     )
 
     const navigation = screen.getByRole('navigation', { name: 'Application' })
-    expect(screen.getByRole('link', { name: 'Customer queue' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Choose a service' })).toHaveAttribute(
       'href',
       '/customer',
     )
-    expect(screen.getByRole('link', { name: 'Customer queue' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Choose a service' })).toHaveAttribute(
       'aria-current',
       'page',
+    )
+    expect(screen.getByRole('link', { name: 'Quevo home' }).querySelector('svg')).toHaveAttribute(
+      'viewBox',
+      '0 0 24 24',
     )
     expect(screen.queryByRole('link', { name: 'Operator queue' })).not.toBeInTheDocument()
     expect(screen.getByText('Demo Customer')).toBeInTheDocument()
@@ -89,7 +93,7 @@ describe('AuthenticatedShell', () => {
     const queueLink = screen.getByRole('link', { name: 'Operator queue' })
     expect(queueLink).toHaveAttribute('href', '/operator')
     expect(queueLink).toHaveAttribute('aria-current', 'page')
-    expect(screen.queryByRole('link', { name: 'Customer queue' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Choose a service' })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Sign out' }))
     await waitFor(() => expect(mocks.signOut).toHaveBeenCalledOnce())
