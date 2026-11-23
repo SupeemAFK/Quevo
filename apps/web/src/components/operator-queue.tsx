@@ -74,17 +74,33 @@ export function OperatorQueue({
     if (!shouldFocusAfterMessageRef.current) return
     if (busy) return
 
-    const nextAction = nextActionRef.current
-    if (current || waiting.length > 0) {
-      if (nextAction && !nextAction.disabled) {
-        nextAction.focus()
+    let frame = 0
+    let attempts = 0
+    const focusNextStep = () => {
+      if (busy) return
+
+      const nextAction = nextActionRef.current
+      if (current || waiting.length > 0) {
+        if (nextAction?.isConnected && !nextAction.disabled) {
+          nextAction.focus({ preventScroll: true })
+          shouldFocusAfterMessageRef.current = false
+          return
+        }
+      } else if (emptyCurrentRef.current?.isConnected) {
+        emptyCurrentRef.current.focus({ preventScroll: true })
         shouldFocusAfterMessageRef.current = false
+        return
       }
-      return
+
+      // Motion and React can replace the action node on adjacent frames after
+      // the server response. Retry briefly so keyboard focus lands on the new
+      // action without waiting for, or being delayed by, the visual transition.
+      attempts += 1
+      if (attempts < 4) frame = window.requestAnimationFrame(focusNextStep)
     }
 
-    emptyCurrentRef.current?.focus()
-    shouldFocusAfterMessageRef.current = false
+    focusNextStep()
+    return () => window.cancelAnimationFrame(frame)
   }, [busy, current, message, waiting.length])
 
   function handleAction(action: Action) {
