@@ -47,6 +47,7 @@ export function OperatorQueue({
   const nextActionRef = useRef<HTMLButtonElement>(null)
   const emptyCurrentRef = useRef<HTMLParagraphElement>(null)
   const lastMessageRef = useRef('')
+  const shouldFocusAfterMessageRef = useRef(false)
   const prefersReducedMotion = usePrefersReducedMotion()
   const motionTransition = prefersReducedMotion
     ? { duration: 0 }
@@ -63,20 +64,28 @@ export function OperatorQueue({
   useEffect(() => {
     if (!message) {
       lastMessageRef.current = ''
+      shouldFocusAfterMessageRef.current = false
       return
     }
-    if (lastMessageRef.current === message) return
-    lastMessageRef.current = message
-    const nextAction = nextActionRef.current
-    const hasActionToFocus = current
-      ? Boolean(nextAction && !nextAction.disabled)
-      : waiting.length > 0
-    if (hasActionToFocus && nextAction && !nextAction.disabled) {
-      nextAction.focus()
-    } else {
-      emptyCurrentRef.current?.focus()
+    if (lastMessageRef.current !== message) {
+      lastMessageRef.current = message
+      shouldFocusAfterMessageRef.current = true
     }
-  }, [current, message, waiting.length])
+    if (!shouldFocusAfterMessageRef.current) return
+    if (busy) return
+
+    const nextAction = nextActionRef.current
+    if (current || waiting.length > 0) {
+      if (nextAction && !nextAction.disabled) {
+        nextAction.focus()
+        shouldFocusAfterMessageRef.current = false
+      }
+      return
+    }
+
+    emptyCurrentRef.current?.focus()
+    shouldFocusAfterMessageRef.current = false
+  }, [busy, current, message, waiting.length])
 
   function handleAction(action: Action) {
     if (!busy) onAction(action)

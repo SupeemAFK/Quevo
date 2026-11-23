@@ -305,4 +305,39 @@ describe('OperatorQueue', () => {
     )
     expect(screen.getByText('No customers are waiting.')).toHaveFocus()
   })
+
+  it('restores focus once the next action is enabled after a confirmed transition', () => {
+    const props = {
+      busy: false,
+      refreshing: false,
+      pendingAction: null,
+      message: '',
+      error: '',
+      onAction: vi.fn(),
+      onRefresh: vi.fn(),
+    }
+    const pendingDetail = { ...detail, current: { ...ticket, status: 'PENDING' }, waiting: [] }
+    const { rerender } = render(<OperatorQueue {...props} detail={pendingDetail} />)
+
+    screen.getByRole('button', { name: 'Start service' }).focus()
+    rerender(
+      <OperatorQueue
+        {...props}
+        busy
+        detail={{ ...detail, current: { ...ticket, status: 'OPERATING' }, waiting: [] }}
+        message="Service started."
+        pendingAction="start"
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Complete service' })).toBeDisabled()
+
+    rerender(
+      <OperatorQueue
+        {...props}
+        detail={{ ...detail, current: { ...ticket, status: 'OPERATING' }, waiting: [] }}
+        message="Service started."
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Complete service' })).toHaveFocus()
+  })
 })
