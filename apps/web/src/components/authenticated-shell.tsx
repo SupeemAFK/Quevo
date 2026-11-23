@@ -70,7 +70,7 @@ export function AuthenticatedShell({ user, currentSection, children }: Props) {
               </Link>
             </nav>
           </div>
-          <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-3">
+          <div className="ml-0 flex w-full flex-wrap items-center justify-between gap-3 sm:ml-auto sm:w-auto sm:flex-nowrap sm:justify-end">
             <ThemePreferenceSelect />
             <span className="max-w-[min(42vw,12rem)] text-right text-sm leading-tight text-muted-foreground sm:max-w-48">
               <span className="block break-words font-medium text-foreground">

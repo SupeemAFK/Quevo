@@ -75,6 +75,11 @@ describe('AuthenticatedShell', () => {
     )
     expect(screen.queryByRole('link', { name: 'Operator queue' })).not.toBeInTheDocument()
     expect(screen.getByText('Demo Customer')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Sign out' }).parentElement).toHaveClass(
+      'w-full',
+      'flex-wrap',
+      'sm:w-auto',
+    )
     expect(navigation).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Skip to main content' })).toHaveAttribute(
       'href',
