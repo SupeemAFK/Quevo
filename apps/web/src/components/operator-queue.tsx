@@ -159,7 +159,7 @@ export function OperatorQueue({
                   <span className="mt-1 block text-sm text-muted-foreground">waiting</span>
                 </p>
                 <Button
-                  className="min-h-11 px-4"
+                  className="min-h-12 px-4"
                   disabled={busy || refreshing}
                   variant="outline"
                   onClick={handleRefresh}
@@ -204,7 +204,7 @@ export function OperatorQueue({
                       {current.status === 'PENDING' ? (
                         <>
                           <Button
-                            className="min-h-11 px-5"
+                            className="min-h-12 px-5"
                             disabled={busy}
                             onClick={() => handleAction('start')}
                             ref={nextActionRef}
@@ -213,7 +213,7 @@ export function OperatorQueue({
                             Start service
                           </Button>
                           <Button
-                            className="min-h-11 px-5"
+                            className="min-h-12 px-5"
                             disabled={busy}
                             variant="outline"
                             onClick={() => handleAction('skip')}
@@ -224,7 +224,7 @@ export function OperatorQueue({
                         </>
                       ) : current.status === 'OPERATING' ? (
                         <Button
-                          className="min-h-11 px-5"
+                          className="min-h-12 px-5"
                           disabled={busy}
                           onClick={() => handleAction('complete')}
                           ref={nextActionRef}
@@ -252,7 +252,7 @@ export function OperatorQueue({
                       </p>
                     </div>
                     <Button
-                      className="min-h-11 w-full px-5 sm:w-auto"
+                      className="min-h-12 w-full px-5 sm:w-auto"
                       disabled={busy}
                       onClick={() => handleAction('call-next')}
                       ref={nextActionRef}
