@@ -107,7 +107,10 @@ describe('QueueDemo', () => {
 
     const customerTicket = await screen.findByRole('region', { name: 'Your ticket' })
     expect(within(customerTicket).getByText('A102')).toBeInTheDocument()
-    expect(within(customerTicket).getByText('In service')).toBeInTheDocument()
+    expect(within(customerTicket).getByText('Called')).toBeInTheDocument()
+    expect(
+      within(screen.getByRole('list', { name: 'Sample queue progression' })).getByText('Called'),
+    ).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'See the operator view' }))
     await user.click(await screen.findByRole('button', { name: 'Mark served' }))

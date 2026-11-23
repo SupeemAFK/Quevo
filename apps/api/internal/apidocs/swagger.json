@@ -258,6 +258,10 @@
                         "example": "Quevo Demo Branch",
                         "type": "string"
                     },
+                    "businessDate": {
+                        "example": "2026-11-07",
+                        "type": "string"
+                    },
                     "id": {
                         "example": "10000000-0000-4000-8000-000000000002",
                         "type": "string"
@@ -270,6 +274,7 @@
                 "required": [
                     "branchId",
                     "branchName",
+                    "businessDate",
                     "id",
                     "name"
                 ],

@@ -27,7 +27,7 @@ function LoginPage() {
   return (
     <MotionConfig reducedMotion="user">
       <main className="relative isolate min-h-svh overflow-hidden bg-background text-foreground">
-        <QueueBackdrop reducedMotion={prefersReducedMotion} variant="login" />
+        <QueueBackdrop variant="login" />
         <div className="relative z-10 mx-auto grid min-h-svh w-full max-w-6xl items-center gap-10 px-page py-10 sm:py-14 lg:grid-cols-[1.08fr_0.92fr] lg:gap-16 lg:py-16">
           <section aria-labelledby="login-welcome-heading" className="mx-auto w-full max-w-xl">
             <motion.div

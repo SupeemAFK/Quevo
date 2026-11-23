@@ -29,6 +29,7 @@ const generalService: Service = {
   id: 'service-1',
   branchId: 'branch-1',
   branchName: 'Demo Branch',
+  businessDate: '2026-11-23',
   name: 'General Service',
 }
 
@@ -36,6 +37,7 @@ const passportService: Service = {
   id: 'service-2',
   branchId: 'branch-2',
   branchName: 'City Branch',
+  businessDate: '2026-11-23',
   name: 'Passport Service',
 }
 
@@ -43,12 +45,18 @@ const activeTicket: ActiveTicket = {
   id: 'ticket-1',
   branchId: 'branch-1',
   branchName: 'Demo Branch',
-  businessDate: '2026-11-22',
-  joinedAt: '2026-11-22T10:00:00Z',
+  businessDate: '2026-11-23',
+  joinedAt: '2026-11-23T10:00:00Z',
   serviceId: 'service-1',
   serviceName: 'General Service',
   status: 'WAITING',
   ticketNumber: '12',
+}
+
+const previousDayTicket: ActiveTicket = {
+  ...activeTicket,
+  businessDate: '2026-11-22',
+  joinedAt: '2026-11-22T10:00:00Z',
 }
 
 describe('CustomerServiceSelection', () => {
@@ -170,6 +178,26 @@ describe('CustomerServiceSelection', () => {
     expect(screen.getByText(/already have an active ticket/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Join queue' })).toBeDisabled()
     expect(screen.getByRole('link', { name: /View ticket 12/ })).toBeEnabled()
+  })
+
+  it('allows joining today while keeping a previous-day ticket available', async () => {
+    const user = userEvent.setup()
+    const onJoin = vi.fn()
+    render(
+      <CustomerServiceSelection
+        activeTickets={[previousDayTicket]}
+        error=""
+        joining={false}
+        onJoin={onJoin}
+        services={[generalService]}
+      />,
+    )
+
+    expect(screen.getByRole('link', { name: /View ticket 12/ })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Join queue' })).toBeEnabled()
+    await user.click(screen.getByRole('button', { name: 'Join queue' }))
+
+    expect(onJoin).toHaveBeenCalledWith(generalService)
   })
 
   it('guards against rapid duplicate join events before the pending state rerenders', async () => {

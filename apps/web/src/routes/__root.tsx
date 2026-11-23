@@ -55,7 +55,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           <MotionConfig reducedMotion="user">
             <motion.div
               animate={{ opacity: 1, y: 0 }}
-              initial={{ opacity: 0, y: 8 }}
+              initial={false}
               key={pathname}
               transition={{ duration: 0.24, ease: 'easeOut' }}
             >

@@ -139,7 +139,7 @@ export function LandingWorkflows() {
         id="workflows"
         tabIndex={-1}
       >
-        <QueueBackdrop reducedMotion={prefersReducedMotion} variant="workflows" />
+        <QueueBackdrop variant="workflows" />
         <div className="relative z-10 mx-auto max-w-content px-page py-section">
           <motion.div
             className="grid gap-4 border-b border-border pb-8 md:grid-cols-[1fr_0.7fr] md:items-end"

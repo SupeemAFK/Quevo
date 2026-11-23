@@ -347,6 +347,8 @@ export interface components {
             branchId: string;
             /** @example Quevo Demo Branch */
             branchName: string;
+            /** @example 2026-11-07 */
+            businessDate: string;
             /** @example 10000000-0000-4000-8000-000000000002 */
             id: string;
             /** @example General Service */

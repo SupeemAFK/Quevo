@@ -36,7 +36,7 @@ export function LandingHero({ user }: LandingHeroProps) {
         id="top"
         tabIndex={-1}
       >
-        <QueueBackdrop reducedMotion={prefersReducedMotion} variant="hero" />
+        <QueueBackdrop variant="hero" />
         <div className="relative z-10 mx-auto grid max-w-content items-center gap-10 px-page py-14 sm:py-18 lg:min-h-[650px] lg:grid-cols-[0.78fr_1.22fr] lg:gap-12 lg:py-20">
           <div className="max-w-xl">
             <motion.p

@@ -41,10 +41,14 @@ export function CustomerServiceSelection({
   const singleService = services.length === 1 ? services[0] : undefined
   const selectedService =
     services.find((service) => service.id === selectedServiceID) ?? singleService
-  const activeServiceIDs = new Set(activeTickets.map((ticket) => ticket.serviceId))
-  const selectedServiceHasActiveTicket = selectedService
-    ? activeServiceIDs.has(selectedService.id)
-    : false
+  const hasActiveTicket = (service: ServiceOption) =>
+    activeTickets.some(
+      (ticket) =>
+        ticket.branchId === service.branchId &&
+        ticket.serviceId === service.id &&
+        ticket.businessDate === service.businessDate,
+    )
+  const selectedServiceHasActiveTicket = selectedService ? hasActiveTicket(selectedService) : false
 
   useEffect(() => {
     if (!joining) joinStartedRef.current = false
@@ -57,7 +61,7 @@ export function CustomerServiceSelection({
       setSelectionError('Select a service before joining the queue.')
       return
     }
-    if (activeServiceIDs.has(selectedService.id)) {
+    if (hasActiveTicket(selectedService)) {
       setSelectionError(
         'You already have an active ticket for this service. Open it above to check your status.',
       )
@@ -180,21 +184,21 @@ export function CustomerServiceSelection({
               <div className="grid gap-2">
                 {services.map((service) => {
                   const selected = selectedService?.id === service.id
-                  const hasActiveTicket = activeServiceIDs.has(service.id)
+                  const serviceHasActiveTicket = hasActiveTicket(service)
                   return (
                     <motion.label
-                      className={`group/service flex min-h-20 items-center gap-4 rounded-lg border bg-card px-4 py-4 transition-[border-color,box-shadow,transform] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring ${hasActiveTicket ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:border-foreground/40 hover:shadow-sm'} ${selected ? 'border-brand-green shadow-[inset_3px_0_0_var(--brand-green)]' : 'border-border'}`}
+                      className={`group/service flex min-h-20 items-center gap-4 rounded-lg border bg-card px-4 py-4 transition-[border-color,box-shadow,transform] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring ${serviceHasActiveTicket ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:border-foreground/40 hover:shadow-sm'} ${selected ? 'border-brand-green shadow-[inset_3px_0_0_var(--brand-green)]' : 'border-border'}`}
                       htmlFor={`service-${service.id}`}
                       key={service.id}
                       layout
                       transition={{ duration: 0.18, ease: 'easeOut' }}
-                      whileHover={hasActiveTicket ? undefined : { y: -1 }}
-                      whileTap={hasActiveTicket ? undefined : { scale: 0.995 }}
+                      whileHover={serviceHasActiveTicket ? undefined : { y: -1 }}
+                      whileTap={serviceHasActiveTicket ? undefined : { scale: 0.995 }}
                     >
                       <input
                         checked={selected}
                         className="size-5 shrink-0 accent-brand-green"
-                        disabled={hasActiveTicket}
+                        disabled={serviceHasActiveTicket}
                         id={`service-${service.id}`}
                         name="service"
                         onChange={() => {
@@ -218,7 +222,7 @@ export function CustomerServiceSelection({
                         </span>
                       </span>
                       <span className="shrink-0 text-right text-sm">
-                        {hasActiveTicket ? (
+                        {serviceHasActiveTicket ? (
                           <span className="text-muted-foreground">Already joined</span>
                         ) : selected ? (
                           <span className="inline-flex items-center gap-1 font-medium text-brand-green">

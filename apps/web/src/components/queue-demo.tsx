@@ -93,14 +93,14 @@ export function QueueDemo({ autoPlay = true }: QueueDemoProps = {}) {
   const customerStatus = ticketWasServed
     ? 'COMPLETED'
     : customerIsCurrent
-      ? 'OPERATING'
+      ? 'PENDING'
       : !current && customerPosition === 0
         ? 'NEXT_UP'
         : 'WAITING'
   const customerGuidance = ticketWasServed
     ? 'Your turn is complete.'
     : customerIsCurrent
-      ? 'Your ticket is with the service team.'
+      ? 'Your ticket has been called. Please get ready.'
       : customerStatus === 'NEXT_UP'
         ? 'You’re next. The service team can call you when ready.'
         : current
@@ -181,7 +181,7 @@ export function QueueDemo({ autoPlay = true }: QueueDemoProps = {}) {
   const customerOrder = [
     ...served.map((ticket) => ({ ticket, status: 'COMPLETED', detail: 'Completed' })),
     ...(current
-      ? [{ ticket: current, status: 'PENDING', detail: 'Now with the service team' }]
+      ? [{ ticket: current, status: 'PENDING', detail: 'Your ticket has been called' }]
       : []),
     ...waiting.map((ticket, index) => ({
       ticket,

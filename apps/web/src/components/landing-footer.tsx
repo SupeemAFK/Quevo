@@ -1,18 +1,16 @@
 import { Link } from '@tanstack/react-router'
 import { ArrowRight } from 'lucide-react'
 import type { Identity } from '@/lib/auth'
-import { usePrefersReducedMotion } from '@/lib/use-prefers-reduced-motion'
 import { QueueBackdrop } from './queue-backdrop'
 import { QuevoMark } from './quevo-mark'
 import { Button } from './ui/button'
 
 export function LandingFooter({ user }: { user: Identity | null }) {
-  const prefersReducedMotion = usePrefersReducedMotion()
   const appPath = user?.role === 'CUSTOMER' ? '/customer' : '/operator'
 
   return (
     <footer className="relative isolate overflow-hidden border-t border-border bg-background text-foreground">
-      <QueueBackdrop reducedMotion={prefersReducedMotion} variant="footer" />
+      <QueueBackdrop variant="footer" />
       <div className="relative z-10 mx-auto flex max-w-content flex-col gap-6 px-page py-8 sm:flex-row sm:items-center sm:justify-between sm:py-10">
         <div>
           <Link
