@@ -21,7 +21,10 @@ export const Route = createFileRoute('/customer')({
 
 function CustomerServicesPage() {
   const { user } = Route.useRouteContext()
-  const queueQuery = useQuery(customerQueueOptions(user.id))
+  const queueQuery = useQuery({
+    ...customerQueueOptions(user.id),
+    refetchOnMount: 'always',
+  })
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const joinMutation = useMutation({
