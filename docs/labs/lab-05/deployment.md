@@ -33,6 +33,25 @@ Commit example files with placeholders or local endpoints. Keep real values in i
 | `POSTGRES_DB`, `POSTGRES_USER` | Local PostgreSQL container | Initial database and username | No | Local defaults in Compose. Create the database and user separately for Cloud SQL. |
 | `POSTGRES_PASSWORD` | Local PostgreSQL container | Initial database user password | Yes outside local development | Compose defines a disposable local value. Cloud SQL credentials are provisioned separately and consumed through `DATABASE_URL`. |
 
+## Swagger access policy
+
+Swagger UI and the OpenAPI document are intentionally public documentation surfaces in both local development and the current production deployment. Viewing them does not require a Quevo account. API operations continue to enforce their existing session and role checks; the documentation UI does not bypass API authorization. The landing-page cleanup tracked by [issue #65](https://github.com/SupeemAFK/Quevo/issues/65) removes the stale localhost Swagger CTA; keep API documentation outside landing-page navigation. Avoid sending write operations to production while exploring the contract.
+
+| Environment | Swagger UI | OpenAPI document | Health endpoint |
+| --- | --- | --- | --- |
+| Local Compose | `http://localhost:8080/swagger/` | `http://localhost:8080/openapi.json` | `http://localhost:8080/api/v1/health` |
+| Production Cloud Run | `https://quevo-api-5unjfhgfwa-as.a.run.app/swagger/` | `https://quevo-api-5unjfhgfwa-as.a.run.app/openapi.json` | `https://quevo-api-5unjfhgfwa-as.a.run.app/api/v1/health` |
+
+The production API base URL was read from the `quevo-api` Cloud Run service in project `cpe334-student-project`, region `asia-southeast1`; all three URLs returned HTTP 200 on 2026-11-22. Recheck the service URL after recreating the service:
+
+```sh
+gcloud run services describe quevo-api \
+  --project cpe334-student-project --region asia-southeast1 \
+  --format='value(status.url)'
+```
+
+The health route remains separate from the Swagger UI and OpenAPI document. It reports API health without checking PostgreSQL; the production release pipeline continues to use the web URL as its public application smoke check.
+
 ## Build, test, and run locally
 
 From the repository root, build the Compose images and start PostgreSQL:

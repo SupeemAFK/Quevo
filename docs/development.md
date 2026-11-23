@@ -8,7 +8,7 @@ From the repository root, run:
 docker compose up --build
 ```
 
-Compose starts PostgreSQL, the Go API, and the TanStack Start web app. Open `http://localhost:3000`. The API is available at `http://localhost:8080`; Swagger UI is at `http://localhost:8080/swagger/` and the generated OpenAPI JSON is at `http://localhost:8080/openapi.json`. PostgreSQL is exposed on port `5432` for local tools. Stop the stack with `Ctrl+C`. Add `-d` to run it in the background and use `docker compose down` to stop it.
+Compose starts PostgreSQL, the Go API, and the TanStack Start web app. Open `http://localhost:3000`. The API is available at `http://localhost:8080`; Swagger UI is at `http://localhost:8080/swagger/` and the generated OpenAPI JSON is at `http://localhost:8080/openapi.json`. PostgreSQL is exposed on port `5432` for local tools. Stop the stack with `Ctrl+C`. Add `-d` to run it in the background and use `docker compose down` to stop it. Quevo's current production API documentation URLs and public access policy are listed in the [Lab 5 deployment guide](labs/lab-05/deployment.md#swagger-access-policy).
 
 Compose stores database files in the named `postgres-data` volume. To reset the local database, run `docker compose down -v`.
 
@@ -82,3 +82,19 @@ cd ../web && bun run generate:api
 ```
 
 The API emits OpenAPI 3.1 at `apps/api/internal/apidocs/swagger.json`, serves it at `/openapi.json`, and hosts Swagger UI at `/swagger/`. `openapi-typescript` writes `apps/web/src/client/api/schema.d.ts`, and `openapi-fetch` uses those types for API requests. TanStack Query calls the typed request through a TanStack Start server function so the API URL stays server-side.
+
+## Web visual tokens
+
+The web app uses the shared semantic palette, type scale, spacing, and focus tokens documented in [the UI design system](ui-design-system.md). Add page and component styles through those tokens so customer, operator, and public routes keep the same visual language.
+
+The public home route and its isolated sample queue are documented in [the landing page guide](landing-page.md).
+
+Authenticated route navigation, role-specific queue links, and sign-out behavior are documented in [the application shell guide](app-shell.md).
+
+Customer service selection, active-ticket recovery, status labels, and manual status refresh are documented in [the customer ticket flow guide](customer-ticket-flow.md).
+
+Operator queue selection, current-ticket actions, and waiting-list presentation are documented in [the operator dashboard guide](operator-dashboard.md).
+
+Shared loading, error, and success semantics are documented in [the workflow feedback guide](feedback-patterns.md).
+
+Confirmed queue state transitions and reduced-motion handling are documented in [the operator queue motion guide](operator-motion.md).

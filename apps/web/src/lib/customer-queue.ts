@@ -90,7 +90,6 @@ export const customerQueueOptions = (customerID: string) =>
       ])
       return { services, activeTickets }
     },
-    staleTime: 30_000,
   })
 
 export const customerTicketOptions = (customerID: string, ticketId: string) =>
