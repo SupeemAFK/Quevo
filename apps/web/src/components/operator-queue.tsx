@@ -12,7 +12,7 @@ import {
   UsersRound,
 } from 'lucide-react'
 import { AnimatePresence, LayoutGroup, MotionConfig, motion } from 'motion/react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { components } from '@/client/api/schema'
 import { usePrefersReducedMotion } from '@/lib/use-prefers-reduced-motion'
 import { FeedbackMessage, LoadingMessage } from './feedback-message'
@@ -32,6 +32,8 @@ type Props = {
   onAction: (action: Action) => void
   onRefresh: () => void
 }
+
+const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 
 export function OperatorQueue({
   detail,
@@ -61,7 +63,7 @@ export function OperatorQueue({
     skip: 'Skipping ticket…',
   }
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (!message) {
       lastMessageRef.current = ''
       shouldFocusAfterMessageRef.current = false
