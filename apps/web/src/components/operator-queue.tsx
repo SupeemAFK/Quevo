@@ -12,7 +12,7 @@ import {
   UsersRound,
 } from 'lucide-react'
 import { AnimatePresence, LayoutGroup, MotionConfig, motion } from 'motion/react'
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useCallback, useRef } from 'react'
 import type { components } from '@/client/api/schema'
 import { usePrefersReducedMotion } from '@/lib/use-prefers-reduced-motion'
 import { FeedbackMessage, LoadingMessage } from './feedback-message'
@@ -33,8 +33,6 @@ type Props = {
   onRefresh: () => void
 }
 
-const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
-
 export function OperatorQueue({
   detail,
   busy,
@@ -46,10 +44,21 @@ export function OperatorQueue({
   onRefresh,
 }: Props) {
   const { current, waiting } = detail
-  const nextActionRef = useRef<HTMLButtonElement>(null)
-  const emptyCurrentRef = useRef<HTMLParagraphElement>(null)
-  const lastMessageRef = useRef('')
-  const shouldFocusAfterMessageRef = useRef(false)
+  const restoreActionFocusRef = useRef<HTMLElement | null>(null)
+  const focusTargetRef = useCallback(
+    (target: HTMLElement | null) => {
+      const source = restoreActionFocusRef.current
+      if (!target || busy || !source || !target.isConnected) return
+      if (target instanceof HTMLButtonElement && target.disabled) return
+
+      const activeElement = document.activeElement
+      if (activeElement === document.body || activeElement === source || activeElement === target) {
+        target.focus({ preventScroll: true })
+      }
+      restoreActionFocusRef.current = null
+    },
+    [busy],
+  )
   const prefersReducedMotion = usePrefersReducedMotion()
   const motionTransition = prefersReducedMotion
     ? { duration: 0 }
@@ -63,50 +72,10 @@ export function OperatorQueue({
     skip: 'Skipping ticket…',
   }
 
-  useIsomorphicLayoutEffect(() => {
-    if (!message) {
-      lastMessageRef.current = ''
-      shouldFocusAfterMessageRef.current = false
-      return
-    }
-    if (lastMessageRef.current !== message) {
-      lastMessageRef.current = message
-      shouldFocusAfterMessageRef.current = true
-    }
-    if (!shouldFocusAfterMessageRef.current) return
+  function handleAction(action: Action, source: HTMLButtonElement) {
     if (busy) return
-
-    let frame = 0
-    let attempts = 0
-    const focusNextStep = () => {
-      if (busy) return
-
-      const nextAction = nextActionRef.current
-      if (current || waiting.length > 0) {
-        if (nextAction?.isConnected && !nextAction.disabled) {
-          nextAction.focus({ preventScroll: true })
-          shouldFocusAfterMessageRef.current = false
-          return
-        }
-      } else if (emptyCurrentRef.current?.isConnected) {
-        emptyCurrentRef.current.focus({ preventScroll: true })
-        shouldFocusAfterMessageRef.current = false
-        return
-      }
-
-      // Motion and React can replace the action node on adjacent frames after
-      // the server response. Retry briefly so keyboard focus lands on the new
-      // action without waiting for, or being delayed by, the visual transition.
-      attempts += 1
-      if (attempts < 4) frame = window.requestAnimationFrame(focusNextStep)
-    }
-
-    focusNextStep()
-    return () => window.cancelAnimationFrame(frame)
-  }, [busy, current, message, waiting.length])
-
-  function handleAction(action: Action) {
-    if (!busy) onAction(action)
+    restoreActionFocusRef.current = document.activeElement === source ? source : null
+    onAction(action)
   }
 
   function handleRefresh() {
@@ -208,8 +177,8 @@ export function OperatorQueue({
                           <Button
                             className="min-h-12 px-5"
                             disabled={busy}
-                            onClick={() => handleAction('start')}
-                            ref={nextActionRef}
+                            onClick={(event) => handleAction('start', event.currentTarget)}
+                            ref={focusTargetRef}
                           >
                             <Play aria-hidden="true" />
                             Start service
@@ -218,7 +187,7 @@ export function OperatorQueue({
                             className="min-h-12 px-5"
                             disabled={busy}
                             variant="outline"
-                            onClick={() => handleAction('skip')}
+                            onClick={(event) => handleAction('skip', event.currentTarget)}
                           >
                             <SkipForward aria-hidden="true" />
                             Skip ticket
@@ -228,8 +197,8 @@ export function OperatorQueue({
                         <Button
                           className="min-h-12 px-5"
                           disabled={busy}
-                          onClick={() => handleAction('complete')}
-                          ref={nextActionRef}
+                          onClick={(event) => handleAction('complete', event.currentTarget)}
+                          ref={focusTargetRef}
                         >
                           <Check aria-hidden="true" />
                           Complete service
@@ -256,8 +225,8 @@ export function OperatorQueue({
                     <Button
                       className="min-h-12 w-full px-5 sm:w-auto"
                       disabled={busy}
-                      onClick={() => handleAction('call-next')}
-                      ref={nextActionRef}
+                      onClick={(event) => handleAction('call-next', event.currentTarget)}
+                      ref={focusTargetRef}
                     >
                       <PhoneCall aria-hidden="true" />
                       Call next
@@ -274,7 +243,7 @@ export function OperatorQueue({
                   >
                     <p
                       className="flex items-center gap-2 font-semibold"
-                      ref={emptyCurrentRef}
+                      ref={focusTargetRef}
                       tabIndex={-1}
                     >
                       <CircleCheck aria-hidden="true" className="text-muted-foreground" size={19} />

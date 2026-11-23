@@ -269,7 +269,8 @@ describe('OperatorQueue', () => {
     expect(screen.getByRole('button', { name: 'Call next' })).toHaveFocus()
   })
 
-  it('moves keyboard focus to the next valid action after a confirmed transition', () => {
+  it('moves keyboard focus to the next valid action after a confirmed transition', async () => {
+    const user = userEvent.setup()
     const props = {
       busy: false,
       refreshing: false,
@@ -280,7 +281,7 @@ describe('OperatorQueue', () => {
       onRefresh: vi.fn(),
     }
     const { rerender } = render(<OperatorQueue {...props} detail={detail} />)
-    screen.getByRole('button', { name: 'Call next' }).focus()
+    await user.click(screen.getByRole('button', { name: 'Call next' }))
 
     rerender(
       <OperatorQueue
@@ -291,6 +292,18 @@ describe('OperatorQueue', () => {
     )
     expect(screen.getByRole('button', { name: 'Start service' })).toHaveFocus()
 
+    await user.click(screen.getByRole('button', { name: 'Start service' }))
+    rerender(
+      <OperatorQueue
+        {...props}
+        busy
+        detail={{ ...detail, current: { ...ticket, status: 'OPERATING' }, waiting: [] }}
+        message="Service started."
+        pendingAction="start"
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Complete service' })).toBeDisabled()
+
     rerender(
       <OperatorQueue
         {...props}
@@ -300,13 +313,24 @@ describe('OperatorQueue', () => {
     )
     expect(screen.getByRole('button', { name: 'Complete service' })).toHaveFocus()
 
+    await user.click(screen.getByRole('button', { name: 'Complete service' }))
+    rerender(
+      <OperatorQueue
+        {...props}
+        busy
+        detail={{ ...detail, waiting: [] }}
+        message="Service completed."
+        pendingAction="complete"
+      />,
+    )
     rerender(
       <OperatorQueue {...props} detail={{ ...detail, waiting: [] }} message="Service completed." />,
     )
     expect(screen.getByText('No customers are waiting.')).toHaveFocus()
   })
 
-  it('restores focus once the next action is enabled after a confirmed transition', () => {
+  it('restores focus once the next action is enabled after a confirmed transition', async () => {
+    const user = userEvent.setup()
     const props = {
       busy: false,
       refreshing: false,
@@ -319,7 +343,7 @@ describe('OperatorQueue', () => {
     const pendingDetail = { ...detail, current: { ...ticket, status: 'PENDING' }, waiting: [] }
     const { rerender } = render(<OperatorQueue {...props} detail={pendingDetail} />)
 
-    screen.getByRole('button', { name: 'Start service' }).focus()
+    await user.click(screen.getByRole('button', { name: 'Start service' }))
     rerender(
       <OperatorQueue
         {...props}
