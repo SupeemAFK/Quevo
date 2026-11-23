@@ -181,6 +181,17 @@
     border-color 180ms ease-out;
 }
 
+.ticket-reflective::before {
+  position: absolute;
+  z-index: -1;
+  inset: 5px -4px -6px 4px;
+  border: 1px solid var(--border);
+  border-radius: inherit;
+  content: "";
+  background: var(--muted);
+  transform: rotate(1deg);
+}
+
 .ticket-reflective::after {
   position: absolute;
   z-index: 0;
@@ -199,7 +210,40 @@
       transparent 20%,
       color-mix(in srgb, var(--foreground) 3%, transparent) 47%,
       transparent 68%
+    ),
+    linear-gradient(
+      108deg,
+      transparent 42%,
+      color-mix(in srgb, var(--foreground) 11%, transparent) 50%,
+      transparent 58%
     );
+  background-size:
+    auto,
+    auto,
+    260% 100%;
+  background-position:
+    center,
+    center,
+    -160% 0;
+  animation: ticket-shine-sweep 7s ease-in-out infinite;
+}
+
+@keyframes ticket-shine-sweep {
+  0%,
+  16% {
+    background-position:
+      center,
+      center,
+      -160% 0;
+  }
+
+  68%,
+  100% {
+    background-position:
+      center,
+      center,
+      160% 0;
+  }
 }
 
 .queue-flow-dashes {

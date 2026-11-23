@@ -68,8 +68,8 @@ export function CustomerTicketDetails({
     const y = (event.clientY - bounds.top) / bounds.height
     event.currentTarget.style.setProperty('--ticket-shine-x', `${x * 100}%`)
     event.currentTarget.style.setProperty('--ticket-shine-y', `${y * 100}%`)
-    event.currentTarget.style.setProperty('--ticket-tilt-x', `${(0.5 - y) * 2.2}deg`)
-    event.currentTarget.style.setProperty('--ticket-tilt-y', `${(x - 0.5) * 2.2}deg`)
+    event.currentTarget.style.setProperty('--ticket-tilt-x', `${(0.5 - y) * 5}deg`)
+    event.currentTarget.style.setProperty('--ticket-tilt-y', `${(x - 0.5) * 5}deg`)
   }
 
   function resetReflection(event: React.PointerEvent<HTMLElement>) {
