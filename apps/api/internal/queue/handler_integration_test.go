@@ -109,13 +109,6 @@ func TestCustomerQueueAPIWithPostgres(t *testing.T) {
 	if len(serviceList.Items) != 1 || serviceList.Items[0].ID != database.DemoServiceID {
 		t.Fatalf("available services = %#v; want only the seeded active service", serviceList.Items)
 	}
-	var expectedBusinessDate string
-	if err := sqlDB.QueryRowContext(ctx, `SELECT (now() AT TIME ZONE timezone)::date::text FROM branches WHERE id = $1`, database.DemoBranchID).Scan(&expectedBusinessDate); err != nil {
-		t.Fatalf("read branch-local business date: %v", err)
-	}
-	if serviceList.Items[0].BusinessDate != expectedBusinessDate {
-		t.Fatalf("service business date = %q, want branch-local date %q", serviceList.Items[0].BusinessDate, expectedBusinessDate)
-	}
 	activeTickets := queueAPIRequest(router, http.MethodGet, "/api/v1/tickets/active", nil, customerSession)
 	if activeTickets.Code != http.StatusOK {
 		t.Fatalf("active-ticket list status = %d, want %d: %s", activeTickets.Code, http.StatusOK, activeTickets.Body.String())
@@ -141,6 +134,10 @@ func TestCustomerQueueAPIWithPostgres(t *testing.T) {
 	}
 	if ticket.ID == "" || ticket.TicketNumber != "1" || ticket.Status != "WAITING" || ticket.BranchName != "Quevo Demo Branch" || ticket.ServiceName != "General Service" {
 		t.Fatalf("joined ticket = %#v; want first WAITING ticket for the seeded service", ticket)
+	}
+	var expectedBusinessDate string
+	if err := sqlDB.QueryRowContext(ctx, `SELECT (now() AT TIME ZONE timezone)::date::text FROM branches WHERE id = $1`, database.DemoBranchID).Scan(&expectedBusinessDate); err != nil {
+		t.Fatalf("read branch-local business date: %v", err)
 	}
 	if ticket.BusinessDate != expectedBusinessDate {
 		t.Fatalf("ticket business date = %q, want branch-local date %q", ticket.BusinessDate, expectedBusinessDate)

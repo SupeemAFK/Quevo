@@ -21,9 +21,8 @@ type Ticket struct {
 }
 
 type AvailableService struct {
-	ID           string `gorm:"column:id"`
-	BranchID     string `gorm:"column:branch_id"`
-	BranchName   string `gorm:"column:branch_name"`
-	Name         string `gorm:"column:name"`
-	BusinessDate string `gorm:"column:business_date"`
+	ID         string `gorm:"column:id"`
+	BranchID   string `gorm:"column:branch_id"`
+	BranchName string `gorm:"column:branch_name"`
+	Name       string `gorm:"column:name"`
 }

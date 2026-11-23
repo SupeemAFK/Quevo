@@ -32,7 +32,7 @@ function LoginPage() {
           <section aria-labelledby="login-welcome-heading" className="mx-auto w-full max-w-xl">
             <motion.div
               className="mb-10 flex items-center gap-2.5"
-              initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: prefersReducedMotion ? 0 : 0.35 }}
             >
@@ -42,7 +42,7 @@ function LoginPage() {
 
             <motion.p
               className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground"
-              initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: prefersReducedMotion ? 0 : 0.38, delay: 0.04 }}
             >
@@ -56,7 +56,7 @@ function LoginPage() {
                 <motion.span
                   animate={{ opacity: 1, y: 0 }}
                   className="block"
-                  initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
+                  initial={false}
                   key={line}
                   transition={{
                     duration: prefersReducedMotion ? 0 : 0.42,
@@ -70,7 +70,7 @@ function LoginPage() {
             </PageHeading>
             <motion.p
               className="mt-5 max-w-lg text-base leading-7 text-muted-foreground sm:text-lg"
-              initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: prefersReducedMotion ? 0 : 0.4, delay: 0.25 }}
             >
@@ -80,7 +80,7 @@ function LoginPage() {
             <motion.ol
               aria-label="How Quevo works"
               className="mt-9 grid max-w-lg grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2 border-y py-4 sm:gap-4"
-              initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: prefersReducedMotion ? 0 : 0.4, delay: 0.34 }}
             >
@@ -105,7 +105,7 @@ function LoginPage() {
           <motion.section
             aria-labelledby="login-heading"
             className="mx-auto w-full max-w-md rounded-xl border border-border bg-card p-6 text-card-foreground shadow-sm sm:p-8"
-            initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: prefersReducedMotion ? 0 : 0.48, delay: 0.12, ease: 'easeOut' }}
           >

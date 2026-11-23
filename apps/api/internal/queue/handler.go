@@ -12,11 +12,10 @@ import (
 )
 
 type ServiceResponse struct {
-	ID           string `json:"id" binding:"required" example:"10000000-0000-4000-8000-000000000002"`
-	BranchID     string `json:"branchId" binding:"required" example:"10000000-0000-4000-8000-000000000001"`
-	BranchName   string `json:"branchName" binding:"required" example:"Quevo Demo Branch"`
-	Name         string `json:"name" binding:"required" example:"General Service"`
-	BusinessDate string `json:"businessDate" binding:"required" example:"2026-11-07"`
+	ID         string `json:"id" binding:"required" example:"10000000-0000-4000-8000-000000000002"`
+	BranchID   string `json:"branchId" binding:"required" example:"10000000-0000-4000-8000-000000000001"`
+	BranchName string `json:"branchName" binding:"required" example:"Quevo Demo Branch"`
+	Name       string `json:"name" binding:"required" example:"General Service"`
 }
 
 type ServicesResponse struct {

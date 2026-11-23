@@ -41,14 +41,6 @@ export function CustomerServiceSelection({
   const singleService = services.length === 1 ? services[0] : undefined
   const selectedService =
     services.find((service) => service.id === selectedServiceID) ?? singleService
-  const hasActiveTicket = (service: ServiceOption) =>
-    activeTickets.some(
-      (ticket) =>
-        ticket.branchId === service.branchId &&
-        ticket.serviceId === service.id &&
-        ticket.businessDate === service.businessDate,
-    )
-  const selectedServiceHasActiveTicket = selectedService ? hasActiveTicket(selectedService) : false
 
   useEffect(() => {
     if (!joining) joinStartedRef.current = false
@@ -59,12 +51,6 @@ export function CustomerServiceSelection({
     if (joining || joinStartedRef.current) return
     if (!selectedService) {
       setSelectionError('Select a service before joining the queue.')
-      return
-    }
-    if (hasActiveTicket(selectedService)) {
-      setSelectionError(
-        'You already have an active ticket for this service. Open it above to check your status.',
-      )
       return
     }
     setSelectionError('')
@@ -156,10 +142,7 @@ export function CustomerServiceSelection({
               </p>
             </section>
           ) : singleService ? (
-            <fieldset
-              aria-describedby={selectedServiceHasActiveTicket ? 'active-service-note' : undefined}
-              className="border-y py-5"
-            >
+            <fieldset className="border-y py-5">
               <legend className="mb-3 text-sm font-medium text-muted-foreground">
                 Active service
               </legend>
@@ -171,12 +154,6 @@ export function CustomerServiceSelection({
                 <MapPin aria-hidden="true" size={14} />
                 {singleService.branchName}
               </p>
-              {selectedServiceHasActiveTicket ? (
-                <p className="mt-3 text-sm text-muted-foreground" id="active-service-note">
-                  You already have an active ticket for this service. Open it above to check your
-                  status.
-                </p>
-              ) : null}
             </fieldset>
           ) : (
             <fieldset className="space-y-2" disabled={joining}>
@@ -184,21 +161,19 @@ export function CustomerServiceSelection({
               <div className="grid gap-2">
                 {services.map((service) => {
                   const selected = selectedService?.id === service.id
-                  const serviceHasActiveTicket = hasActiveTicket(service)
                   return (
                     <motion.label
-                      className={`group/service flex min-h-20 items-center gap-4 rounded-lg border bg-card px-4 py-4 transition-[border-color,box-shadow,transform] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring ${serviceHasActiveTicket ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:border-foreground/40 hover:shadow-sm'} ${selected ? 'border-brand-green shadow-[inset_3px_0_0_var(--brand-green)]' : 'border-border'}`}
+                      className={`group/service flex min-h-20 cursor-pointer items-center gap-4 rounded-lg border bg-card px-4 py-4 transition-[border-color,box-shadow,transform] hover:border-foreground/40 hover:shadow-sm focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring ${selected ? 'border-brand-green shadow-[inset_3px_0_0_var(--brand-green)]' : 'border-border'}`}
                       htmlFor={`service-${service.id}`}
                       key={service.id}
                       layout
                       transition={{ duration: 0.18, ease: 'easeOut' }}
-                      whileHover={serviceHasActiveTicket ? undefined : { y: -1 }}
-                      whileTap={serviceHasActiveTicket ? undefined : { scale: 0.995 }}
+                      whileHover={{ y: -1 }}
+                      whileTap={{ scale: 0.995 }}
                     >
                       <input
                         checked={selected}
                         className="size-5 shrink-0 accent-brand-green"
-                        disabled={serviceHasActiveTicket}
                         id={`service-${service.id}`}
                         name="service"
                         onChange={() => {
@@ -222,9 +197,7 @@ export function CustomerServiceSelection({
                         </span>
                       </span>
                       <span className="shrink-0 text-right text-sm">
-                        {serviceHasActiveTicket ? (
-                          <span className="text-muted-foreground">Already joined</span>
-                        ) : selected ? (
+                        {selected ? (
                           <span className="inline-flex items-center gap-1 font-medium text-brand-green">
                             <Check aria-hidden="true" size={15} />
                             <span>Selected</span>
@@ -248,9 +221,7 @@ export function CustomerServiceSelection({
           ) : null}
           <Button
             className="min-h-12 w-full px-5 sm:w-auto"
-            disabled={
-              joining || services.length === 0 || !selectedService || selectedServiceHasActiveTicket
-            }
+            disabled={joining || services.length === 0 || !selectedService}
             type="submit"
           >
             {joining ? 'Joining queue…' : 'Join queue'}

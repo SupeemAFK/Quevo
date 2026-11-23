@@ -14,7 +14,7 @@ type LandingHeroProps = {
 
 function reveal(delay: number, reducedMotion: boolean) {
   return {
-    initial: reducedMotion ? false : { opacity: 0, y: 14 },
+    initial: false,
     animate: { opacity: 1, y: 0 },
     transition: {
       duration: reducedMotion ? 0 : 0.48,
@@ -56,7 +56,7 @@ export function LandingHero({ user }: LandingHeroProps) {
                   animate={{ opacity: 1, y: 0 }}
                   aria-hidden="true"
                   className="block"
-                  initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
+                  initial={false}
                   key={line}
                   transition={{
                     duration: prefersReducedMotion ? 0 : 0.45,

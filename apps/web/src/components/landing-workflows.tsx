@@ -32,7 +32,7 @@ const highlights = [
 
 function reveal(delay: number, reducedMotion: boolean) {
   return {
-    initial: reducedMotion ? false : { opacity: 0, y: 10 },
+    initial: false,
     transition: {
       duration: reducedMotion ? 0 : 0.38,
       delay: reducedMotion ? 0 : delay,
@@ -44,8 +44,6 @@ function reveal(delay: number, reducedMotion: boolean) {
 }
 
 function HighlightVisual({ visual }: { visual: (typeof highlights)[number]['visual'] }) {
-  const prefersReducedMotion = usePrefersReducedMotion()
-
   if (visual === 'ticket') {
     return (
       <motion.div
@@ -56,15 +54,7 @@ function HighlightVisual({ visual }: { visual: (typeof highlights)[number]['visu
         <div aria-hidden="true" className="flex items-center gap-2 text-xs">
           <span className="font-mono text-muted-foreground">01</span>
           <span className="relative h-px flex-1 bg-border">
-            <motion.span
-              animate={prefersReducedMotion ? { left: '50%' } : { left: ['0%', '100%'] }}
-              className="absolute top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-green"
-              transition={{
-                duration: 2.8,
-                ease: 'easeInOut',
-                repeat: prefersReducedMotion ? 0 : Infinity,
-              }}
-            />
+            <span className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-green" />
           </span>
           <span className="font-mono text-muted-foreground">03</span>
         </div>
@@ -143,7 +133,7 @@ export function LandingWorkflows() {
         <div className="relative z-10 mx-auto max-w-content px-page py-section">
           <motion.div
             className="grid gap-4 border-b border-border pb-8 md:grid-cols-[1fr_0.7fr] md:items-end"
-            initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
+            initial={false}
             transition={{ duration: prefersReducedMotion ? 0 : 0.45, ease: 'easeOut' }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.25 }}
@@ -181,7 +171,7 @@ export function LandingWorkflows() {
             {highlights.map(({ icon: Icon, audience, title, description, visual }, index) => (
               <motion.article
                 className="group flex min-w-0 flex-col border-b border-border py-6 sm:py-8 lg:border-b-0 lg:border-l lg:pl-6 first:lg:border-l-0 first:lg:pl-0"
-                initial={prefersReducedMotion ? false : { opacity: 0, y: 18 }}
+                initial={false}
                 key={audience}
                 transition={{
                   duration: prefersReducedMotion ? 0 : 0.55,
@@ -225,7 +215,7 @@ export function LandingWorkflows() {
           <motion.a
             className="group mt-7 inline-flex min-h-11 items-center gap-2 text-sm font-medium underline-offset-4 hover:underline focus-visible:outline"
             href="#queue-demo"
-            initial={prefersReducedMotion ? false : { opacity: 0, x: -8 }}
+            initial={false}
             transition={{
               duration: prefersReducedMotion ? 0 : 0.3,
               delay: prefersReducedMotion ? 0 : 0.22,

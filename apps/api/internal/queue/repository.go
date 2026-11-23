@@ -27,7 +27,7 @@ func (r *Repository) ListAvailableServices(ctx context.Context, branchID string)
 	var services []AvailableService
 	query := r.db.WithContext(ctx).
 		Table("services AS s").
-		Select("s.id::text AS id, s.branch_id::text AS branch_id, b.name AS branch_name, s.name, to_char((now() AT TIME ZONE b.timezone)::date, 'YYYY-MM-DD') AS business_date").
+		Select("s.id::text AS id, s.branch_id::text AS branch_id, b.name AS branch_name, s.name").
 		Joins("JOIN branches AS b ON b.id = s.branch_id").
 		Where("s.active = ?", true)
 	if branchID != "" {

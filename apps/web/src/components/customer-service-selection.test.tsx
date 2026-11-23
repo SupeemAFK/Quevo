@@ -29,7 +29,6 @@ const generalService: Service = {
   id: 'service-1',
   branchId: 'branch-1',
   branchName: 'Demo Branch',
-  businessDate: '2026-11-23',
   name: 'General Service',
 }
 
@@ -37,7 +36,6 @@ const passportService: Service = {
   id: 'service-2',
   branchId: 'branch-2',
   branchName: 'City Branch',
-  businessDate: '2026-11-23',
   name: 'Passport Service',
 }
 
@@ -160,24 +158,28 @@ describe('CustomerServiceSelection', () => {
         name: 'View ticket 12 (General Service at Demo Branch). Status: Waiting',
       }),
     ).toHaveAttribute('href', '/tickets/ticket-1')
-    expect(screen.getByRole('radio', { name: /General Service.*Demo Branch/ })).toBeDisabled()
+    expect(screen.getByRole('radio', { name: /General Service.*Demo Branch/ })).toBeEnabled()
     expect(screen.getByRole('radio', { name: /Passport Service.*City Branch/ })).toBeEnabled()
   })
 
-  it('prevents joining a service that already has an active ticket', () => {
+  it('lets the API decide a duplicate join and keeps the active ticket available', async () => {
+    const user = userEvent.setup()
+    const onJoin = vi.fn()
     render(
       <CustomerServiceSelection
         activeTickets={[activeTicket]}
         error=""
         joining={false}
-        onJoin={vi.fn()}
+        onJoin={onJoin}
         services={[generalService]}
       />,
     )
 
-    expect(screen.getByText(/already have an active ticket/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Join queue' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Join queue' })).toBeEnabled()
     expect(screen.getByRole('link', { name: /View ticket 12/ })).toBeEnabled()
+    await user.click(screen.getByRole('button', { name: 'Join queue' }))
+
+    expect(onJoin).toHaveBeenCalledWith(generalService)
   })
 
   it('allows joining today while keeping a previous-day ticket available', async () => {

@@ -1,5 +1,27 @@
 import { expect, test } from '@playwright/test'
 
+test('server-rendered landing and login content stays visible without JavaScript', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({ javaScriptEnabled: false })
+  const page = await context.newPage()
+
+  try {
+    const landing = await page.goto('/')
+    expect(landing?.status()).toBe(200)
+    await expect(page.locator('#hero-heading span').first()).toHaveCSS('opacity', '1')
+    await expect(page.locator('#queue-demo').locator('xpath=..')).toHaveCSS('opacity', '1')
+    await expect(page.locator('#workflows article').first()).toHaveCSS('opacity', '1')
+
+    const login = await page.goto('/login')
+    expect(login?.status()).toBe(200)
+    await expect(page.locator('#login-welcome-heading span').first()).toHaveCSS('opacity', '1')
+    await expect(page.locator('#login-heading').locator('xpath=..')).toHaveCSS('opacity', '1')
+  } finally {
+    await context.close()
+  }
+})
+
 test('landing page explains Quevo and its sample queue stays local', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   const apiRequests: string[] = []
