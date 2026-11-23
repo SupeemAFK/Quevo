@@ -10,6 +10,8 @@ const generalQueue: QueueOption = {
   branchId: 'branch-1',
   branchName: 'Demo Branch',
   serviceId: 'service-1',
+  queueId: 'queue-1',
+  queueName: 'Main queue',
   serviceName: 'General Service',
   businessDate: '2026-11-22',
   waitingCount: 1,
@@ -19,6 +21,8 @@ const passportQueue: QueueOption = {
   branchId: 'branch-2',
   branchName: 'City Branch',
   serviceId: 'service-2',
+  queueId: 'queue-2',
+  queueName: 'Main queue',
   serviceName: 'Passport Service',
   businessDate: '2026-11-22',
   waitingCount: 0,
@@ -32,7 +36,7 @@ describe('OperatorServiceNavigation', () => {
       <OperatorServiceNavigation
         onSelect={onSelect}
         queues={[generalQueue, passportQueue]}
-        selectedQueueKey="branch-1:service-1"
+        selectedQueueKey="branch-1:queue-1"
       />,
     )
 
@@ -49,7 +53,7 @@ describe('OperatorServiceNavigation', () => {
 
     const mobileSelector = screen.getByRole('combobox', { name: 'Service' })
     expect(mobileSelector).toHaveClass('min-h-11')
-    await user.selectOptions(mobileSelector, 'branch-2:service-2')
+    await user.selectOptions(mobileSelector, 'branch-2:queue-2')
 
     expect(onSelect).toHaveBeenCalledWith(passportQueue)
   })
@@ -59,7 +63,7 @@ describe('OperatorServiceNavigation', () => {
       <OperatorServiceNavigation
         onSelect={vi.fn()}
         queues={[generalQueue]}
-        selectedQueueKey="branch-1:service-1"
+        selectedQueueKey="branch-1:queue-1"
       />,
     )
 

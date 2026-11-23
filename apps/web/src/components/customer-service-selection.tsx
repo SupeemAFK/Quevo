@@ -3,6 +3,7 @@ import {
   ArrowRight,
   Check,
   ChevronRight,
+  FileUp,
   Layers3,
   LoaderCircle,
   MapPin,
@@ -25,7 +26,7 @@ type CustomerServiceSelectionProps = {
   activeTickets: ActiveTicket[]
   joining: boolean
   error: string
-  onJoin: (service: ServiceOption) => void
+  onJoin: (service: ServiceOption, queueID: string, requestAnswers: Record<string, string>) => void
 }
 
 export function CustomerServiceSelection({
@@ -36,11 +37,16 @@ export function CustomerServiceSelection({
   onJoin,
 }: CustomerServiceSelectionProps) {
   const [selectedServiceID, setSelectedServiceID] = useState('')
+  const [selectedQueueID, setSelectedQueueID] = useState('')
+  const [answers, setAnswers] = useState<Record<string, string>>({})
   const [selectionError, setSelectionError] = useState('')
   const joinStartedRef = useRef(false)
-  const singleService = services.length === 1 ? services[0] : undefined
   const selectedService =
-    services.find((service) => service.id === selectedServiceID) ?? singleService
+    services.find((service) => service.id === selectedServiceID) ??
+    (services.length === 1 ? services[0] : undefined)
+  const selectedQueue =
+    selectedService?.queues.find((queue) => queue.id === selectedQueueID) ??
+    (selectedService?.queues.length === 1 ? selectedService.queues[0] : undefined)
 
   useEffect(() => {
     if (!joining) joinStartedRef.current = false
@@ -49,13 +55,20 @@ export function CustomerServiceSelection({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (joining || joinStartedRef.current) return
-    if (!selectedService) {
-      setSelectionError('Select a service before joining the queue.')
+    if (!selectedService || !selectedQueue) {
+      setSelectionError('Select a service and queue before joining.')
       return
     }
     setSelectionError('')
     joinStartedRef.current = true
-    onJoin(selectedService)
+    onJoin(selectedService, selectedQueue.id, answers)
+  }
+
+  function selectService(service: ServiceOption) {
+    setSelectedServiceID(service.id)
+    setSelectedQueueID(service.queues.length === 1 ? service.queues[0].id : '')
+    setAnswers({})
+    setSelectionError('')
   }
 
   return (
@@ -141,18 +154,18 @@ export function CustomerServiceSelection({
                 No active services are available right now. Check again later.
               </p>
             </section>
-          ) : singleService ? (
+          ) : services.length === 1 ? (
             <fieldset className="border-y py-5">
               <legend className="mb-3 text-sm font-medium text-muted-foreground">
                 Active service
               </legend>
               <p className="flex items-center gap-2 text-xl font-semibold tracking-tight">
                 <Layers3 aria-hidden="true" size={19} />
-                {singleService.name}
+                {services[0].name}
               </p>
               <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
                 <MapPin aria-hidden="true" size={14} />
-                {singleService.branchName}
+                {services[0].branchName}
               </p>
             </fieldset>
           ) : (
@@ -176,10 +189,7 @@ export function CustomerServiceSelection({
                         className="size-5 shrink-0 accent-brand-green"
                         id={`service-${service.id}`}
                         name="service"
-                        onChange={() => {
-                          setSelectedServiceID(service.id)
-                          setSelectionError('')
-                        }}
+                        onChange={() => selectService(service)}
                         type="radio"
                       />
                       <span className="min-w-0 flex-1">
@@ -196,20 +206,112 @@ export function CustomerServiceSelection({
                           {service.branchName}
                         </span>
                       </span>
-                      <span className="shrink-0 text-right text-sm">
-                        {selected ? (
-                          <span className="inline-flex items-center gap-1 font-medium text-brand-green">
-                            <Check aria-hidden="true" size={15} />
-                            <span>Selected</span>
-                          </span>
-                        ) : null}
-                      </span>
+                      {selected ? (
+                        <Check aria-hidden="true" className="shrink-0 text-brand-green" size={17} />
+                      ) : null}
                     </motion.label>
                   )
                 })}
               </div>
             </fieldset>
           )}
+
+          {selectedService ? (
+            <div className="space-y-5">
+              {selectedService.queues.length > 1 ? (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium" htmlFor="queue-choice">
+                    Choose a queue
+                  </label>
+                  <select
+                    className="min-h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
+                    id="queue-choice"
+                    onChange={(event) => setSelectedQueueID(event.target.value)}
+                    value={selectedQueueID}
+                  >
+                    <option value="">Select a queue</option>
+                    {selectedService.queues.map((queue) => (
+                      <option key={queue.id} value={queue.id}>
+                        {queue.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : selectedQueue ? (
+                <p className="text-sm text-muted-foreground">
+                  Queue: <span className="font-medium text-foreground">{selectedQueue.name}</span>
+                </p>
+              ) : null}
+
+              {selectedService.fields.length > 0 ? (
+                <fieldset className="space-y-4 border-t pt-5">
+                  <legend className="pb-1 text-base font-semibold">
+                    A few details for the team
+                  </legend>
+                  {selectedService.fields.map((field) => (
+                    <div className="space-y-2" key={field.id}>
+                      <label className="text-sm font-medium" htmlFor={`field-${field.id}`}>
+                        {field.label}
+                        {field.required ? <span aria-hidden="true"> *</span> : null}
+                        {field.required ? <span className="sr-only"> required</span> : null}
+                      </label>
+                      {field.type === 'single_select' ? (
+                        <select
+                          className="min-h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
+                          id={`field-${field.id}`}
+                          onChange={(event) =>
+                            setAnswers((current) => ({
+                              ...current,
+                              [field.id]: event.target.value,
+                            }))
+                          }
+                          required={field.required}
+                          value={answers[field.id] ?? ''}
+                        >
+                          <option value="">Choose one</option>
+                          {field.options.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          autoComplete="off"
+                          className="min-h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
+                          id={`field-${field.id}`}
+                          maxLength={200}
+                          onChange={(event) =>
+                            setAnswers((current) => ({
+                              ...current,
+                              [field.id]: event.target.value,
+                            }))
+                          }
+                          required={field.required}
+                          type="text"
+                          value={answers[field.id] ?? ''}
+                        />
+                      )}
+                    </div>
+                  ))}
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    Please don’t enter account or card numbers, ID numbers, passwords, PINs, OTPs,
+                    or income details.
+                  </p>
+                </fieldset>
+              ) : null}
+
+              {selectedService.allowsUploads ? (
+                <p className="flex items-start gap-2 border-t pt-4 text-sm text-muted-foreground">
+                  <FileUp aria-hidden="true" className="mt-0.5 shrink-0" size={16} />
+                  <span>
+                    {selectedService.documentGuidance ||
+                      'You can add supporting documents after receiving your ticket.'}
+                  </span>
+                </p>
+              ) : null}
+            </div>
+          ) : null}
 
           {joining ? <LoadingMessage>Joining queue…</LoadingMessage> : null}
           {selectionError ? <FeedbackMessage kind="error">{selectionError}</FeedbackMessage> : null}
@@ -221,7 +323,7 @@ export function CustomerServiceSelection({
           ) : null}
           <Button
             className="min-h-12 w-full px-5 sm:w-auto"
-            disabled={joining || services.length === 0 || !selectedService}
+            disabled={joining || services.length === 0 || !selectedService || !selectedQueue}
             type="submit"
           >
             {joining ? 'Joining queue…' : 'Join queue'}

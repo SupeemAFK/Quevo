@@ -106,8 +106,8 @@ func TestCustomerQueueAPIWithPostgres(t *testing.T) {
 	if err := json.Unmarshal(services.Body.Bytes(), &serviceList); err != nil {
 		t.Fatalf("decode service list: %v", err)
 	}
-	if len(serviceList.Items) != 1 || serviceList.Items[0].ID != database.DemoServiceID {
-		t.Fatalf("available services = %#v; want only the seeded active service", serviceList.Items)
+	if len(serviceList.Items) != 6 || serviceList.Items[0].ID == "" {
+		t.Fatalf("available services = %#v; want the seeded bank service catalog", serviceList.Items)
 	}
 	activeTickets := queueAPIRequest(router, http.MethodGet, "/api/v1/tickets/active", nil, customerSession)
 	if activeTickets.Code != http.StatusOK {
@@ -160,7 +160,7 @@ func TestCustomerQueueAPIWithPostgres(t *testing.T) {
 	if err := sqlDB.QueryRowContext(ctx, `SELECT count(*) FROM tickets WHERE customer_id = $1 AND business_date = $2`, database.DemoCustomerID, ticket.BusinessDate).Scan(&ticketCount); err != nil {
 		t.Fatalf("count customer tickets after duplicate: %v", err)
 	}
-	if err := sqlDB.QueryRowContext(ctx, `SELECT last_issued FROM queue_sequences WHERE branch_id = $1 AND service_id = $2 AND business_date = $3`, database.DemoBranchID, database.DemoServiceID, ticket.BusinessDate).Scan(&lastIssued); err != nil {
+	if err := sqlDB.QueryRowContext(ctx, `SELECT last_issued FROM queue_sequences WHERE branch_id = $1 AND queue_id = $2 AND business_date = $3`, database.DemoBranchID, database.DemoServiceID, ticket.BusinessDate).Scan(&lastIssued); err != nil {
 		t.Fatalf("read queue number after duplicate: %v", err)
 	}
 	if ticketCount != 1 || lastIssued != 1 {

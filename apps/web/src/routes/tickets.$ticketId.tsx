@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { ArrowLeft, RefreshCw, Ticket } from 'lucide-react'
 import { useState } from 'react'
@@ -8,7 +8,13 @@ import { FeedbackMessage, LoadingMessage } from '@/components/feedback-message'
 import { PageHeading } from '@/components/page-heading'
 import { Button } from '@/components/ui/button'
 import { getCurrentUser } from '@/lib/auth'
-import { customerTicketOptions } from '@/lib/customer-queue'
+import {
+  cancelCustomerTicket,
+  customerQueueOptions,
+  customerTicketOptions,
+} from '@/lib/customer-queue'
+import { ticketDocumentsOptions, uploadTicketDocument } from '@/lib/ticket-documents'
+import { usePageActivity } from '@/lib/use-page-activity'
 
 export const Route = createFileRoute('/tickets/$ticketId')({
   component: CustomerTicketPage,
@@ -23,13 +29,37 @@ export const Route = createFileRoute('/tickets/$ticketId')({
 function CustomerTicketPage() {
   const { user } = Route.useRouteContext()
   const { ticketId } = Route.useParams()
+  const queryClient = useQueryClient()
   const [feedback, setFeedback] = useState<{ message: string; kind: 'success' | 'error' } | null>(
     null,
   )
+  const pageActive = usePageActivity()
   const ticketQuery = useQuery({
     ...customerTicketOptions(user.id, ticketId),
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    refetchInterval: pageActive ? 10_000 : false,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  })
+  const documentsQuery = useQuery({
+    ...ticketDocumentsOptions(`customer:${user.id}`, ticketId),
+    enabled: Boolean(ticketQuery.data?.allowsUploads),
+  })
+  const uploadMutation = useMutation({
+    mutationFn: (file: File) => uploadTicketDocument(ticketId, file),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ticketDocumentsOptions(`customer:${user.id}`, ticketId).queryKey,
+      })
+      setFeedback({ message: 'Document uploaded.', kind: 'success' })
+    },
+  })
+  const cancelMutation = useMutation({
+    mutationFn: () => cancelCustomerTicket({ data: ticketId }),
+    onSuccess: async (ticket) => {
+      queryClient.setQueryData(customerTicketOptions(user.id, ticketId).queryKey, ticket)
+      await queryClient.invalidateQueries({ queryKey: customerQueueOptions(user.id).queryKey })
+      setFeedback({ message: 'Ticket cancelled.', kind: 'success' })
+    },
   })
 
   async function refreshStatus() {
@@ -67,9 +97,40 @@ function CustomerTicketPage() {
           <LoadingMessage>Loading your ticket…</LoadingMessage>
         ) : ticketQuery.data ? (
           <CustomerTicketDetails
-            feedback={feedback}
+            cancelling={cancelMutation.isPending}
+            documents={documentsQuery.data}
+            documentsError={documentsQuery.isError ? documentsQuery.error.message : ''}
+            feedback={
+              feedback ??
+              (cancelMutation.error
+                ? { message: cancelMutation.error.message, kind: 'error' }
+                : uploadMutation.error
+                  ? { message: uploadMutation.error.message, kind: 'error' }
+                  : ticketQuery.isRefetchError
+                    ? {
+                        message:
+                          'Could not sync the latest status. Showing the last saved ticket; try refreshing again.',
+                        kind: 'error',
+                      }
+                    : null)
+            }
+            onCancel={() => {
+              if (
+                window.confirm(
+                  'Leave this queue? Your waiting ticket will be cancelled and cannot be restored.',
+                )
+              ) {
+                setFeedback(null)
+                cancelMutation.mutate()
+              }
+            }}
             onRefresh={() => void refreshStatus()}
+            onUpload={(file) => {
+              setFeedback(null)
+              uploadMutation.mutate(file)
+            }}
             refreshing={ticketQuery.isFetching}
+            uploading={uploadMutation.isPending}
             ticket={ticketQuery.data}
           />
         ) : ticketQuery.isError ? (

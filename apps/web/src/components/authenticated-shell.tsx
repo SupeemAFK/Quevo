@@ -11,7 +11,7 @@ import { Button } from './ui/button'
 
 type Props = {
   user: Identity
-  currentSection: 'customer' | 'operator'
+  currentSection: 'customer' | 'operator' | 'manager'
   children: React.ReactNode
 }
 
@@ -20,9 +20,10 @@ export function AuthenticatedShell({ user, currentSection, children }: Props) {
   const router = useRouter()
   const [signOutError, setSignOutError] = useState('')
   const isCustomer = user.role === 'CUSTOMER'
-  const queuePath = isCustomer ? '/customer' : '/operator'
-  const queueLabel = isCustomer ? 'Choose a service' : 'Operator queue'
-  const roleLabel = isCustomer ? 'Customer' : 'Operator'
+  const isManager = user.role === 'BRANCH_MANAGER'
+  const queuePath = isCustomer ? '/customer' : isManager ? '/manager' : '/operator'
+  const queueLabel = isCustomer ? 'Choose a service' : isManager ? 'Branch setup' : 'Operator queue'
+  const roleLabel = isCustomer ? 'Customer' : isManager ? 'Branch manager' : 'Operator'
 
   async function handleSignOut() {
     setSignOutError('')
@@ -59,7 +60,9 @@ export function AuthenticatedShell({ user, currentSection, children }: Props) {
             <nav aria-label="Application" className="flex items-center">
               <Link
                 aria-current={
-                  currentSection === (isCustomer ? 'customer' : 'operator') ? 'page' : undefined
+                  currentSection === (isCustomer ? 'customer' : isManager ? 'manager' : 'operator')
+                    ? 'page'
+                    : undefined
                 }
                 className="inline-flex min-h-11 items-center rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline aria-[current=page]:font-semibold aria-[current=page]:text-foreground"
                 to={queuePath}

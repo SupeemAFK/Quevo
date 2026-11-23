@@ -1,5 +1,14 @@
 import type { LucideIcon } from 'lucide-react'
-import { ArrowRight, Check, CircleDot, Clock3, Megaphone, SkipForward } from 'lucide-react'
+import {
+  ArrowRight,
+  Ban,
+  Check,
+  CircleDot,
+  Clock3,
+  Megaphone,
+  SkipForward,
+  UserX,
+} from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { usePrefersReducedMotion } from '@/lib/use-prefers-reduced-motion'
 
@@ -39,6 +48,16 @@ const statusPresentations: Record<string, TicketStatusPresentation> = {
     label: 'Skipped',
     className: 'border-status-warning/40 text-status-warning',
     Icon: SkipForward,
+  },
+  CANCELLED: {
+    label: 'Cancelled',
+    className: 'border-status-danger/40 text-status-danger',
+    Icon: Ban,
+  },
+  NO_SHOW: {
+    label: 'No-show',
+    className: 'border-status-warning/40 text-status-warning',
+    Icon: UserX,
   },
 }
 

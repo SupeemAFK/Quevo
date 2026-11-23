@@ -97,12 +97,14 @@
             "auth.Role": {
                 "enum": [
                     "CUSTOMER",
-                    "OPERATOR"
+                    "OPERATOR",
+                    "BRANCH_MANAGER"
                 ],
                 "type": "string",
                 "x-enum-varnames": [
                     "RoleCustomer",
-                    "RoleOperator"
+                    "RoleOperator",
+                    "RoleBranchManager"
                 ]
             },
             "health.Response": {
@@ -114,6 +116,21 @@
                 },
                 "required": [
                     "status"
+                ],
+                "type": "object"
+            },
+            "queue.AvailableQueue": {
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name"
                 ],
                 "type": "object"
             },
@@ -132,6 +149,168 @@
                 ],
                 "type": "object"
             },
+            "queue.FormConfiguration": {
+                "properties": {
+                    "allowsUploads": {
+                        "type": "boolean"
+                    },
+                    "documentGuidance": {
+                        "type": "string"
+                    },
+                    "fields": {
+                        "items": {
+                            "$ref": "#/components/schemas/queue.ServiceFormFieldInput"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
+                    },
+                    "requiresDocuments": {
+                        "type": "boolean"
+                    }
+                },
+                "type": "object"
+            },
+            "queue.JoinTicketRequest": {
+                "properties": {
+                    "requestAnswers": {
+                        "$ref": "#/components/schemas/queue.RequestAnswers"
+                    },
+                    "requestLabels": {
+                        "$ref": "#/components/schemas/queue.RequestAnswers"
+                    }
+                },
+                "type": "object"
+            },
+            "queue.ManagedBranch": {
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "queue.ManagerCatalog": {
+                "properties": {
+                    "branch": {
+                        "$ref": "#/components/schemas/queue.ManagedBranch"
+                    },
+                    "counters": {
+                        "items": {
+                            "$ref": "#/components/schemas/queue.ManagerCounter"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
+                    },
+                    "operators": {
+                        "items": {
+                            "$ref": "#/components/schemas/queue.ManagerOperator"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
+                    },
+                    "services": {
+                        "items": {
+                            "$ref": "#/components/schemas/queue.ManagerService"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
+                    }
+                },
+                "type": "object"
+            },
+            "queue.ManagerCounter": {
+                "properties": {
+                    "active": {
+                        "type": "boolean"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "operators": {
+                        "items": {
+                            "$ref": "#/components/schemas/queue.ManagerOperator"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
+                    },
+                    "queueIds": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
+                    }
+                },
+                "type": "object"
+            },
+            "queue.ManagerOperator": {
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "queue.ManagerQueue": {
+                "properties": {
+                    "active": {
+                        "type": "boolean"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "queue.ManagerService": {
+                "properties": {
+                    "active": {
+                        "type": "boolean"
+                    },
+                    "allowsUploads": {
+                        "type": "boolean"
+                    },
+                    "documentGuidance": {
+                        "type": "string"
+                    },
+                    "fields": {
+                        "items": {
+                            "$ref": "#/components/schemas/queue.ServiceFormField"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "queues": {
+                        "items": {
+                            "$ref": "#/components/schemas/queue.ManagerQueue"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
+                    },
+                    "requiresDocuments": {
+                        "type": "boolean"
+                    }
+                },
+                "type": "object"
+            },
             "queue.OperatorQueueDetailResponse": {
                 "properties": {
                     "current": {
@@ -139,6 +318,13 @@
                     },
                     "queue": {
                         "$ref": "#/components/schemas/queue.OperatorQueueResponse"
+                    },
+                    "recent": {
+                        "items": {
+                            "$ref": "#/components/schemas/queue.OperatorTicketResponse"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
                     },
                     "waiting": {
                         "items": {
@@ -150,6 +336,7 @@
                 },
                 "required": [
                     "queue",
+                    "recent",
                     "waiting"
                 ],
                 "type": "object"
@@ -163,6 +350,12 @@
                         "type": "string"
                     },
                     "businessDate": {
+                        "type": "string"
+                    },
+                    "queueId": {
+                        "type": "string"
+                    },
+                    "queueName": {
                         "type": "string"
                     },
                     "serviceId": {
@@ -179,6 +372,8 @@
                     "branchId",
                     "branchName",
                     "businessDate",
+                    "queueId",
+                    "queueName",
                     "serviceId",
                     "serviceName"
                 ],
@@ -201,6 +396,9 @@
             },
             "queue.OperatorTicketResponse": {
                 "properties": {
+                    "allowsUploads": {
+                        "type": "boolean"
+                    },
                     "businessDate": {
                         "type": "string"
                     },
@@ -209,6 +407,15 @@
                     },
                     "joinedAt": {
                         "type": "string"
+                    },
+                    "requestAnswers": {
+                        "$ref": "#/components/schemas/queue.RequestAnswers"
+                    },
+                    "requestLabels": {
+                        "$ref": "#/components/schemas/queue.RequestAnswers"
+                    },
+                    "requiresDocuments": {
+                        "type": "boolean"
                     },
                     "status": {
                         "type": "string"
@@ -221,6 +428,8 @@
                     "businessDate",
                     "id",
                     "joinedAt",
+                    "requestAnswers",
+                    "requestLabels",
                     "status",
                     "ticketNumber"
                 ],
@@ -248,8 +457,73 @@
                 ],
                 "type": "object"
             },
+            "queue.RequestAnswers": {
+                "additionalProperties": {
+                    "type": "string"
+                },
+                "type": "object"
+            },
+            "queue.ServiceFormField": {
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "options": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
+                    },
+                    "position": {
+                        "type": "integer"
+                    },
+                    "required": {
+                        "type": "boolean"
+                    },
+                    "type": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "label",
+                    "options",
+                    "position",
+                    "required",
+                    "type"
+                ],
+                "type": "object"
+            },
+            "queue.ServiceFormFieldInput": {
+                "properties": {
+                    "label": {
+                        "type": "string"
+                    },
+                    "options": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
+                    },
+                    "required": {
+                        "type": "boolean"
+                    },
+                    "type": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
             "queue.ServiceResponse": {
                 "properties": {
+                    "allowsUploads": {
+                        "type": "boolean"
+                    },
                     "branchId": {
                         "example": "10000000-0000-4000-8000-000000000001",
                         "type": "string"
@@ -258,6 +532,16 @@
                         "example": "Quevo Demo Branch",
                         "type": "string"
                     },
+                    "documentGuidance": {
+                        "type": "string"
+                    },
+                    "fields": {
+                        "items": {
+                            "$ref": "#/components/schemas/queue.ServiceFormField"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
+                    },
                     "id": {
                         "example": "10000000-0000-4000-8000-000000000002",
                         "type": "string"
@@ -265,14 +549,49 @@
                     "name": {
                         "example": "General Service",
                         "type": "string"
+                    },
+                    "queues": {
+                        "items": {
+                            "$ref": "#/components/schemas/queue.AvailableQueue"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
+                    },
+                    "requiresDocuments": {
+                        "type": "boolean"
                     }
                 },
                 "required": [
                     "branchId",
                     "branchName",
+                    "fields",
                     "id",
-                    "name"
+                    "name",
+                    "queues"
                 ],
+                "type": "object"
+            },
+            "queue.ServiceSummary": {
+                "properties": {
+                    "averageServiceSeconds": {
+                        "type": "number"
+                    },
+                    "averageWaitSeconds": {
+                        "type": "number"
+                    },
+                    "cancelled": {
+                        "type": "integer"
+                    },
+                    "completed": {
+                        "type": "integer"
+                    },
+                    "noShow": {
+                        "type": "integer"
+                    },
+                    "skipped": {
+                        "type": "integer"
+                    }
+                },
                 "type": "object"
             },
             "queue.ServicesResponse": {
@@ -290,8 +609,69 @@
                 ],
                 "type": "object"
             },
+            "queue.TicketDocument": {
+                "properties": {
+                    "byteSize": {
+                        "type": "integer"
+                    },
+                    "createdAt": {
+                        "type": "string"
+                    },
+                    "fileName": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "mediaType": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "queue.TicketDocumentsResponse": {
+                "properties": {
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/queue.TicketDocument"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
+                    }
+                },
+                "required": [
+                    "items"
+                ],
+                "type": "object"
+            },
+            "queue.TicketEvent": {
+                "properties": {
+                    "actorId": {
+                        "type": "string"
+                    },
+                    "actorName": {
+                        "type": "string"
+                    },
+                    "fromStatus": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "occurredAt": {
+                        "type": "string"
+                    },
+                    "toStatus": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
             "queue.TicketResponse": {
                 "properties": {
+                    "allowsUploads": {
+                        "type": "boolean"
+                    },
                     "branchId": {
                         "example": "10000000-0000-4000-8000-000000000001",
                         "type": "string"
@@ -304,6 +684,9 @@
                         "example": "2026-11-07",
                         "type": "string"
                     },
+                    "documentGuidance": {
+                        "type": "string"
+                    },
                     "id": {
                         "example": "d6d26a41-5c50-4ca9-b4f7-e82d7558da79",
                         "type": "string"
@@ -311,6 +694,21 @@
                     "joinedAt": {
                         "example": "2026-11-07T12:00:00Z",
                         "type": "string"
+                    },
+                    "queueId": {
+                        "type": "string"
+                    },
+                    "queueName": {
+                        "type": "string"
+                    },
+                    "requestAnswers": {
+                        "$ref": "#/components/schemas/queue.RequestAnswers"
+                    },
+                    "requestLabels": {
+                        "$ref": "#/components/schemas/queue.RequestAnswers"
+                    },
+                    "requiresDocuments": {
+                        "type": "boolean"
                     },
                     "serviceId": {
                         "example": "10000000-0000-4000-8000-000000000002",
@@ -335,10 +733,114 @@
                     "businessDate",
                     "id",
                     "joinedAt",
+                    "queueId",
+                    "queueName",
+                    "requestAnswers",
+                    "requestLabels",
                     "serviceId",
                     "serviceName",
                     "status",
                     "ticketNumber"
+                ],
+                "type": "object"
+            },
+            "queue.assignmentInput": {
+                "properties": {
+                    "operatorIds": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
+                    },
+                    "queueIds": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
+                    }
+                },
+                "type": "object"
+            },
+            "queue.historyResponse": {
+                "properties": {
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/queue.TicketEvent"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
+                    },
+                    "limit": {
+                        "type": "integer"
+                    },
+                    "offset": {
+                        "type": "integer"
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "items"
+                ],
+                "type": "object"
+            },
+            "queue.managedBranchesResponse": {
+                "properties": {
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/queue.ManagedBranch"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
+                    }
+                },
+                "required": [
+                    "items"
+                ],
+                "type": "object"
+            },
+            "queue.managerCounterInput": {
+                "properties": {
+                    "active": {
+                        "type": "boolean"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "name"
+                ],
+                "type": "object"
+            },
+            "queue.managerQueueInput": {
+                "properties": {
+                    "active": {
+                        "type": "boolean"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "name"
+                ],
+                "type": "object"
+            },
+            "queue.managerServiceInput": {
+                "properties": {
+                    "active": {
+                        "type": "boolean"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "name"
                 ],
                 "type": "object"
             }
@@ -543,6 +1045,117 @@
                 ]
             }
         },
+        "/branches/{branchId}/queues/{queueId}/tickets": {
+            "post": {
+                "operationId": "postCustomerQueueTicket",
+                "parameters": [
+                    {
+                        "description": "Branch ID",
+                        "in": "path",
+                        "name": "branchId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Queue ID",
+                        "in": "path",
+                        "name": "queueId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/queue.JoinTicketRequest",
+                                "summary": "request",
+                                "description": "Customer request details"
+                            }
+                        }
+                    },
+                    "description": "Customer request details",
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.TicketResponse"
+                                }
+                            }
+                        },
+                        "description": "Created"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Join a selected queue",
+                "tags": [
+                    "tickets"
+                ]
+            }
+        },
         "/branches/{branchId}/services/{serviceId}/tickets": {
             "post": {
                 "description": "Creates a WAITING ticket and allocates its number using the branch-local business date.",
@@ -681,6 +1294,1002 @@
                 "summary": "Check API health",
                 "tags": [
                     "health"
+                ]
+            }
+        },
+        "/manager/branches": {
+            "get": {
+                "operationId": "getManagerBranches",
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.managedBranchesResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "List managed branches",
+                "tags": [
+                    "manager"
+                ]
+            }
+        },
+        "/manager/branches/{branchId}/catalog": {
+            "get": {
+                "operationId": "getManagerCatalog",
+                "parameters": [
+                    {
+                        "description": "Branch ID",
+                        "in": "path",
+                        "name": "branchId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.ManagerCatalog"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Get branch catalog",
+                "tags": [
+                    "manager"
+                ]
+            }
+        },
+        "/manager/branches/{branchId}/counters": {
+            "post": {
+                "operationId": "postManagerCounter",
+                "parameters": [
+                    {
+                        "description": "Branch ID",
+                        "in": "path",
+                        "name": "branchId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/queue.managerCounterInput",
+                                "summary": "request",
+                                "description": "Counter name"
+                            }
+                        }
+                    },
+                    "description": "Counter name",
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Create a branch counter",
+                "tags": [
+                    "manager"
+                ]
+            }
+        },
+        "/manager/branches/{branchId}/counters/{counterId}": {
+            "patch": {
+                "operationId": "patchManagerCounter",
+                "parameters": [
+                    {
+                        "description": "Branch ID",
+                        "in": "path",
+                        "name": "branchId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Counter ID",
+                        "in": "path",
+                        "name": "counterId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/queue.managerCounterInput",
+                                "summary": "request",
+                                "description": "Counter settings"
+                            }
+                        }
+                    },
+                    "description": "Counter settings",
+                    "required": true
+                },
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Update a branch counter",
+                "tags": [
+                    "manager"
+                ]
+            }
+        },
+        "/manager/branches/{branchId}/counters/{counterId}/assignments": {
+            "put": {
+                "operationId": "putManagerCounterAssignments",
+                "parameters": [
+                    {
+                        "description": "Branch ID",
+                        "in": "path",
+                        "name": "branchId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Counter ID",
+                        "in": "path",
+                        "name": "counterId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/queue.assignmentInput",
+                                "summary": "request",
+                                "description": "Queue and operator IDs"
+                            }
+                        }
+                    },
+                    "description": "Queue and operator IDs",
+                    "required": true
+                },
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Set counter assignments",
+                "tags": [
+                    "manager"
+                ]
+            }
+        },
+        "/manager/branches/{branchId}/queues/{queueId}": {
+            "patch": {
+                "operationId": "patchManagerQueue",
+                "parameters": [
+                    {
+                        "description": "Branch ID",
+                        "in": "path",
+                        "name": "branchId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Queue ID",
+                        "in": "path",
+                        "name": "queueId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/queue.managerQueueInput",
+                                "summary": "request",
+                                "description": "Queue settings"
+                            }
+                        }
+                    },
+                    "description": "Queue settings",
+                    "required": true
+                },
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Update a service queue",
+                "tags": [
+                    "manager"
+                ]
+            }
+        },
+        "/manager/branches/{branchId}/services": {
+            "post": {
+                "operationId": "postManagerService",
+                "parameters": [
+                    {
+                        "description": "Branch ID",
+                        "in": "path",
+                        "name": "branchId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/queue.managerServiceInput",
+                                "summary": "request",
+                                "description": "Service name"
+                            }
+                        }
+                    },
+                    "description": "Service name",
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.ManagerService"
+                                }
+                            }
+                        },
+                        "description": "Created"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Create a service",
+                "tags": [
+                    "manager"
+                ]
+            }
+        },
+        "/manager/branches/{branchId}/services/{serviceId}": {
+            "patch": {
+                "operationId": "patchManagerService",
+                "parameters": [
+                    {
+                        "description": "Branch ID",
+                        "in": "path",
+                        "name": "branchId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Service ID",
+                        "in": "path",
+                        "name": "serviceId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/queue.managerServiceInput",
+                                "summary": "request",
+                                "description": "Service settings"
+                            }
+                        }
+                    },
+                    "description": "Service settings",
+                    "required": true
+                },
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Update a service",
+                "tags": [
+                    "manager"
+                ]
+            }
+        },
+        "/manager/branches/{branchId}/services/{serviceId}/form": {
+            "put": {
+                "operationId": "putManagerServiceForm",
+                "parameters": [
+                    {
+                        "description": "Branch ID",
+                        "in": "path",
+                        "name": "branchId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Service ID",
+                        "in": "path",
+                        "name": "serviceId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/queue.FormConfiguration",
+                                "summary": "request",
+                                "description": "Request form configuration"
+                            }
+                        }
+                    },
+                    "description": "Request form configuration",
+                    "required": true
+                },
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Save a service request form",
+                "tags": [
+                    "manager"
+                ]
+            }
+        },
+        "/manager/branches/{branchId}/services/{serviceId}/queues": {
+            "post": {
+                "operationId": "postManagerQueue",
+                "parameters": [
+                    {
+                        "description": "Branch ID",
+                        "in": "path",
+                        "name": "branchId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Service ID",
+                        "in": "path",
+                        "name": "serviceId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/queue.managerQueueInput",
+                                "summary": "request",
+                                "description": "Queue name"
+                            }
+                        }
+                    },
+                    "description": "Queue name",
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Create a service queue",
+                "tags": [
+                    "manager"
+                ]
+            }
+        },
+        "/manager/branches/{branchId}/services/{serviceId}/summary": {
+            "get": {
+                "operationId": "getManagerServiceSummary",
+                "parameters": [
+                    {
+                        "description": "Branch ID",
+                        "in": "path",
+                        "name": "branchId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Service ID",
+                        "in": "path",
+                        "name": "serviceId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Start UTC date",
+                        "in": "query",
+                        "name": "from",
+                        "required": true,
+                        "schema": {
+                            "format": "date",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "End UTC date",
+                        "in": "query",
+                        "name": "to",
+                        "required": true,
+                        "schema": {
+                            "format": "date",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.ServiceSummary"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Get service summary",
+                "tags": [
+                    "manager"
+                ]
+            }
+        },
+        "/manager/tickets/{ticketId}/history": {
+            "get": {
+                "operationId": "getTicketHistory",
+                "parameters": [
+                    {
+                        "description": "Ticket ID",
+                        "in": "path",
+                        "name": "ticketId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Maximum events",
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "default": 50,
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Events to skip",
+                        "in": "query",
+                        "name": "offset",
+                        "schema": {
+                            "default": 0,
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.historyResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Get ticket status history",
+                "tags": [
+                    "tickets"
+                ]
+            }
+        },
+        "/operator/branches/{branchId}/queues/{queueId}/tickets": {
+            "get": {
+                "operationId": "getOperatorQueueByID",
+                "parameters": [
+                    {
+                        "description": "Branch ID",
+                        "in": "path",
+                        "name": "branchId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Queue ID",
+                        "in": "path",
+                        "name": "queueId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.OperatorQueueDetailResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Get an authorized queue",
+                "tags": [
+                    "operator"
+                ]
+            }
+        },
+        "/operator/branches/{branchId}/queues/{queueId}/tickets/call-next": {
+            "post": {
+                "operationId": "postOperatorCallNextByQueue",
+                "parameters": [
+                    {
+                        "description": "Branch ID",
+                        "in": "path",
+                        "name": "branchId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Queue ID",
+                        "in": "path",
+                        "name": "queueId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.OperatorTicketResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "204": {
+                        "description": "No waiting ticket"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Call the next waiting ticket in a queue",
+                "tags": [
+                    "operator"
                 ]
             }
         },
@@ -1062,6 +2671,130 @@
                     }
                 ],
                 "summary": "Complete an assigned ticket",
+                "tags": [
+                    "operator"
+                ]
+            }
+        },
+        "/operator/tickets/{ticketId}/history": {
+            "get": {
+                "operationId": "getOperatorTicketHistory",
+                "parameters": [
+                    {
+                        "description": "Ticket ID",
+                        "in": "path",
+                        "name": "ticketId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Maximum events",
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "default": 50,
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Events to skip",
+                        "in": "query",
+                        "name": "offset",
+                        "schema": {
+                            "default": 0,
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.historyResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Get ticket status history",
+                "tags": [
+                    "operator"
+                ]
+            }
+        },
+        "/operator/tickets/{ticketId}/no-show": {
+            "post": {
+                "operationId": "postOperatorNoShowTicket",
+                "parameters": [
+                    {
+                        "description": "Ticket ID",
+                        "in": "path",
+                        "name": "ticketId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.OperatorTicketResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Mark a called ticket as no-show",
                 "tags": [
                     "operator"
                 ]
@@ -1532,6 +3265,287 @@
                     }
                 ],
                 "summary": "Get my ticket",
+                "tags": [
+                    "tickets"
+                ]
+            }
+        },
+        "/tickets/{ticketId}/cancel": {
+            "post": {
+                "operationId": "postCustomerCancelTicket",
+                "parameters": [
+                    {
+                        "description": "Ticket ID",
+                        "in": "path",
+                        "name": "ticketId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.TicketResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Cancel a waiting ticket",
+                "tags": [
+                    "tickets"
+                ]
+            }
+        },
+        "/tickets/{ticketId}/documents": {
+            "get": {
+                "operationId": "getTicketDocuments",
+                "parameters": [
+                    {
+                        "description": "Ticket ID",
+                        "in": "path",
+                        "name": "ticketId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.TicketDocumentsResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "List ticket documents",
+                "tags": [
+                    "tickets"
+                ]
+            },
+            "post": {
+                "operationId": "postCustomerTicketDocument",
+                "parameters": [
+                    {
+                        "description": "Ticket ID",
+                        "in": "path",
+                        "name": "ticketId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "file": {
+                                        "description": "PDF, PNG, or JPG file (10 MB maximum)",
+                                        "format": "binary",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "description": "PDF, PNG, or JPG file (10 MB maximum)",
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.TicketDocument"
+                                }
+                            }
+                        },
+                        "description": "Created"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Upload a ticket document",
+                "tags": [
+                    "tickets"
+                ]
+            }
+        },
+        "/tickets/{ticketId}/documents/{documentId}": {
+            "get": {
+                "operationId": "getTicketDocument",
+                "parameters": [
+                    {
+                        "description": "Ticket ID",
+                        "in": "path",
+                        "name": "ticketId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Document ID",
+                        "in": "path",
+                        "name": "documentId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/octet-stream": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "description": "Binary document contents"
+                    },
+                    "401": {
+                        "content": {
+                            "application/octet-stream": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/octet-stream": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/octet-stream": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Download a ticket document",
                 "tags": [
                     "tickets"
                 ]

@@ -5,8 +5,9 @@ import "time"
 type Role string
 
 const (
-	RoleCustomer Role = "CUSTOMER"
-	RoleOperator Role = "OPERATOR"
+	RoleCustomer      Role = "CUSTOMER"
+	RoleOperator      Role = "OPERATOR"
+	RoleBranchManager Role = "BRANCH_MANAGER"
 )
 
 // User is the authentication data needed for identity and authorization.

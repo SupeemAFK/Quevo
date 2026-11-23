@@ -11,7 +11,7 @@ type Props = {
 }
 
 function keyFor(queue: QueueOption) {
-  return `${queue.branchId}:${queue.serviceId}`
+  return `${queue.branchId}:${queue.queueId}`
 }
 
 export function OperatorServiceNavigation({ queues, selectedQueueKey, onSelect }: Props) {
@@ -38,7 +38,7 @@ export function OperatorServiceNavigation({ queues, selectedQueueKey, onSelect }
         >
           {queues.map((queue) => (
             <option key={keyFor(queue)} value={keyFor(queue)}>
-              {queue.serviceName} · {queue.branchName}
+              {queue.serviceName} · {queue.queueName} · {queue.branchName}
             </option>
           ))}
         </select>
@@ -70,7 +70,7 @@ export function OperatorServiceNavigation({ queues, selectedQueueKey, onSelect }
                   <span className="flex items-center justify-between gap-2 truncate">
                     <span className="flex items-center gap-2 truncate">
                       <Layers3 aria-hidden="true" className="shrink-0" size={16} />
-                      {queue.serviceName}
+                      {queue.serviceName} · {queue.queueName}
                     </span>
                     {active ? (
                       <Check aria-hidden="true" className="shrink-0 text-brand-green" size={16} />

@@ -30,6 +30,8 @@ const generalService: Service = {
   branchId: 'branch-1',
   branchName: 'Demo Branch',
   name: 'General Service',
+  queues: [{ id: 'queue-1', name: 'Main queue' }],
+  fields: [],
 }
 
 const passportService: Service = {
@@ -37,6 +39,8 @@ const passportService: Service = {
   branchId: 'branch-2',
   branchName: 'City Branch',
   name: 'Passport Service',
+  queues: [{ id: 'queue-2', name: 'Main queue' }],
+  fields: [],
 }
 
 const activeTicket: ActiveTicket = {
@@ -45,6 +49,10 @@ const activeTicket: ActiveTicket = {
   branchName: 'Demo Branch',
   businessDate: '2026-11-23',
   joinedAt: '2026-11-23T10:00:00Z',
+  queueId: 'queue-1',
+  queueName: 'Main queue',
+  requestAnswers: {},
+  requestLabels: {},
   serviceId: 'service-1',
   serviceName: 'General Service',
   status: 'WAITING',
@@ -79,7 +87,7 @@ describe('CustomerServiceSelection', () => {
     expect(screen.getByRole('button', { name: 'Join queue' })).toHaveFocus()
     await user.keyboard('{Enter}')
 
-    expect(onJoin).toHaveBeenCalledWith(generalService)
+    expect(onJoin).toHaveBeenCalledWith(generalService, 'queue-1', {})
   })
 
   it('offers multiple services as keyboard-operable radio choices', async () => {
@@ -104,7 +112,39 @@ describe('CustomerServiceSelection', () => {
     expect(screen.getByRole('button', { name: 'Join queue' })).toBeEnabled()
     await user.click(screen.getByRole('button', { name: 'Join queue' }))
 
-    expect(onJoin).toHaveBeenCalledWith(passportService)
+    expect(onJoin).toHaveBeenCalledWith(passportService, 'queue-2', {})
+  })
+
+  it('collects the configured queue and service-specific answer before joining', async () => {
+    const user = userEvent.setup()
+    const onJoin = vi.fn()
+    const bankService: Service = {
+      ...generalService,
+      queues: [{ id: 'account-queue', name: 'Account opening' }],
+      fields: [
+        {
+          id: 'request-type',
+          position: 1,
+          type: 'single_select',
+          label: 'Account type',
+          required: true,
+          options: ['Everyday', 'Savings'],
+        },
+      ],
+    }
+    render(
+      <CustomerServiceSelection
+        activeTickets={[]}
+        error=""
+        joining={false}
+        onJoin={onJoin}
+        services={[bankService]}
+      />,
+    )
+
+    await user.selectOptions(screen.getByLabelText(/Account type/), 'Savings')
+    await user.click(screen.getByRole('button', { name: 'Join queue' }))
+    expect(onJoin).toHaveBeenCalledWith(bankService, 'account-queue', { 'request-type': 'Savings' })
   })
 
   it('explains that a service must be chosen before the join action is available', () => {
@@ -179,7 +219,7 @@ describe('CustomerServiceSelection', () => {
     expect(screen.getByRole('link', { name: /View ticket 12/ })).toBeEnabled()
     await user.click(screen.getByRole('button', { name: 'Join queue' }))
 
-    expect(onJoin).toHaveBeenCalledWith(generalService)
+    expect(onJoin).toHaveBeenCalledWith(generalService, 'queue-1', {})
   })
 
   it('allows joining today while keeping a previous-day ticket available', async () => {
@@ -199,7 +239,7 @@ describe('CustomerServiceSelection', () => {
     expect(screen.getByRole('button', { name: 'Join queue' })).toBeEnabled()
     await user.click(screen.getByRole('button', { name: 'Join queue' }))
 
-    expect(onJoin).toHaveBeenCalledWith(generalService)
+    expect(onJoin).toHaveBeenCalledWith(generalService, 'queue-1', {})
   })
 
   it('guards against rapid duplicate join events before the pending state rerenders', async () => {

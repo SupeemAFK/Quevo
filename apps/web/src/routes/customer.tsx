@@ -28,7 +28,12 @@ function CustomerServicesPage() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const joinMutation = useMutation({
-    mutationFn: (service: { branchId: string; serviceId: string }) => joinQueue({ data: service }),
+    mutationFn: (service: {
+      branchId: string
+      serviceId: string
+      queueId: string
+      requestAnswers: Record<string, string>
+    }) => joinQueue({ data: service }),
     onError: async () => {
       await queryClient.invalidateQueries({ queryKey: customerQueueOptions(user.id).queryKey })
     },
@@ -95,9 +100,14 @@ function CustomerServicesPage() {
             error={joinMutation.error?.message ?? ''}
             activeTickets={queueQuery.data.activeTickets}
             joining={joinMutation.isPending}
-            onJoin={(service) => {
+            onJoin={(service, queueID, requestAnswers) => {
               joinMutation.reset()
-              joinMutation.mutate({ branchId: service.branchId, serviceId: service.id })
+              joinMutation.mutate({
+                branchId: service.branchId,
+                serviceId: service.id,
+                queueId: queueID,
+                requestAnswers,
+              })
             }}
             services={queueQuery.data.services}
           />

@@ -1,6 +1,6 @@
 # Quevo Feature Inventory
 
-**Status:** Draft baseline cross-checked against the supplied course documents; feature interpretations and proposals are labeled in the source-basis column.
+**Status:** Baseline and implementation record. Feature interpretations and proposals are labeled in the source-basis column; the 2026-11-24 update below records delivery of the formerly later-sprint work.
 **Sources:** group_work_specs_v1.pdf (§§5–8; draft for instructor review) and project_deliverable_1_v1.pdf (§§2–3), plus the Quevo product scope in srs.md.
 **Planning note:** Sprint allocations are planning proposals. Step 3 will confirm sprint goals, feasibility, and dependencies.
 
@@ -30,4 +30,13 @@ Feature IDs are stable. Keep an existing ID attached to a feature if its descrip
 
 Sprint 1 is the customer/operator vertical slice from identity through ticket completion or skip, with a seeded service queue and persisted ticket state. Sprint 2 is proposed for service/queue administration, counter/operator assignments, cancellation, and no-show handling. Sprint 3 is proposed for summaries, extended audit history, and service-specific request forms. Real-time updates are an optional enhancement after required scope.
 
-The official Theme 9 text places cancellation/no-show handling, multiple queues/counters, priority policy if applicable, and service summaries in later-sprint scope. Other rows are explicitly marked as Quevo proposals rather than official rubric clauses. Step 3 will review allocations, dependencies, risks, and outcomes. Do not implement future features before their feature contracts are approved.
+The original sprint allocation above was a planning proposal. On 2026-11-24, F-010 through F-017 were implemented together to meet the current sprint scope. The bank demo catalog and document-upload flow are Quevo product choices based on the user's later request; they extend F-017 beyond its original no-upload issue brief. Document storage is prototype-only and must not contain real customer documents. See [branch management and customer documents](../branch-management.md) for behavior and security limitations.
+
+## Implementation update — 2026-11-24
+
+- F-010/F-011: branch-scoped manager role, service/queue/counter configuration, and queue/operator assignments.
+- F-012/F-013: customer cancellation while WAITING and operator no-show while PENDING.
+- F-014/F-015: branch-authorized aggregate service summaries and paginated chronological ticket history.
+- F-016: customer and operator polling every ten seconds while visible and online, with stale-data feedback and manual refresh.
+- F-017: configurable customer request forms with validated answers and operator visibility; the current demo also supports service-configured uploads.
+- Cleanup: the placeholder route is removed and its path falls through to the standard not-found route.
