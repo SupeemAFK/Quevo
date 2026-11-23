@@ -202,6 +202,16 @@
     );
 }
 
+.queue-flow-dashes {
+  animation: queue-dash-travel 4s linear infinite;
+}
+
+@keyframes queue-dash-travel {
+  to {
+    stroke-dashoffset: -23;
+  }
+}
+
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .ticket-reflective:hover {
     border-color: color-mix(in srgb, var(--foreground) 24%, var(--border));

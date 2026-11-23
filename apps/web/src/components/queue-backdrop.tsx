@@ -1,3 +1,5 @@
+import { usePrefersReducedMotion } from '@/lib/use-prefers-reduced-motion'
+
 type QueueBackdropProps = {
   variant: 'hero' | 'workflows' | 'footer' | 'login'
 }
@@ -32,6 +34,7 @@ function TicketSlip({ x, y }: { x: number; y: number }) {
 }
 
 export function QueueBackdrop({ variant }: QueueBackdropProps) {
+  const prefersReducedMotion = usePrefersReducedMotion()
   const className = {
     hero: 'right-0 top-0 hidden h-full w-[67%] opacity-55 lg:block',
     workflows: 'inset-0 h-full w-full opacity-40',
@@ -62,12 +65,22 @@ export function QueueBackdrop({ variant }: QueueBackdropProps) {
       />
       <path
         d={path}
+        className="queue-flow-dashes"
         opacity={isFullBleed ? '0.38' : '0.52'}
         stroke="var(--brand-green)"
-        strokeDasharray="2 17"
+        strokeDasharray="4 19"
         strokeLinecap="round"
         strokeWidth="1.8"
       />
+
+      {!prefersReducedMotion ? (
+        <g opacity="0.92">
+          <animateMotion dur="22s" path={path} repeatCount="indefinite" rotate="0" />
+          <g transform="translate(-48 -17)">
+            <TicketSlip x={0} y={0} />
+          </g>
+        </g>
+      ) : null}
 
       {variant === 'workflows' ? (
         <>
