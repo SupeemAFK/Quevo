@@ -58,7 +58,7 @@ func TestQueueRepositoryPostgres(t *testing.T) {
 		RequestAnswers: map[string]string{
 			"10000000-0000-4000-8000-000000000020": "Everyday account",
 			"10000000-0000-4000-8000-000000000025": "Individual",
-			"10000000-0000-4000-8000-000000000026": "Yes, both",
+			"10000000-0000-4000-8000-000000000026": "I am opening an everyday account.",
 		},
 	}); !errors.Is(err, ErrActiveTicket) {
 		t.Fatalf("cross-service next-day join error = %v; want ErrActiveTicket", err)

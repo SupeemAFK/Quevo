@@ -51,10 +51,10 @@ func TestSprint2QueueExpansionPostgres(t *testing.T) {
 		RequestAnswers: map[string]string{
 			"10000000-0000-4000-8000-000000000020": "Everyday account",
 			"10000000-0000-4000-8000-000000000025": "Individual",
-			"10000000-0000-4000-8000-000000000026": "Yes, both",
+			"10000000-0000-4000-8000-000000000026": "I would like to discuss the savings options.",
 		},
 	})
-	if err != nil || account.RequestLabels["10000000-0000-4000-8000-000000000020"] != "What would you like to open?" {
+	if err != nil || account.RequestLabels["10000000-0000-4000-8000-000000000020"] != "Which account are you interested in?" {
 		t.Fatalf("account-opening join = %#v, err %v", account, err)
 	}
 	if _, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: customer2, BranchID: database.DemoBranchID, QueueID: accountQueue, ServiceID: accountService, RequestAnswers: map[string]string{"10000000-0000-4000-8000-000000000020": "Unknown account"}}); !errors.Is(err, ErrInvalidInput) {

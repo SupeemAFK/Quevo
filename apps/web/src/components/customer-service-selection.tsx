@@ -30,6 +30,7 @@ import {
 } from './ui/form'
 import { Input } from './ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
+import { Textarea } from './ui/textarea'
 
 type ServiceOption = components['schemas']['queue.ServiceResponse']
 type ActiveTicket = components['schemas']['queue.TicketResponse']
@@ -365,61 +366,79 @@ export function CustomerServiceSelection({
                               if (field.required && (typeof value !== 'string' || !value.trim())) {
                                 return `${field.label} is required.`
                               }
-                              if (typeof value === 'string' && value.length > 200) {
-                                return `${field.label} must be 200 characters or fewer.`
+                              const maxLength = field.type === 'long_text' ? 1000 : 200
+                              if (typeof value === 'string' && value.length > maxLength) {
+                                return `${field.label} must be ${maxLength} characters or fewer.`
                               }
                               return true
                             },
                           }}
-                          render={({ field: control }) => (
-                            <FormItem>
-                              <FormLabel
-                                aria-label={field.required ? `${field.label}, required` : undefined}
-                              >
-                                {field.label}
-                                {field.required ? <span aria-hidden="true"> *</span> : null}
-                              </FormLabel>
-                              {field.type === 'single_select' ? (
-                                <Select
-                                  onValueChange={control.onChange}
-                                  value={typeof control.value === 'string' ? control.value : ''}
+                          render={({ field: control }) => {
+                            const maxLength = field.type === 'long_text' ? 1000 : 200
+                            const answerGuidance =
+                              field.type === 'single_select'
+                                ? 'Choose one option.'
+                                : `Enter up to ${maxLength} characters.`
+                            const controlProps = {
+                              maxLength,
+                              name: control.name,
+                              onBlur: control.onBlur,
+                              onChange: control.onChange,
+                              ref: control.ref,
+                              required: field.required,
+                              value: typeof control.value === 'string' ? control.value : '',
+                            }
+
+                            return (
+                              <FormItem>
+                                <FormLabel
+                                  aria-label={
+                                    field.required ? `${field.label}, required` : undefined
+                                  }
                                 >
-                                  <FormControl>
-                                    <SelectTrigger className="min-h-11 w-full">
-                                      <SelectValue placeholder="Choose one" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {field.options.map((option) => (
-                                      <SelectItem key={option} value={option}>
-                                        {option}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              ) : (
-                                <FormControl>
-                                  <Input
-                                    autoComplete="off"
-                                    className="min-h-11"
-                                    maxLength={200}
-                                    onBlur={control.onBlur}
-                                    onChange={control.onChange}
-                                    name={control.name}
-                                    ref={control.ref}
-                                    required={field.required}
+                                  {field.label}
+                                  {field.required ? <span aria-hidden="true"> *</span> : null}
+                                </FormLabel>
+                                {field.type === 'single_select' ? (
+                                  <Select
+                                    onValueChange={control.onChange}
                                     value={typeof control.value === 'string' ? control.value : ''}
-                                  />
-                                </FormControl>
-                              )}
-                              <FormDescription>
-                                {field.type === 'single_select'
-                                  ? 'Choose one option.'
-                                  : 'Enter up to 200 characters.'}
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
+                                  >
+                                    <FormControl>
+                                      <SelectTrigger className="min-h-11 w-full">
+                                        <SelectValue placeholder="Choose one" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      {field.options.map((option) => (
+                                        <SelectItem key={option} value={option}>
+                                          {option}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                ) : field.type === 'long_text' ? (
+                                  <FormControl>
+                                    <Textarea
+                                      {...controlProps}
+                                      placeholder="Add any helpful context"
+                                    />
+                                  </FormControl>
+                                ) : (
+                                  <FormControl>
+                                    <Input
+                                      {...controlProps}
+                                      autoComplete="off"
+                                      className="min-h-11"
+                                      placeholder="Your answer"
+                                    />
+                                  </FormControl>
+                                )}
+                                <FormDescription>{answerGuidance}</FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )
+                          }}
                         />
                       ))}
                       <p className="text-xs leading-5 text-muted-foreground">

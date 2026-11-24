@@ -125,6 +125,13 @@ func TestCustomerQueueAPIWithPostgres(t *testing.T) {
 	if len(serviceList.Items) != 6 || serviceList.Items[0].ID == "" {
 		t.Fatalf("available services = %#v; want the seeded bank service catalog", serviceList.Items)
 	}
+	for _, service := range serviceList.Items {
+		if service.ID == "10000000-0000-4000-8000-000000000010" {
+			if len(service.Fields) != 3 || service.Fields[0].Type != "single_select" || service.Fields[1].Type != "single_select" || service.Fields[2].Type != "long_text" {
+				t.Fatalf("account opening fields = %#v; want account choices and an optional long answer", service.Fields)
+			}
+		}
+	}
 	activeTickets := queueAPIRequest(router, http.MethodGet, "/api/v1/tickets/active", nil, customerSession)
 	if activeTickets.Code != http.StatusOK {
 		t.Fatalf("active-ticket list status = %d, want %d: %s", activeTickets.Code, http.StatusOK, activeTickets.Body.String())
@@ -192,8 +199,8 @@ func TestCustomerQueueAPIWithPostgres(t *testing.T) {
 	})
 	bankAnswers := map[string]string{
 		"10000000-0000-4000-8000-000000000020": "Savings account",
-		"10000000-0000-4000-8000-000000000025": "Individual",
-		"10000000-0000-4000-8000-000000000026": "Yes, both",
+		"10000000-0000-4000-8000-000000000025": "Joint",
+		"10000000-0000-4000-8000-000000000026": "I want to compare the savings options.",
 	}
 	bankJoin := queueAPIRequest(router, http.MethodPost, bankQueuePath, map[string]any{
 		"requestAnswers": bankAnswers,
@@ -206,7 +213,7 @@ func TestCustomerQueueAPIWithPostgres(t *testing.T) {
 	if err := json.Unmarshal(bankJoin.Body.Bytes(), &bankTicket); err != nil {
 		t.Fatalf("decode bank ticket: %v", err)
 	}
-	if bankTicket.ServiceName != "Account Opening" || !bankTicket.AllowsUploads || !bankTicket.RequiresDocuments || bankTicket.RequestAnswers["10000000-0000-4000-8000-000000000020"] != "Savings account" {
+	if bankTicket.ServiceName != "Account Opening" || !bankTicket.AllowsUploads || !bankTicket.RequiresDocuments || bankTicket.RequestAnswers["10000000-0000-4000-8000-000000000020"] != "Savings account" || bankTicket.RequestAnswers["10000000-0000-4000-8000-000000000026"] != "I want to compare the savings options." {
 		t.Fatalf("bank ticket = %#v; want saved form answer and required upload policy", bankTicket)
 	}
 	activeTickets = queueAPIRequest(router, http.MethodGet, "/api/v1/tickets/active", nil, customerSession)

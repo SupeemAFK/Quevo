@@ -228,6 +228,45 @@ describe('CustomerServiceSelection', () => {
     expect(onJoin).toHaveBeenCalledWith(textService, 'queue-1', { 'preferred-name': 'Sam' }, [])
   })
 
+  it('renders long-answer service fields as labeled textareas with the longer limit', async () => {
+    const user = userEvent.setup()
+    const onJoin = vi.fn()
+    const service: Service = {
+      ...generalService,
+      fields: [
+        {
+          id: 'issue-details',
+          position: 1,
+          type: 'long_text',
+          label: 'What happened?',
+          required: true,
+          options: [],
+        },
+      ],
+    }
+    render(
+      <CustomerServiceSelection
+        activeTickets={[]}
+        error=""
+        joining={false}
+        onJoin={onJoin}
+        services={[service]}
+      />,
+    )
+
+    const details = screen.getByRole('textbox', { name: 'What happened?, required' })
+    expect(details.tagName).toBe('TEXTAREA')
+    expect(details).toHaveAttribute('maxLength', '1000')
+    await user.type(details, 'I need help resetting access to the mobile app.')
+    await user.click(screen.getByRole('button', { name: 'Join queue' }))
+    expect(onJoin).toHaveBeenCalledWith(
+      service,
+      'queue-1',
+      { 'issue-details': 'I need help resetting access to the mobile app.' },
+      [],
+    )
+  })
+
   it('requires a supporting file before joining a document-required service', async () => {
     const user = userEvent.setup()
     const onJoin = vi.fn()

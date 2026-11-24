@@ -69,30 +69,30 @@ func SeedDemo(ctx context.Context, db *gorm.DB, credentials SeedCredentials, del
 			'10000000-0000-4000-8000-000000000012','10000000-0000-4000-8000-000000000013','10000000-0000-4000-8000-000000000014')
 			ON CONFLICT (id) DO NOTHING`, nil, nil},
 		{`INSERT INTO service_form_fields (id, service_id, position, field_type, label, required, options)
-			SELECT v.id::uuid, v.service_id::uuid, 1, 'single_select', 'What would you like to open?', true, v.options::jsonb
+			SELECT v.id::uuid, v.service_id::uuid, 1, 'single_select', v.label, true, v.options::jsonb
 			FROM (VALUES
-			('10000000-0000-4000-8000-000000000020','10000000-0000-4000-8000-000000000010','["Everyday account","Savings account","Fixed-term deposit"]'),
-			('10000000-0000-4000-8000-000000000021','10000000-0000-4000-8000-000000000011','["Replace a damaged card","Report a lost card","Renew an expiring card"]'),
-			('10000000-0000-4000-8000-000000000022','10000000-0000-4000-8000-000000000012','["Personal loan","Home loan","Vehicle loan"]'),
-			('10000000-0000-4000-8000-000000000023','10000000-0000-4000-8000-000000000013','["Update contact details","Request a statement","Other account maintenance"]'),
-			('10000000-0000-4000-8000-000000000024','10000000-0000-4000-8000-000000000014','["Mobile app","Online banking","Transfers and payments"]')
-			) AS v(id, service_id, options)
+			('10000000-0000-4000-8000-000000000020','10000000-0000-4000-8000-000000000010','Which account are you interested in?','["Everyday account","Savings account","Fixed-term deposit"]'),
+			('10000000-0000-4000-8000-000000000021','10000000-0000-4000-8000-000000000011','What card service do you need?','["Replace a damaged card","Report a lost card","Renew an expiring card"]'),
+			('10000000-0000-4000-8000-000000000022','10000000-0000-4000-8000-000000000012','Which loan product would you like to discuss?','["Personal loan","Home loan","Vehicle loan"]'),
+			('10000000-0000-4000-8000-000000000023','10000000-0000-4000-8000-000000000013','What would you like to update?','["Update contact details","Request a statement","Other account maintenance"]'),
+			('10000000-0000-4000-8000-000000000024','10000000-0000-4000-8000-000000000014','Which digital banking service needs help?','["Mobile app","Online banking","Transfers and payments"]')
+			) AS v(id, service_id, label, options)
 			WHERE NOT EXISTS (SELECT 1 FROM service_form_fields f WHERE f.service_id = v.service_id::uuid)
 			ON CONFLICT (id) DO NOTHING`, nil, nil},
 		{`INSERT INTO service_form_fields (id, service_id, position, field_type, label, required, options)
-			SELECT v.id::uuid, v.service_id::uuid, v.position, 'single_select', v.label, true, v.options::jsonb
+			SELECT v.id::uuid, v.service_id::uuid, v.position, v.field_type, v.label, v.required, v.options::jsonb
 			FROM (VALUES
-			('10000000-0000-4000-8000-000000000025','10000000-0000-4000-8000-000000000010',2,'Individual or joint account?','["Individual","Joint"]'),
-			('10000000-0000-4000-8000-000000000026','10000000-0000-4000-8000-000000000010',3,'Do you have photo ID and proof of address ready?','["Yes, both","Photo ID only","Proof of address only","I need help"]'),
-			('10000000-0000-4000-8000-000000000027','10000000-0000-4000-8000-000000000011',2,'Which card do you need help with?','["Debit card","Credit card","Not sure"]'),
-			('10000000-0000-4000-8000-000000000028','10000000-0000-4000-8000-000000000011',3,'Is the card still with you?','["Yes","No","Not applicable"]'),
-			('10000000-0000-4000-8000-000000000029','10000000-0000-4000-8000-000000000012',2,'Is this a new application or a follow-up?','["New application","Follow-up"]'),
-			('10000000-0000-4000-8000-000000000030','10000000-0000-4000-8000-000000000012',3,'Do you have proof of income and photo ID ready?','["Yes, both","Photo ID only","Proof of income only","I need help"]'),
-			('10000000-0000-4000-8000-000000000031','10000000-0000-4000-8000-000000000013',2,'Which account is this about?','["Personal","Joint","Business","Not sure"]'),
-			('10000000-0000-4000-8000-000000000032','10000000-0000-4000-8000-000000000013',3,'Do you need a printed statement today?','["Yes","No"]'),
-			('10000000-0000-4000-8000-000000000033','10000000-0000-4000-8000-000000000014',2,'Which device are you using?','["Android phone or tablet","iPhone or iPad","Computer","Other"]'),
-			('10000000-0000-4000-8000-000000000034','10000000-0000-4000-8000-000000000014',3,'Can you sign in right now?','["Yes","No","I have not registered"]')
-			) AS v(id, service_id, position, label, options)
+			('10000000-0000-4000-8000-000000000025','10000000-0000-4000-8000-000000000010',2,'single_select','Individual or joint account?',true,'["Individual","Joint"]'),
+			('10000000-0000-4000-8000-000000000026','10000000-0000-4000-8000-000000000010',3,'long_text','What would you like to ask the account team?',false,'[]'),
+			('10000000-0000-4000-8000-000000000027','10000000-0000-4000-8000-000000000011',2,'short_text','What type of card is this about? Do not enter a card number.',false,'[]'),
+			('10000000-0000-4000-8000-000000000028','10000000-0000-4000-8000-000000000011',3,'long_text','Briefly describe what happened. Do not include card details.',false,'[]'),
+			('10000000-0000-4000-8000-000000000029','10000000-0000-4000-8000-000000000012',2,'single_select','Is this a new application or a follow-up?',true,'["New application","Follow-up"]'),
+			('10000000-0000-4000-8000-000000000030','10000000-0000-4000-8000-000000000012',3,'long_text','What should the loan officer know? Leave out income and ID details.',false,'[]'),
+			('10000000-0000-4000-8000-000000000031','10000000-0000-4000-8000-000000000013',2,'short_text','Which account type should staff review? Do not enter an account number.',false,'[]'),
+			('10000000-0000-4000-8000-000000000032','10000000-0000-4000-8000-000000000013',3,'long_text','What should staff prepare for? Do not include an account number.',false,'[]'),
+			('10000000-0000-4000-8000-000000000033','10000000-0000-4000-8000-000000000014',2,'short_text','What device model are you using? For example, iPhone 15.',false,'[]'),
+			('10000000-0000-4000-8000-000000000034','10000000-0000-4000-8000-000000000014',3,'long_text','What happened? Do not include passwords, PINs, or one-time codes.',false,'[]')
+			) AS v(id, service_id, position, field_type, label, required, options)
 			ON CONFLICT (id) DO NOTHING`, nil, nil},
 		{`INSERT INTO counter_queues (counter_id, queue_id)
 			SELECT c.id, q.id FROM branch_counters c JOIN service_queues q ON q.branch_id = c.branch_id

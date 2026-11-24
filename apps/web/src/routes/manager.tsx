@@ -484,6 +484,7 @@ function ServiceEditor({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="short_text">Short answer</SelectItem>
+                    <SelectItem value="long_text">Long answer</SelectItem>
                     <SelectItem value="single_select">Choose one</SelectItem>
                   </SelectContent>
                 </Select>

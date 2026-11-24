@@ -67,7 +67,11 @@ func validateServiceAnswers(tx *gorm.DB, serviceID string, answers map[string]st
 			return "", "", ErrInvalidInput
 		}
 		value = strings.TrimSpace(value)
-		if len([]rune(value)) > 200 {
+		maxLength := 200
+		if field.Type == "long_text" {
+			maxLength = 1000
+		}
+		if len([]rune(value)) > maxLength {
 			return "", "", ErrInvalidInput
 		}
 		if field.Type == "single_select" {
@@ -84,7 +88,7 @@ func validateServiceAnswers(tx *gorm.DB, serviceID string, answers map[string]st
 			if !valid {
 				return "", "", ErrInvalidInput
 			}
-		} else if field.Type != "short_text" {
+		} else if field.Type != "short_text" && field.Type != "long_text" {
 			return "", "", ErrInvalidInput
 		}
 		if value != "" {
@@ -330,13 +334,13 @@ func validateFormConfiguration(config FormConfiguration) error {
 		return ErrInvalidInput
 	}
 	for _, field := range config.Fields {
-		if field.Type != "short_text" && field.Type != "single_select" {
+		if field.Type != "short_text" && field.Type != "long_text" && field.Type != "single_select" {
 			return ErrInvalidInput
 		}
 		if label := strings.TrimSpace(field.Label); label == "" || len([]rune(label)) > 80 {
 			return ErrInvalidInput
 		}
-		if field.Type == "short_text" && len(field.Options) != 0 {
+		if (field.Type == "short_text" || field.Type == "long_text") && len(field.Options) != 0 {
 			return ErrInvalidInput
 		}
 		if field.Type == "single_select" {

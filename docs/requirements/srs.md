@@ -174,7 +174,7 @@ Theme 9 identifies cancellation/no-show handling, multiple queues/counters, prio
 | D-016 | Theme 9 mentions a priority policy “if applicable.” | FIFO is selected in BR-001; no priority feature is planned unless the team approves a scope change. | Product review. |
 | D-017 | The no-show transition is not defined by the supplied theme brief. | PENDING → NO_SHOW is a proposal only; agree on timing, reassignment, customer notification, and rejoin behavior before F-013 implementation. | Sprint 2 feature contract. |
 | D-018 | Theme 9 asks for useful service summaries but does not define measures. | Ticket counts and waiting/service durations are candidate measures; define exact formulas, filters, and privacy before F-014 implementation. | Sprint 3 feature contract. |
-| D-019 | Service-specific request forms appear in the product's future scope, but field schemas are unspecified. | A service may define validated request fields; finalize allowed field types and handling in the F-017 contract. | Sprint 3 feature contract. |
+| D-019 | Service-specific request forms are a Quevo product proposal, not an explicit Theme 9 requirement. | The current implementation supports validated single-select, short-answer, and long-answer fields and avoids collecting sensitive banking credentials or identifiers. Institution-specific data and document policy remains to be defined before production use. | Product and compliance review. |
 | D-020 | Future service, counter, and operator-assignment management does not define a new administrative actor. | Keep management operations unavailable until the authorized role and branch scope are approved; do not infer an administrator role. | Product/course review. |
 
 ## 11. Glossary

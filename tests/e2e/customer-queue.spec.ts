@@ -40,17 +40,15 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await page.getByRole('radio', { name: /Account Opening.*Quevo Demo Branch/ }).click()
   await expect(page.getByRole('heading', { name: 'A few details for the team' })).toBeVisible()
   await expect(page.getByText('Supporting documents')).toBeVisible()
-  const accountType = page.getByRole('combobox', { name: 'What would you like to open?' })
+  const accountType = page.getByRole('combobox', { name: 'Which account are you interested in?' })
   await accountType.click()
   await page.getByRole('option', { name: 'Savings account' }).click()
   const accountHolders = page.getByRole('combobox', { name: 'Individual or joint account?' })
   await accountHolders.click()
   await page.getByRole('option', { name: 'Individual' }).click()
-  const documentsReady = page.getByRole('combobox', {
-    name: 'Do you have photo ID and proof of address ready?',
-  })
-  await documentsReady.click()
-  await page.getByRole('option', { name: 'Yes, both' }).click()
+  await page
+    .getByRole('textbox', { name: 'What would you like to ask the account team?' })
+    .fill('I would like to compare the available savings accounts.')
   await page.getByLabel('Upload files').setInputFiles({
     name: 'proof-of-address.png',
     mimeType: 'image/png',

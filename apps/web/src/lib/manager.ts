@@ -8,7 +8,7 @@ export type ManagerQueue = { id: string; name: string; active: boolean }
 export type FormField = {
   id?: string
   position?: number
-  type: 'single_select' | 'short_text'
+  type: 'single_select' | 'short_text' | 'long_text'
   label: string
   required: boolean
   options: string[]
