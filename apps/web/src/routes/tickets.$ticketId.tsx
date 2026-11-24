@@ -6,6 +6,15 @@ import { AuthenticatedShell } from '@/components/authenticated-shell'
 import { CustomerTicketDetails } from '@/components/customer-ticket-details'
 import { FeedbackMessage, LoadingMessage } from '@/components/feedback-message'
 import { PageHeading } from '@/components/page-heading'
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { getCurrentUser } from '@/lib/auth'
 import {
@@ -33,6 +42,7 @@ function CustomerTicketPage() {
   const [feedback, setFeedback] = useState<{ message: string; kind: 'success' | 'error' } | null>(
     null,
   )
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const pageActive = usePageActivity()
   const ticketQuery = useQuery({
     ...customerTicketOptions(user.id, ticketId),
@@ -59,6 +69,7 @@ function CustomerTicketPage() {
       queryClient.setQueryData(customerTicketOptions(user.id, ticketId).queryKey, ticket)
       await queryClient.invalidateQueries({ queryKey: customerQueueOptions(user.id).queryKey })
       setFeedback({ message: 'Ticket cancelled.', kind: 'success' })
+      setCancelDialogOpen(false)
     },
   })
 
@@ -115,14 +126,9 @@ function CustomerTicketPage() {
                     : null)
             }
             onCancel={() => {
-              if (
-                window.confirm(
-                  'Leave this queue? Your waiting ticket will be cancelled and cannot be restored.',
-                )
-              ) {
-                setFeedback(null)
-                cancelMutation.mutate()
-              }
+              cancelMutation.reset()
+              setFeedback(null)
+              setCancelDialogOpen(true)
             }}
             onRefresh={() => void refreshStatus()}
             onUpload={(file) => {
@@ -152,6 +158,39 @@ function CustomerTicketPage() {
             </Button>
           </div>
         ) : null}
+        <AlertDialog
+          onOpenChange={(open) => {
+            if (!cancelMutation.isPending) setCancelDialogOpen(open)
+          }}
+          open={cancelDialogOpen}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Leave this queue?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Your waiting ticket will be cancelled and cannot be restored. You can join an active
+                service again if you still need help.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            {cancelMutation.error ? (
+              <p className="text-sm text-status-danger" role="alert">
+                {cancelMutation.error.message}
+              </p>
+            ) : null}
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={cancelMutation.isPending}>
+                Keep my ticket
+              </AlertDialogCancel>
+              <Button
+                disabled={cancelMutation.isPending}
+                onClick={() => cancelMutation.mutate()}
+                variant="destructive"
+              >
+                {cancelMutation.isPending ? 'Cancelling…' : 'Leave queue'}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </section>
     </AuthenticatedShell>
   )

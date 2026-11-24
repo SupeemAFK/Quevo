@@ -10,7 +10,7 @@ Queue joining disables the action while the request is pending and redirects to 
 
 ## Ticket status
 
-The ticket page gives the number and current status first, then displays the service, branch, and business date. It provides concise guidance for every backend state:
+The ticket page uses a perforated ticket layout: a large ticket number and service on the main face, with status guidance on a detachable-looking stub and branch/date details below. It provides concise guidance for every backend state:
 
 | API state | Guidance |
 | --- | --- |
@@ -22,7 +22,7 @@ The ticket page gives the number and current status first, then displays the ser
 | `CANCELLED` | Join an active service again if help is still needed. |
 | `NO_SHOW` | Ask the service desk about next steps. |
 
-Customers can cancel a waiting ticket after confirming; called or in-service tickets cannot be cancelled. After joining, customers add files from the ticket’s **Add document** control. Configured services can accept up to five PDF, PNG, or JPG files (10 MiB each) through a same-origin authenticated upload proxy. Required document services show that requirement on both the selection form and ticket and block operator start until at least one file is attached. The reflective ticket highlight follows mouse input, uses neutral theme colors, and is disabled for reduced-motion users. The API does not return a reliable customer position or wait-time estimate; neither is derived from ticket numbers. If a refresh fails, the last valid ticket stays visible with retry feedback.
+Customers cancel a waiting ticket through a shadcn confirmation dialog; called or in-service tickets cannot be cancelled. After joining, customers add files from the ticket’s **Add document** control. Configured services can accept up to five PDF, PNG, or JPG files (10 MiB each) through a same-origin authenticated upload proxy. Required document services show that requirement on both the selection form and ticket and block operator start until at least one file is attached. The ticket highlight follows mouse input, uses neutral theme colors, and is disabled for reduced-motion users. The API does not return a reliable customer position or wait-time estimate; neither is derived from ticket numbers. If a refresh fails, the last valid ticket stays visible with retry feedback.
 
 Uploaded data is stored in PostgreSQL for this prototype and protected by ticket-level customer/operator/manager access checks. The demo does not scan malware or provide a production document-storage service; see [branch management and customer documents](branch-management.md) before handling real customer data.
 

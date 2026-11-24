@@ -8,7 +8,7 @@ import {
   X,
 } from 'lucide-react'
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import type { components } from '@/client/api/schema'
 import type { TicketDocument } from '@/lib/ticket-documents'
 import { usePrefersReducedMotion } from '@/lib/use-prefers-reduced-motion'
@@ -56,7 +56,6 @@ export function CustomerTicketDetails({
   onCancel,
 }: Props) {
   const prefersReducedMotion = usePrefersReducedMotion()
-  const ticketSurface = useRef<HTMLElement>(null)
   const [fileError, setFileError] = useState('')
   const guidance =
     statusGuidance[ticket.status] ?? 'Refresh this page to check your ticket status again.'
@@ -98,11 +97,7 @@ export function CustomerTicketDetails({
       <div className="space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-2xl">
-            <p className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-              <Layers3 aria-hidden="true" size={16} />
-              {ticket.serviceName}
-            </p>
-            <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <RefreshCw aria-hidden="true" size={14} />
               Status updates load when you open this page. Refresh to check again.
             </p>
@@ -125,43 +120,51 @@ export function CustomerTicketDetails({
 
         <section
           aria-labelledby="ticket-number-heading"
-          className="ticket-reflective rounded-xl border bg-card p-5 shadow-sm sm:p-8"
+          className="ticket-reflective queue-ticket rounded-xl border bg-card shadow-sm"
           onPointerLeave={resetReflection}
           onPointerMove={reflectPointer}
-          ref={ticketSurface}
         >
-          <div className="relative z-10 mb-6 flex items-center justify-between gap-4 border-b pb-4">
+          <div className="relative z-10 flex items-center justify-between gap-4 px-5 py-4 sm:px-7">
             <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              <TicketIcon aria-hidden="true" size={15} /> Quevo digital ticket
+              <TicketIcon aria-hidden="true" size={15} /> Quevo service ticket
             </span>
             <span className="font-mono text-xs tabular-nums text-muted-foreground">
-              {ticket.queueName || 'Queue'}
+              No. {ticket.ticketNumber}
             </span>
           </div>
-          <div className="relative z-10">
-            <p
-              className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground"
-              id="ticket-number-heading"
-            >
-              <TicketIcon aria-hidden="true" size={16} />
-              Your ticket number
-            </p>
-            <AnimatePresence initial={false} mode="popLayout">
-              <motion.p
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-2 break-words font-mono text-6xl font-semibold tabular-nums tracking-[-0.06em] sm:text-7xl"
-                data-testid="ticket-number"
-                initial={prefersReducedMotion ? false : { opacity: 0, y: 6 }}
-                key={ticket.ticketNumber}
-                transition={{ duration: prefersReducedMotion ? 0 : 0.18, ease: 'easeOut' }}
-              >
-                {ticket.ticketNumber}
-              </motion.p>
-            </AnimatePresence>
+          <div aria-hidden="true" className="queue-ticket-perforation" />
 
-            <div className="mt-7 border-t pt-5">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-sm font-medium text-muted-foreground">Current status</span>
+          <div className="grid md:grid-cols-[minmax(0,1.15fr)_minmax(15rem,0.85fr)]">
+            <div className="relative z-10 min-w-0 px-5 py-6 sm:px-7 sm:py-8">
+              <p
+                className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground"
+                id="ticket-number-heading"
+              >
+                Your ticket number
+              </p>
+              <AnimatePresence initial={false} mode="popLayout">
+                <motion.p
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-2 break-words font-mono text-6xl font-semibold tabular-nums tracking-[-0.06em] sm:text-7xl"
+                  data-testid="ticket-number"
+                  initial={prefersReducedMotion ? false : { opacity: 0, y: 6 }}
+                  key={ticket.ticketNumber}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.18, ease: 'easeOut' }}
+                >
+                  {ticket.ticketNumber}
+                </motion.p>
+              </AnimatePresence>
+              <p className="mt-4 flex items-center gap-2 text-sm font-medium">
+                <Layers3 aria-hidden="true" className="text-muted-foreground" size={15} />
+                {ticket.serviceName}
+              </p>
+            </div>
+
+            <div className="ticket-stub relative z-10 min-w-0 px-5 py-5 sm:px-7 md:py-7">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Current status
+              </p>
+              <div className="mt-2">
                 <TicketStatus status={ticket.status} />
               </div>
               <AnimatePresence initial={false}>
@@ -169,7 +172,7 @@ export function CustomerTicketDetails({
                   aria-atomic="true"
                   aria-live="polite"
                   animate={{ opacity: 1, y: 0 }}
-                  className="mt-3 max-w-2xl leading-6"
+                  className="mt-3 max-w-sm text-sm leading-6"
                   exit={prefersReducedMotion ? undefined : { opacity: 0, y: -4 }}
                   initial={false}
                   key={ticket.status}
@@ -178,103 +181,103 @@ export function CustomerTicketDetails({
                   {guidance}
                 </motion.p>
               </AnimatePresence>
+              <div className="mt-5 border-t pt-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  Queue
+                </p>
+                <p className="mt-1 truncate text-sm font-medium">{ticket.queueName || 'Queue'}</p>
+              </div>
             </div>
-
-            <dl className="mt-7 grid grid-cols-1 gap-x-6 gap-y-4 border-t pt-5 text-sm sm:grid-cols-2">
-              <div>
-                <dt className="flex items-center gap-1.5 text-muted-foreground">
-                  <MapPin aria-hidden="true" size={14} />
-                  Branch
-                </dt>
-                <dd className="mt-1 font-medium">{ticket.branchName}</dd>
-              </div>
-              <div>
-                <dt className="flex items-center gap-1.5 text-muted-foreground">
-                  <CalendarDays aria-hidden="true" size={14} />
-                  Business date
-                </dt>
-                <dd className="mt-1 font-medium">{ticket.businessDate}</dd>
-              </div>
-            </dl>
           </div>
 
-          {ticket.allowsUploads && onUpload ? (
-            <div className="relative z-10 mt-7 border-t pt-5">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="max-w-xl">
-                  <p className="flex items-center gap-2 font-semibold">
-                    <FileUp aria-hidden="true" size={17} /> Supporting documents
+          <div aria-hidden="true" className="queue-ticket-perforation" />
+          <dl className="relative z-10 grid grid-cols-1 gap-4 px-5 py-4 text-sm sm:grid-cols-2 sm:px-7">
+            <div>
+              <dt className="flex items-center gap-1.5 text-muted-foreground">
+                <MapPin aria-hidden="true" size={14} /> Branch
+              </dt>
+              <dd className="mt-1 font-medium">{ticket.branchName}</dd>
+            </div>
+            <div>
+              <dt className="flex items-center gap-1.5 text-muted-foreground">
+                <CalendarDays aria-hidden="true" size={14} /> Business date
+              </dt>
+              <dd className="mt-1 font-medium">{ticket.businessDate}</dd>
+            </div>
+          </dl>
+        </section>
+
+        {ticket.allowsUploads && onUpload ? (
+          <section aria-labelledby="ticket-documents-heading" className="border-t pt-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="max-w-xl">
+                <h2 className="flex items-center gap-2 font-semibold" id="ticket-documents-heading">
+                  <FileUp aria-hidden="true" size={17} /> Supporting documents
+                </h2>
+                <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                  {ticket.documentGuidance || 'Upload a PDF, JPG, or PNG file up to 10 MB.'}
+                </p>
+                {ticket.requiresDocuments ? (
+                  <p className="mt-1 text-sm font-medium">
+                    {documents.length
+                      ? `${documents.length} document${documents.length === 1 ? '' : 's'} attached`
+                      : 'Required before service starts'}
                   </p>
-                  <p className="mt-1 text-sm leading-5 text-muted-foreground">
-                    {ticket.documentGuidance || 'Upload a PDF, JPG, or PNG file up to 10 MB.'}
-                  </p>
-                  {ticket.requiresDocuments ? (
-                    <p className="mt-1 text-sm font-medium">
-                      {documents.length
-                        ? `${documents.length} document${documents.length === 1 ? '' : 's'} attached`
-                        : 'Required before service starts'}
-                    </p>
-                  ) : null}
-                </div>
-                {ticket.status === 'WAITING' || ticket.status === 'PENDING' ? (
-                  <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-[var(--primary-hover)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring">
-                    <FileUp aria-hidden="true" size={16} />
-                    {uploading ? 'Uploading…' : 'Add document'}
-                    <input
-                      accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
-                      className="sr-only"
-                      disabled={uploading || documents.length >= 5}
-                      onChange={onChooseFile}
-                      type="file"
-                    />
-                  </label>
                 ) : null}
               </div>
-              {fileError || documentsError ? (
-                <p className="mt-3 text-sm text-status-danger" role="alert">
-                  {fileError || documentsError}
-                </p>
+              {ticket.status === 'WAITING' || ticket.status === 'PENDING' ? (
+                <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-[var(--primary-hover)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring">
+                  <FileUp aria-hidden="true" size={16} />
+                  {uploading ? 'Uploading…' : 'Add document'}
+                  <input
+                    accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                    className="sr-only"
+                    disabled={uploading || documents.length >= 5}
+                    onChange={onChooseFile}
+                    type="file"
+                  />
+                </label>
               ) : null}
-              {documents.length ? (
-                <ul className="mt-4 divide-y border-y">
-                  {documents.map((document) => (
-                    <li
-                      className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm"
-                      key={document.id}
-                    >
-                      <span className="min-w-0 truncate">
-                        {document.fileName}{' '}
-                        <span className="text-muted-foreground">
-                          · {(document.byteSize / 1024 / 1024).toFixed(1)} MB
-                        </span>
+            </div>
+            {fileError || documentsError ? (
+              <p className="mt-3 text-sm text-status-danger" role="alert">
+                {fileError || documentsError}
+              </p>
+            ) : null}
+            {documents.length ? (
+              <ul className="mt-4 divide-y border-y">
+                {documents.map((document) => (
+                  <li
+                    className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm"
+                    key={document.id}
+                  >
+                    <span className="min-w-0 truncate">
+                      {document.fileName}{' '}
+                      <span className="text-muted-foreground">
+                        · {(document.byteSize / 1024 / 1024).toFixed(1)} MB
                       </span>
-                      <a
-                        className="shrink-0 rounded-sm underline underline-offset-4 focus-visible:outline"
-                        href={`/api/tickets/${encodeURIComponent(ticket.id)}/documents/${encodeURIComponent(document.id)}`}
-                      >
-                        Download
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-          ) : null}
+                    </span>
+                    <a
+                      className="shrink-0 rounded-sm underline underline-offset-4 focus-visible:outline"
+                      href={`/api/tickets/${encodeURIComponent(ticket.id)}/documents/${encodeURIComponent(document.id)}`}
+                    >
+                      Download
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
+        ) : null}
 
-          {onCancel && ticket.status === 'WAITING' ? (
-            <div className="relative z-10 mt-5 flex justify-end border-t pt-4">
-              <Button
-                className="min-h-10"
-                disabled={cancelling}
-                onClick={onCancel}
-                variant="outline"
-              >
-                <X aria-hidden="true" />
-                {cancelling ? 'Cancelling…' : 'Leave queue'}
-              </Button>
-            </div>
-          ) : null}
-        </section>
+        {onCancel && ticket.status === 'WAITING' ? (
+          <div className="flex justify-end border-t pt-4">
+            <Button className="min-h-10" disabled={cancelling} onClick={onCancel} variant="outline">
+              <X aria-hidden="true" />
+              {cancelling ? 'Cancelling…' : 'Leave queue'}
+            </Button>
+          </div>
+        ) : null}
 
         {refreshing ? <LoadingMessage>Refreshing ticket status…</LoadingMessage> : null}
         {feedback ? (

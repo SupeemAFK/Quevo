@@ -53,8 +53,10 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   })
   await expect(page.getByRole('status')).toHaveText('Document uploaded.')
   await expect(page.getByText('1 document attached')).toBeVisible()
-  page.once('dialog', (dialog) => dialog.accept())
-  await page.getByRole('button', { name: 'Leave queue' }).click()
+  await page.getByRole('button', { name: 'Leave queue', exact: true }).click()
+  const cancelTicketDialog = page.getByRole('alertdialog', { name: 'Leave this queue?' })
+  await expect(cancelTicketDialog).toBeVisible()
+  await cancelTicketDialog.getByRole('button', { name: 'Leave queue', exact: true }).click()
   await expect(page.getByRole('status')).toHaveText('Ticket cancelled.')
   await page.goto('/customer')
 

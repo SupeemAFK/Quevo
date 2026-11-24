@@ -107,7 +107,9 @@ describe('CustomerTicketDetails', () => {
     )
 
     const ticketSection = screen.getByRole('region', { name: /your ticket number/i })
-    expect(ticketSection).toHaveClass('border', 'bg-card')
+    expect(ticketSection).toHaveClass('border', 'bg-card', 'queue-ticket')
+    expect(ticketSection.querySelector('.ticket-stub')).not.toBeNull()
+    expect(ticketSection.querySelector('.queue-ticket-perforation')).not.toBeNull()
     expect(ticketSection).not.toHaveClass('before:bg-brand-green')
     expect(ticketSection).toHaveClass('ticket-reflective')
   })
