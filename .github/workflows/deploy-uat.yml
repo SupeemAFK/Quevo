@@ -1,0 +1,262 @@
+name: Deploy UAT
+
+on:
+  push:
+    branches: [staging]
+
+permissions:
+  contents: read
+
+jobs:
+  release_checks:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: Build and deploy UAT
+    needs: release_checks
+    runs-on: ubuntu-latest
+    environment: uat
+    concurrency:
+      group: quevo-uat-cloud-run
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      WIF_PROVIDER: ${{ vars.WIF_PROVIDER }}
+      WIF_SERVICE_ACCOUNT: ${{ vars.WIF_SERVICE_ACCOUNT }}
+      CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT: ${{ vars.CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT }}
+      CLOUD_SQL_INSTANCE: cpe334-student-project:asia-southeast1:quevo-pg
+      DATABASE_SECRET: quevo-uat-database-url
+      API_IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/quevo/api
+      WEB_IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/quevo/web
+
+    steps:
+      - name: Check out staging commit
+        uses: actions/checkout@v4
+
+      - name: Check whether this commit is still latest on staging
+        id: freshness
+        shell: bash
+        run: |
+          set -euo pipefail
+          latest_staging_sha="$(git ls-remote origin refs/heads/staging | cut -f1)"
+          if [[ -z "$latest_staging_sha" ]]; then
+            echo "Could not read the latest staging commit" >&2
+            exit 1
+          fi
+          if [[ "$latest_staging_sha" == "$GITHUB_SHA" ]]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "Commit $GITHUB_SHA was superseded by $latest_staging_sha on staging." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Check UAT deployment configuration
+        if: steps.freshness.outputs.deploy == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION WIF_PROVIDER WIF_SERVICE_ACCOUNT CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT; do
+            if [[ -z "${!name}" ]]; then
+              echo "Missing GitHub uat environment variable: $name" >&2
+              exit 1
+            fi
+          done
+          if [[ "$GCP_PROJECT_ID" != "cpe334-student-project" || "$GCP_REGION" != "asia-southeast1" ]]; then
+            echo "UAT project or region does not match the configured Cloud SQL instance." >&2
+            exit 1
+          fi
+
+      - name: Authenticate to Google Cloud with WIF
+        if: steps.freshness.outputs.deploy == 'true'
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Google Cloud SDK
+        if: steps.freshness.outputs.deploy == 'true'
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          version: ">= 363.0.0"
+
+      - name: Configure Artifact Registry Docker access
+        if: steps.freshness.outputs.deploy == 'true'
+        run: gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+
+      - name: Build, push, and resolve immutable image digests
+        if: steps.freshness.outputs.deploy == 'true'
+        id: images
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          docker build --platform linux/amd64 --target production \
+            --tag "${API_IMAGE}:${GITHUB_SHA}" apps/api
+          docker build --platform linux/amd64 --target production \
+            --tag "${WEB_IMAGE}:${GITHUB_SHA}" apps/web
+
+          docker push "${API_IMAGE}:${GITHUB_SHA}"
+          docker push "${WEB_IMAGE}:${GITHUB_SHA}"
+
+          resolve_runtime_digest() {
+            local image="$1"
+            local index_digest manifest digest
+            index_digest="$(gcloud artifacts docker images describe "${image}:${GITHUB_SHA}" \
+              --project "$GCP_PROJECT_ID" --format='value(image_summary.digest)')" || return 1
+            [[ "$index_digest" =~ ^sha256:[a-f0-9]{64}$ ]] || return 1
+            manifest="$(docker buildx imagetools inspect --raw "${image}@${index_digest}")" || return 1
+            digest="$(jq -er --arg root "$index_digest" '
+              if has("manifests") then
+                [.manifests[] | select(.platform.os == "linux" and .platform.architecture == "amd64")]
+                | if length == 1 then .[0].digest else error("expected one linux/amd64 manifest") end
+              elif has("config") and has("layers") then
+                $root
+              else
+                error("unsupported image manifest")
+              end
+            ' <<< "$manifest")" || return 1
+            [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]] || return 1
+            printf '%s\n' "$digest"
+          }
+
+          api_digest="$(resolve_runtime_digest "$API_IMAGE")" || {
+            echo "Could not resolve the API linux/amd64 image digest" >&2
+            exit 1
+          }
+          web_digest="$(resolve_runtime_digest "$WEB_IMAGE")" || {
+            echo "Could not resolve the web linux/amd64 image digest" >&2
+            exit 1
+          }
+
+          echo "api_image=${API_IMAGE}@${api_digest}" >> "$GITHUB_OUTPUT"
+          echo "web_image=${WEB_IMAGE}@${web_digest}" >> "$GITHUB_OUTPUT"
+
+      - name: Recheck staging before migrations
+        if: steps.freshness.outputs.deploy == 'true'
+        id: migration_freshness
+        shell: bash
+        run: |
+          set -euo pipefail
+          latest_staging_sha="$(git ls-remote origin refs/heads/staging | cut -f1)"
+          if [[ -z "$latest_staging_sha" ]]; then
+            echo "Could not read the latest staging commit" >&2
+            exit 1
+          fi
+          if [[ "$latest_staging_sha" == "$GITHUB_SHA" ]]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping UAT migrations for superseded commit $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Run UAT database migrations
+        if: steps.migration_freshness.outputs.deploy == 'true'
+        env:
+          API_IMAGE_DIGEST: ${{ steps.images.outputs.api_image }}
+        run: |
+          gcloud run jobs deploy quevo-uat-migrate \
+            --image "$API_IMAGE_DIGEST" \
+            --command ./quevo-migrate \
+            --set-cloudsql-instances "$CLOUD_SQL_INSTANCE" \
+            --set-secrets "DATABASE_URL=${DATABASE_SECRET}:1" \
+            --service-account "$CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT" \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --quiet
+          gcloud run jobs execute quevo-uat-migrate \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --wait \
+            --quiet
+
+      - name: Deploy UAT API and web services
+        if: steps.migration_freshness.outputs.deploy == 'true'
+        env:
+          API_IMAGE_DIGEST: ${{ steps.images.outputs.api_image }}
+          WEB_IMAGE_DIGEST: ${{ steps.images.outputs.web_image }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          revision_suffix="sha-${GITHUB_SHA:0:12}-a${GITHUB_RUN_ATTEMPT}"
+
+          gcloud run deploy quevo-uat-api \
+            --image "$API_IMAGE_DIGEST" \
+            --revision-suffix "$revision_suffix" \
+            --port 8080 \
+            --set-cloudsql-instances "$CLOUD_SQL_INSTANCE" \
+            --set-secrets "DATABASE_URL=${DATABASE_SECRET}:1" \
+            --service-account "$CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT" \
+            --min 0 \
+            --max-instances 3 \
+            --allow-unauthenticated \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --quiet
+
+          api_url="$(gcloud run services describe quevo-uat-api \
+            --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
+            --format='value(status.url)')"
+          test -n "$api_url"
+
+          gcloud run deploy quevo-uat-web \
+            --image "$WEB_IMAGE_DIGEST" \
+            --revision-suffix "$revision_suffix" \
+            --port 3000 \
+            --set-env-vars "API_BASE_URL=${api_url}" \
+            --min 0 \
+            --max-instances 3 \
+            --allow-unauthenticated \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --quiet
+
+      - name: Verify UAT endpoints and deployed images
+        if: steps.migration_freshness.outputs.deploy == 'true'
+        env:
+          API_IMAGE_DIGEST: ${{ steps.images.outputs.api_image }}
+          WEB_IMAGE_DIGEST: ${{ steps.images.outputs.web_image }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          api_url="$(gcloud run services describe quevo-uat-api \
+            --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
+            --format='value(status.url)')"
+          web_url="$(gcloud run services describe quevo-uat-web \
+            --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
+            --format='value(status.url)')"
+          test -n "$api_url"
+          test -n "$web_url"
+          curl --fail --silent --show-error --retry 10 --retry-all-errors \
+            --retry-delay 5 --output /dev/null "$api_url/api/v1/health"
+          curl --fail --silent --show-error --retry 10 --retry-all-errors \
+            --retry-delay 5 --output /dev/null "$web_url"
+
+          api_revision="$(gcloud run services describe quevo-uat-api \
+            --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
+            --format='value(status.latestReadyRevisionName)')"
+          web_revision="$(gcloud run services describe quevo-uat-web \
+            --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
+            --format='value(status.latestReadyRevisionName)')"
+          api_revision_image="$(gcloud run revisions describe "$api_revision" \
+            --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
+            --format='value(status.imageDigest)')"
+          web_revision_image="$(gcloud run revisions describe "$web_revision" \
+            --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
+            --format='value(status.imageDigest)')"
+          [[ "$api_revision_image" == "$API_IMAGE_DIGEST" ]]
+          [[ "$web_revision_image" == "$WEB_IMAGE_DIGEST" ]]
+
+          {
+            echo "## Quevo UAT deployment"
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- UAT URL: $web_url"
+            echo "- API health: $api_url/api/v1/health"
+            echo "- API revision: \`$api_revision\`"
+            echo "- Web revision: \`$web_revision\`"
+          } >> "$GITHUB_STEP_SUMMARY"

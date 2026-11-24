@@ -15,9 +15,9 @@ jobs:
     name: Build and deploy release
     needs: release_checks
     runs-on: ubuntu-latest
-    environment: demo
+    environment: prod
     concurrency:
-      group: quevo-demo-cloud-run
+      group: quevo-prod-cloud-run
       cancel-in-progress: false
     permissions:
       contents: read
