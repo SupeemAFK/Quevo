@@ -120,13 +120,16 @@ export function CustomerTicketDetails({
 
         <section
           aria-labelledby="ticket-number-heading"
-          className="ticket-reflective queue-ticket rounded-xl border bg-card shadow-sm"
+          className="ticket-reflective queue-ticket rounded-xl border shadow-md"
           onPointerLeave={resetReflection}
           onPointerMove={reflectPointer}
         >
+          <span aria-hidden="true" className="queue-ticket-notch queue-ticket-notch-start" />
+          <span aria-hidden="true" className="queue-ticket-notch queue-ticket-notch-end" />
           <div className="relative z-10 flex items-center justify-between gap-4 px-5 py-4 sm:px-7">
-            <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              <TicketIcon aria-hidden="true" size={15} /> Quevo service ticket
+            <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              <TicketIcon aria-hidden="true" className="text-brand-green" size={15} /> Quevo{' '}
+              <span aria-hidden="true">·</span> Queue ticket
             </span>
             <span className="font-mono text-xs tabular-nums text-muted-foreground">
               No. {ticket.ticketNumber}

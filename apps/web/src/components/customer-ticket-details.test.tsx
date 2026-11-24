@@ -96,7 +96,7 @@ describe('CustomerTicketDetails', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Ticket status updated.')
   })
 
-  it('keeps the ticket surface neutral so its status badge carries the state color', () => {
+  it('renders the ticket face with visible ticket notches and a detachable status stub', () => {
     render(
       <CustomerTicketDetails
         feedback={null}
@@ -107,7 +107,8 @@ describe('CustomerTicketDetails', () => {
     )
 
     const ticketSection = screen.getByRole('region', { name: /your ticket number/i })
-    expect(ticketSection).toHaveClass('border', 'bg-card', 'queue-ticket')
+    expect(ticketSection).toHaveClass('border', 'queue-ticket')
+    expect(ticketSection.querySelectorAll('.queue-ticket-notch')).toHaveLength(2)
     expect(ticketSection.querySelector('.ticket-stub')).not.toBeNull()
     expect(ticketSection.querySelector('.queue-ticket-perforation')).not.toBeNull()
     expect(ticketSection).not.toHaveClass('before:bg-brand-green')
