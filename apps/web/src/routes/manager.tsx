@@ -3,9 +3,17 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 import { ArrowDown, ArrowUp, Building2, Plus, Save, Settings2, UsersRound } from 'lucide-react'
 import { useState } from 'react'
 import { AuthenticatedShell } from '@/components/authenticated-shell'
+import { DatePicker } from '@/components/date-picker'
 import { FeedbackMessage, LoadingMessage } from '@/components/feedback-message'
 import { PageHeading } from '@/components/page-heading'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { getCurrentUser } from '@/lib/auth'
 import {
   createManagerCounter,
@@ -86,19 +94,20 @@ function ManagerPage() {
             </p>
           </div>
           {branches.data && branches.data.length > 1 ? (
-            <label className="grid gap-1.5 text-sm font-medium">
+            <label className="grid gap-1.5 text-sm font-medium" htmlFor="manager-branch">
               Branch
-              <select
-                className="min-h-11 min-w-56 rounded-md border border-input bg-card px-3"
-                value={selectedBranch}
-                onChange={(event) => setBranchId(event.target.value)}
-              >
-                {branches.data.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </option>
-                ))}
-              </select>
+              <Select onValueChange={setBranchId} value={selectedBranch}>
+                <SelectTrigger className="min-h-11 min-w-56" id="manager-branch">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {branches.data.map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </label>
           ) : branches.data?.[0] ? (
             <p className="text-sm text-muted-foreground">{branches.data[0].name}</p>
@@ -458,20 +467,26 @@ function ServiceEditor({
                   placeholder="For example, request type"
                   value={field.label}
                 />
-                <select
-                  aria-label={`Field ${index + 1} type`}
-                  className="min-h-10 rounded-md border border-input bg-card px-2 text-sm"
-                  onChange={(event) =>
+                <Select
+                  onValueChange={(value) =>
                     updateField(index, {
-                      type: event.target.value as FormField['type'],
-                      options: event.target.value === 'single_select' ? ['Option 1'] : [],
+                      type: value as FormField['type'],
+                      options: value === 'single_select' ? ['Option 1'] : [],
                     })
                   }
                   value={field.type}
                 >
-                  <option value="short_text">Short answer</option>
-                  <option value="single_select">Choose one</option>
-                </select>
+                  <SelectTrigger
+                    aria-label={`Field ${index + 1} type`}
+                    className="min-h-10 w-full px-2 text-sm"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="short_text">Short answer</SelectItem>
+                    <SelectItem value="single_select">Choose one</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Button
                   aria-label={`Move field ${index + 1} up`}
                   className="min-h-10"
@@ -690,41 +705,32 @@ function SummarySection({ branchId, services }: { branchId: string; services: Ma
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <label className="grid gap-1 text-xs text-muted-foreground">
-            Service
-            <select
-              aria-label="Summary service"
-              className="min-h-10 rounded-md border border-input bg-card px-2 text-sm text-foreground"
-              onChange={(event) => setServiceId(event.target.value)}
-              value={serviceId}
-            >
-              {services.map((service) => (
-                <option key={service.id} value={service.id}>
-                  {service.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="grid gap-1 text-xs text-muted-foreground">
-            From
-            <input
-              aria-label="Summary start date"
-              className="min-h-10 rounded-md border border-input bg-card px-2 text-sm text-foreground"
-              onChange={(event) => setFrom(event.target.value)}
-              type="date"
-              value={from}
-            />
-          </label>
-          <label className="grid gap-1 text-xs text-muted-foreground">
-            To
-            <input
-              aria-label="Summary end date"
-              className="min-h-10 rounded-md border border-input bg-card px-2 text-sm text-foreground"
-              onChange={(event) => setTo(event.target.value)}
-              type="date"
-              value={to}
-            />
-          </label>
+          <div className="grid gap-1 text-xs text-muted-foreground">
+            <span id="summary-service-label">Service</span>
+            <Select onValueChange={setServiceId} value={serviceId}>
+              <SelectTrigger
+                aria-labelledby="summary-service-label"
+                className="min-h-10 min-w-44 text-sm"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {services.map((service) => (
+                  <SelectItem key={service.id} value={service.id}>
+                    {service.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1 text-xs text-muted-foreground">
+            <span>From</span>
+            <DatePicker ariaLabel="Summary start date" onChange={setFrom} value={from} />
+          </div>
+          <div className="grid gap-1 text-xs text-muted-foreground">
+            <span>To</span>
+            <DatePicker ariaLabel="Summary end date" onChange={setTo} value={to} />
+          </div>
         </div>
       </div>
       {summary.isError ? (

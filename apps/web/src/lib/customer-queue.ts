@@ -62,11 +62,33 @@ export const joinQueue = createServerFn({ method: 'POST' })
       },
     )
 
-    if (response.status === 409) {
-      throw new Error('You already have an active ticket for this service today.')
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+        requestId?: string
+      } | null
+      const serverMessage = payload?.message?.trim()
+
+      if (response.status === 409) {
+        throw new Error(
+          serverMessage || 'You already have an active ticket for this service today.',
+        )
+      }
+      if (response.status === 404) {
+        throw new Error(serverMessage || 'This service is no longer available.')
+      }
+      if (response.status === 400) {
+        throw new Error(serverMessage || 'Check the required service details and try again.')
+      }
+      if (response.status === 403) {
+        throw new Error(serverMessage || 'You do not have permission to join this queue.')
+      }
+      if (response.status >= 500) {
+        const reference = payload?.requestId ? ` Reference: ${payload.requestId}.` : ''
+        throw new Error(`The queue could not be joined right now. Please try again.${reference}`)
+      }
+      throw new Error(serverMessage || 'Could not join the queue. Please try again.')
     }
-    if (response.status === 404) throw new Error('This service is no longer available.')
-    if (!response.ok) throw new Error('Could not join the queue. Please try again.')
     return (await response.json()) as Ticket
   })
 

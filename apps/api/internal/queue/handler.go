@@ -244,6 +244,7 @@ func (h Handler) joinQueue(c *gin.Context) {
 		return
 	}
 	if err != nil {
+		_ = c.Error(err)
 		writeQueueError(c, http.StatusInternalServerError, "internal_error", "The request could not be completed")
 		return
 	}

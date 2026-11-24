@@ -85,7 +85,7 @@ func (r *Repository) JoinQueue(ctx context.Context, input JoinQueueInput) (Ticke
 			(now() AT TIME ZONE b.timezone)::date
 			FROM service_queues q JOIN services s ON s.id = q.service_id
 			JOIN branches b ON b.id = s.branch_id CROSS JOIN users u
-			WHERE q.id = ? AND q.branch_id = ? AND (? = '' OR s.id = ?) AND u.id = ?`,
+			WHERE q.id = ? AND q.branch_id = ? AND (CAST(? AS text) = '' OR s.id::text = ?) AND u.id = ?`,
 			requestedQueueID, input.BranchID, input.ServiceID, input.ServiceID, input.CustomerID).
 			Row().Scan(&branchID, &serviceID, &queueID, &queueName, &role, &active, &branchName, &serviceName,
 			&allowsUploads, &requiresDocuments, &documentGuidance, &branchBusinessDate)

@@ -53,7 +53,8 @@ describe('OperatorServiceNavigation', () => {
 
     const mobileSelector = screen.getByRole('combobox', { name: 'Service' })
     expect(mobileSelector).toHaveClass('min-h-11')
-    await user.selectOptions(mobileSelector, 'branch-2:queue-2')
+    await user.click(mobileSelector)
+    await user.click(await screen.findByRole('option', { name: /Passport Service/ }))
 
     expect(onSelect).toHaveBeenCalledWith(passportQueue)
   })

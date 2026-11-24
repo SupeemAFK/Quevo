@@ -121,6 +121,9 @@ describe('CustomerServiceSelection', () => {
     const bankService: Service = {
       ...generalService,
       queues: [{ id: 'account-queue', name: 'Account opening' }],
+      allowsUploads: true,
+      requiresDocuments: true,
+      documentGuidance: 'Bring proof of address and photo ID.',
       fields: [
         {
           id: 'request-type',
@@ -142,9 +145,45 @@ describe('CustomerServiceSelection', () => {
       />,
     )
 
-    await user.selectOptions(screen.getByLabelText(/Account type/), 'Savings')
+    await user.click(screen.getByRole('combobox', { name: /Account type/ }))
+    await user.click(await screen.findByRole('option', { name: 'Savings' }))
     await user.click(screen.getByRole('button', { name: 'Join queue' }))
     expect(onJoin).toHaveBeenCalledWith(bankService, 'account-queue', { 'request-type': 'Savings' })
+    expect(screen.getByText('Bring proof of address and photo ID.')).toBeInTheDocument()
+    expect(screen.getByText(/After joining, open your ticket and choose/)).toBeInTheDocument()
+  })
+
+  it('requires configured form answers before joining', async () => {
+    const user = userEvent.setup()
+    const onJoin = vi.fn()
+    const requiredService: Service = {
+      ...generalService,
+      fields: [
+        {
+          id: 'request-type',
+          position: 1,
+          type: 'single_select',
+          label: 'Account type',
+          required: true,
+          options: ['Everyday', 'Savings'],
+        },
+      ],
+    }
+    render(
+      <CustomerServiceSelection
+        activeTickets={[]}
+        error=""
+        joining={false}
+        onJoin={onJoin}
+        services={[requiredService]}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Join queue' }))
+    expect(onJoin).not.toHaveBeenCalled()
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Complete the required service details before joining.',
+    )
   })
 
   it('explains that a service must be chosen before the join action is available', () => {
@@ -158,7 +197,11 @@ describe('CustomerServiceSelection', () => {
       />,
     )
 
-    expect(screen.getByText('Choose an available service to continue.')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Choose an available service to see its request form and document requirements.',
+      ),
+    ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Join queue' })).toBeDisabled()
   })
 

@@ -37,6 +37,27 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await expect(page.getByRole('heading', { name: 'Select a service' })).toBeFocused()
   await expectNoHorizontalOverflow(page)
 
+  await page.getByRole('radio', { name: /Account Opening.*Quevo Demo Branch/ }).click()
+  await expect(page.getByRole('heading', { name: 'A few details for the team' })).toBeVisible()
+  await expect(page.getByText('Supporting documents')).toBeVisible()
+  const accountType = page.getByRole('combobox', { name: 'What would you like to open?' })
+  await accountType.click()
+  await page.getByRole('option', { name: 'Savings account' }).click()
+  await page.getByRole('button', { name: 'Join queue' }).click()
+  await expect(page.getByRole('heading', { name: 'Your ticket' })).toBeVisible()
+  await expect(page.getByText('Required before service starts')).toBeVisible()
+  await page.getByLabel('Add document').setInputFiles({
+    name: 'proof-of-address.pdf',
+    mimeType: 'application/pdf',
+    buffer: Buffer.from('%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF'),
+  })
+  await expect(page.getByRole('status')).toHaveText('Document uploaded.')
+  await expect(page.getByText('1 document attached')).toBeVisible()
+  page.once('dialog', (dialog) => dialog.accept())
+  await page.getByRole('button', { name: 'Leave queue' }).click()
+  await expect(page.getByRole('status')).toHaveText('Ticket cancelled.')
+  await page.goto('/customer')
+
   const secondDevice = await browser.newPage()
   await secondDevice.goto('/login')
   await secondDevice.waitForLoadState('networkidle')

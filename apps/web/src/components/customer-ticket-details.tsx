@@ -217,13 +217,13 @@ export function CustomerTicketDetails({
                   ) : null}
                 </div>
                 {ticket.status === 'WAITING' || ticket.status === 'PENDING' ? (
-                  <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-md border border-border px-3 text-sm font-medium transition-colors hover:bg-muted focus-within:outline focus-within:outline-2 focus-within:outline-ring">
+                  <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-[var(--primary-hover)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring">
                     <FileUp aria-hidden="true" size={16} />
                     {uploading ? 'Uploading…' : 'Add document'}
                     <input
                       accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
                       className="sr-only"
-                      disabled={uploading}
+                      disabled={uploading || documents.length >= 5}
                       onChange={onChooseFile}
                       type="file"
                     />

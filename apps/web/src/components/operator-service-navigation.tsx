@@ -1,6 +1,7 @@
 import { Check, Layers3, MapPin } from 'lucide-react'
 import { motion } from 'motion/react'
 import type { components } from '@/client/api/schema'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 
 type QueueOption = components['schemas']['queue.OperatorQueueResponse']
 
@@ -27,21 +28,24 @@ export function OperatorServiceNavigation({ queues, selectedQueueKey, onSelect }
           <Layers3 aria-hidden="true" size={16} />
           Service
         </label>
-        <select
-          className="min-h-11 w-full rounded-md border border-input bg-card px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          id="operator-service-select"
-          onChange={(event) => {
-            const queue = queues.find((item) => keyFor(item) === event.target.value)
+        <Select
+          onValueChange={(value) => {
+            const queue = queues.find((item) => keyFor(item) === value)
             if (queue) onSelect(queue)
           }}
           value={selectedQueueKey}
         >
-          {queues.map((queue) => (
-            <option key={keyFor(queue)} value={keyFor(queue)}>
-              {queue.serviceName} · {queue.queueName} · {queue.branchName}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="min-h-11 w-full" id="operator-service-select">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {queues.map((queue) => (
+              <SelectItem key={keyFor(queue)} value={keyFor(queue)}>
+                {queue.serviceName} · {queue.queueName} · {queue.branchName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <nav aria-label="Assigned queues" className="hidden min-w-0 lg:block">

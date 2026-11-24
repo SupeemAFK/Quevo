@@ -17,6 +17,7 @@ import type { components } from '@/client/api/schema'
 import { FeedbackMessage, LoadingMessage } from './feedback-message'
 import { TicketStatus, ticketStatusLabel } from './ticket-status'
 import { Button } from './ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 
 type ServiceOption = components['schemas']['queue.ServiceResponse']
 type ActiveTicket = components['schemas']['queue.TicketResponse']
@@ -47,6 +48,9 @@ export function CustomerServiceSelection({
   const selectedQueue =
     selectedService?.queues.find((queue) => queue.id === selectedQueueID) ??
     (selectedService?.queues.length === 1 ? selectedService.queues[0] : undefined)
+  const missingRequiredField = Boolean(
+    selectedService?.fields.some((field) => field.required && !answers[field.id]?.trim()),
+  )
 
   useEffect(() => {
     if (!joining) joinStartedRef.current = false
@@ -57,6 +61,10 @@ export function CustomerServiceSelection({
     if (joining || joinStartedRef.current) return
     if (!selectedService || !selectedQueue) {
       setSelectionError('Select a service and queue before joining.')
+      return
+    }
+    if (missingRequiredField) {
+      setSelectionError('Complete the required service details before joining.')
       return
     }
     setSelectionError('')
@@ -220,22 +228,35 @@ export function CustomerServiceSelection({
             <div className="space-y-5">
               {selectedService.queues.length > 1 ? (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium" htmlFor="queue-choice">
+                  <label
+                    className="text-sm font-medium"
+                    htmlFor="queue-choice"
+                    id="queue-choice-label"
+                  >
                     Choose a queue
                   </label>
-                  <select
-                    className="min-h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
-                    id="queue-choice"
-                    onChange={(event) => setSelectedQueueID(event.target.value)}
+                  <Select
+                    onValueChange={(queueID) => {
+                      setSelectedQueueID(queueID)
+                      setSelectionError('')
+                    }}
                     value={selectedQueueID}
                   >
-                    <option value="">Select a queue</option>
-                    {selectedService.queues.map((queue) => (
-                      <option key={queue.id} value={queue.id}>
-                        {queue.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      aria-labelledby="queue-choice-label"
+                      className="min-h-11 w-full"
+                      id="queue-choice"
+                    >
+                      <SelectValue placeholder="Select a queue" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectedService.queues.map((queue) => (
+                        <SelectItem key={queue.id} value={queue.id}>
+                          {queue.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               ) : selectedQueue ? (
                 <p className="text-sm text-muted-foreground">
@@ -250,43 +271,53 @@ export function CustomerServiceSelection({
                   </legend>
                   {selectedService.fields.map((field) => (
                     <div className="space-y-2" key={field.id}>
-                      <label className="text-sm font-medium" htmlFor={`field-${field.id}`}>
+                      <label
+                        className="text-sm font-medium"
+                        htmlFor={`field-${field.id}`}
+                        id={`field-${field.id}-label`}
+                      >
                         {field.label}
                         {field.required ? <span aria-hidden="true"> *</span> : null}
                         {field.required ? <span className="sr-only"> required</span> : null}
                       </label>
                       {field.type === 'single_select' ? (
-                        <select
-                          className="min-h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
-                          id={`field-${field.id}`}
-                          onChange={(event) =>
-                            setAnswers((current) => ({
-                              ...current,
-                              [field.id]: event.target.value,
-                            }))
-                          }
-                          required={field.required}
+                        <Select
+                          onValueChange={(value) => {
+                            setAnswers((current) => ({ ...current, [field.id]: value }))
+                            setSelectionError('')
+                          }}
                           value={answers[field.id] ?? ''}
                         >
-                          <option value="">Choose one</option>
-                          {field.options.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
+                          <SelectTrigger
+                            aria-invalid={field.required && !answers[field.id]}
+                            aria-required={field.required}
+                            aria-labelledby={`field-${field.id}-label`}
+                            className="min-h-11 w-full"
+                            id={`field-${field.id}`}
+                          >
+                            <SelectValue placeholder="Choose one" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {field.options.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       ) : (
                         <input
                           autoComplete="off"
                           className="min-h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
                           id={`field-${field.id}`}
                           maxLength={200}
-                          onChange={(event) =>
+                          onChange={(event) => {
                             setAnswers((current) => ({
                               ...current,
                               [field.id]: event.target.value,
                             }))
-                          }
+                            setSelectionError('')
+                          }}
                           required={field.required}
                           type="text"
                           value={answers[field.id] ?? ''}
@@ -302,13 +333,22 @@ export function CustomerServiceSelection({
               ) : null}
 
               {selectedService.allowsUploads ? (
-                <p className="flex items-start gap-2 border-t pt-4 text-sm text-muted-foreground">
-                  <FileUp aria-hidden="true" className="mt-0.5 shrink-0" size={16} />
-                  <span>
+                <section aria-labelledby="document-step-heading" className="border-t pt-4">
+                  <h3
+                    className="flex items-center gap-2 text-sm font-semibold"
+                    id="document-step-heading"
+                  >
+                    <FileUp aria-hidden="true" size={16} /> Supporting documents
+                  </h3>
+                  <p className="mt-1 text-sm leading-5 text-muted-foreground">
                     {selectedService.documentGuidance ||
-                      'You can add supporting documents after receiving your ticket.'}
-                  </span>
-                </p>
+                      'You can add supporting documents from your ticket after joining.'}
+                  </p>
+                  <p className="mt-2 text-sm text-foreground">
+                    After joining, open your ticket and choose <strong>Add document</strong>
+                    {selectedService.requiresDocuments ? ' before service starts.' : '.'}
+                  </p>
+                </section>
               ) : null}
             </div>
           ) : null}
@@ -318,7 +358,7 @@ export function CustomerServiceSelection({
           {error ? <FeedbackMessage kind="error">{error}</FeedbackMessage> : null}
           {services.length > 1 && !selectedService ? (
             <p className="text-sm text-muted-foreground">
-              Choose an available service to continue.
+              Choose an available service to see its request form and document requirements.
             </p>
           ) : null}
           <Button
