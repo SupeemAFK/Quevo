@@ -147,11 +147,7 @@ func (h Handler) listServices(c *gin.Context) {
 	}
 	response := ServicesResponse{Items: make([]ServiceResponse, 0, len(services))}
 	for _, service := range services {
-		response.Items = append(response.Items, ServiceResponse{
-			ID: service.ID, BranchID: service.BranchID, BranchName: service.BranchName, Name: service.Name,
-			Queues: service.Queues, Fields: service.Fields, AllowsUploads: service.AllowsUploads,
-			RequiresDocuments: service.RequiresDocuments, DocumentGuidance: service.DocumentGuidance,
-		})
+		response.Items = append(response.Items, ServiceResponse(service))
 	}
 	c.JSON(http.StatusOK, response)
 }
@@ -399,7 +395,11 @@ func (h Handler) uploadDocument(c *gin.Context) {
 		writeQueueError(c, http.StatusBadRequest, "invalid_request", "Choose a PDF, JPG, or PNG file up to 10 MB")
 		return
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			_ = c.Error(err)
+		}
+	}()
 	if header.Size <= 0 || header.Size > maxTicketDocumentBytes {
 		writeQueueError(c, http.StatusBadRequest, "invalid_request", "Choose a PDF, JPG, or PNG file up to 10 MB")
 		return

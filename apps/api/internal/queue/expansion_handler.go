@@ -451,7 +451,7 @@ func getTicketHistory(c *gin.Context, repository *Repository) {
 		operatorError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, historyResponse{Items: page.Items, Limit: page.Limit, Offset: page.Offset, Total: page.Total})
+	c.JSON(http.StatusOK, historyResponse(page))
 }
 
 // getOperatorTicketHistory returns the operator's authorized ticket status audit trail.
