@@ -14,11 +14,15 @@ export const Route = createFileRoute('/api/tickets/$ticketId/documents/$document
             `${baseURL}/api/v1/tickets/${encodeURIComponent(params.ticketId)}/documents/${encodeURIComponent(params.documentId)}`,
             { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' },
           )
+          const contentType = upstream.headers.get('Content-Type') ?? 'application/octet-stream'
+          const isPreviewableImage = contentType === 'image/jpeg' || contentType === 'image/png'
           const headers = new Headers({
             'Cache-Control': 'private, no-store',
             'X-Content-Type-Options': 'nosniff',
-            'Content-Type': upstream.headers.get('Content-Type') ?? 'application/octet-stream',
-            'Content-Disposition': upstream.headers.get('Content-Disposition') ?? 'attachment',
+            'Content-Type': contentType,
+            'Content-Disposition': isPreviewableImage
+              ? 'inline'
+              : (upstream.headers.get('Content-Disposition') ?? 'attachment'),
           })
           return new Response(upstream.body, { status: upstream.status, headers })
         } catch {

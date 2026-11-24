@@ -159,26 +159,24 @@ func TestCustomerQueueAPIWithPostgres(t *testing.T) {
 		t.Fatalf("ticket business date = %q, want branch-local date %q", ticket.BusinessDate, expectedBusinessDate)
 	}
 	bankQueuePath := "/api/v1/branches/" + database.DemoBranchID + "/queues/10000000-0000-4000-8000-000000000010/tickets"
-	bankJoin := queueAPIRequest(router, http.MethodPost, bankQueuePath, map[string]any{
+	activeConflict := queueAPIRequest(router, http.MethodPost, bankQueuePath, map[string]any{
 		"requestAnswers": map[string]string{
 			"10000000-0000-4000-8000-000000000020": "Savings account",
 		},
 	}, customerSession)
-	if bankJoin.Code != http.StatusCreated {
-		t.Fatalf("bank queue join status = %d, want %d: %s", bankJoin.Code, http.StatusCreated, bankJoin.Body.String())
+	if activeConflict.Code != http.StatusConflict || !strings.Contains(activeConflict.Body.String(), "Finish or cancel it before joining another service") {
+		t.Fatalf("cross-service active-ticket status = %d, want %d: %s", activeConflict.Code, http.StatusConflict, activeConflict.Body.String())
 	}
-	assertContractResponse(http.MethodPost, bankQueuePath, bankJoin, map[string]any{
+	assertContractResponse(http.MethodPost, bankQueuePath, activeConflict, map[string]any{
 		"requestAnswers": map[string]string{
 			"10000000-0000-4000-8000-000000000020": "Savings account",
 		},
 	})
-	var bankTicket TicketResponse
-	if err := json.Unmarshal(bankJoin.Body.Bytes(), &bankTicket); err != nil {
-		t.Fatalf("decode bank ticket: %v", err)
+	cancelled := queueAPIRequest(router, http.MethodPost, "/api/v1/tickets/"+ticket.ID+"/cancel", nil, customerSession)
+	if cancelled.Code != http.StatusOK {
+		t.Fatalf("cancel general ticket status = %d, want %d: %s", cancelled.Code, http.StatusOK, cancelled.Body.String())
 	}
-	if bankTicket.ServiceName != "Account Opening" || !bankTicket.AllowsUploads || !bankTicket.RequiresDocuments || bankTicket.RequestAnswers["10000000-0000-4000-8000-000000000020"] != "Savings account" {
-		t.Fatalf("bank ticket = %#v; want saved form answer and required upload policy", bankTicket)
-	}
+	assertContractResponse(http.MethodPost, "/api/v1/tickets/"+ticket.ID+"/cancel", cancelled)
 	invalidBankJoin := queueAPIRequest(router, http.MethodPost, bankQueuePath, map[string]any{
 		"requestAnswers": map[string]string{
 			"10000000-0000-4000-8000-000000000020": "Unlisted account type",
@@ -192,6 +190,25 @@ func TestCustomerQueueAPIWithPostgres(t *testing.T) {
 			"10000000-0000-4000-8000-000000000020": "Unlisted account type",
 		},
 	})
+	bankAnswers := map[string]string{
+		"10000000-0000-4000-8000-000000000020": "Savings account",
+		"10000000-0000-4000-8000-000000000025": "Individual",
+		"10000000-0000-4000-8000-000000000026": "Yes, both",
+	}
+	bankJoin := queueAPIRequest(router, http.MethodPost, bankQueuePath, map[string]any{
+		"requestAnswers": bankAnswers,
+	}, customerSession)
+	if bankJoin.Code != http.StatusCreated {
+		t.Fatalf("bank queue join status = %d, want %d: %s", bankJoin.Code, http.StatusCreated, bankJoin.Body.String())
+	}
+	assertContractResponse(http.MethodPost, bankQueuePath, bankJoin, map[string]any{"requestAnswers": bankAnswers})
+	var bankTicket TicketResponse
+	if err := json.Unmarshal(bankJoin.Body.Bytes(), &bankTicket); err != nil {
+		t.Fatalf("decode bank ticket: %v", err)
+	}
+	if bankTicket.ServiceName != "Account Opening" || !bankTicket.AllowsUploads || !bankTicket.RequiresDocuments || bankTicket.RequestAnswers["10000000-0000-4000-8000-000000000020"] != "Savings account" {
+		t.Fatalf("bank ticket = %#v; want saved form answer and required upload policy", bankTicket)
+	}
 	activeTickets = queueAPIRequest(router, http.MethodGet, "/api/v1/tickets/active", nil, customerSession)
 	if activeTickets.Code != http.StatusOK || json.Unmarshal(activeTickets.Body.Bytes(), &ticketList) != nil {
 		t.Fatalf("active-ticket list after joining = %d %s", activeTickets.Code, activeTickets.Body.String())
@@ -201,8 +218,8 @@ func TestCustomerQueueAPIWithPostgres(t *testing.T) {
 	for _, activeTicket := range ticketList.Items {
 		activeTicketIDs[activeTicket.ID] = true
 	}
-	if len(ticketList.Items) != 2 || !activeTicketIDs[ticket.ID] || !activeTicketIDs[bankTicket.ID] {
-		t.Fatalf("active tickets after joining = %#v; want both of the customer's tickets", ticketList.Items)
+	if len(ticketList.Items) != 1 || !activeTicketIDs[bankTicket.ID] || activeTicketIDs[ticket.ID] {
+		t.Fatalf("active tickets after switching services = %#v; want only the bank ticket", ticketList.Items)
 	}
 
 	duplicate := queueAPIRequest(router, http.MethodPost, joinPath, nil, customerSession)

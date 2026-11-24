@@ -87,7 +87,7 @@ describe('CustomerServiceSelection', () => {
     expect(screen.getByRole('button', { name: 'Join queue' })).toHaveFocus()
     await user.keyboard('{Enter}')
 
-    expect(onJoin).toHaveBeenCalledWith(generalService, 'queue-1', {})
+    expect(onJoin).toHaveBeenCalledWith(generalService, 'queue-1', {}, [])
   })
 
   it('offers multiple services as keyboard-operable radio choices', async () => {
@@ -112,7 +112,7 @@ describe('CustomerServiceSelection', () => {
     expect(screen.getByRole('button', { name: 'Join queue' })).toBeEnabled()
     await user.click(screen.getByRole('button', { name: 'Join queue' }))
 
-    expect(onJoin).toHaveBeenCalledWith(passportService, 'queue-2', {})
+    expect(onJoin).toHaveBeenCalledWith(passportService, 'queue-2', {}, [])
   })
 
   it('collects the configured queue and service-specific answer before joining', async () => {
@@ -147,10 +147,23 @@ describe('CustomerServiceSelection', () => {
 
     await user.click(screen.getByRole('combobox', { name: /Account type/ }))
     await user.click(await screen.findByRole('option', { name: 'Savings' }))
+    const document = new File(['photo'], 'proof.png', { type: 'image/png' })
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      value: vi.fn(() => 'blob:proof'),
+    })
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() })
+    await user.upload(screen.getByLabelText('Upload files'), document)
+    expect(await screen.findByAltText('Preview of proof.png')).toHaveAttribute('src', 'blob:proof')
     await user.click(screen.getByRole('button', { name: 'Join queue' }))
-    expect(onJoin).toHaveBeenCalledWith(bankService, 'account-queue', { 'request-type': 'Savings' })
+    expect(onJoin).toHaveBeenCalledWith(
+      bankService,
+      'account-queue',
+      { 'request-type': 'Savings' },
+      [document],
+    )
     expect(screen.getByText('Bring proof of address and photo ID.')).toBeInTheDocument()
-    expect(screen.getByText(/After joining, open your ticket and choose/)).toBeInTheDocument()
+    expect(screen.getByText(/uploaded to your ticket as soon as it is created/)).toBeInTheDocument()
   })
 
   it('requires configured form answers before joining', async () => {
@@ -181,8 +194,63 @@ describe('CustomerServiceSelection', () => {
 
     await user.click(screen.getByRole('button', { name: 'Join queue' }))
     expect(onJoin).not.toHaveBeenCalled()
+    expect(screen.getByRole('alert')).toHaveTextContent('Account type is required.')
+  })
+
+  it('renders and validates a labeled text field through the shared form controls', async () => {
+    const user = userEvent.setup()
+    const onJoin = vi.fn()
+    const textService: Service = {
+      ...generalService,
+      fields: [
+        {
+          id: 'preferred-name',
+          position: 1,
+          type: 'short_text',
+          label: 'Name to call you',
+          required: true,
+          options: [],
+        },
+      ],
+    }
+    render(
+      <CustomerServiceSelection
+        activeTickets={[]}
+        error=""
+        joining={false}
+        onJoin={onJoin}
+        services={[textService]}
+      />,
+    )
+
+    await user.type(screen.getByRole('textbox', { name: 'Name to call you, required' }), 'Sam')
+    await user.click(screen.getByRole('button', { name: 'Join queue' }))
+    expect(onJoin).toHaveBeenCalledWith(textService, 'queue-1', { 'preferred-name': 'Sam' }, [])
+  })
+
+  it('requires a supporting file before joining a document-required service', async () => {
+    const user = userEvent.setup()
+    const onJoin = vi.fn()
+    const documentService: Service = {
+      ...generalService,
+      allowsUploads: true,
+      requiresDocuments: true,
+      documentGuidance: 'Bring proof of address.',
+    }
+    render(
+      <CustomerServiceSelection
+        activeTickets={[]}
+        error=""
+        joining={false}
+        onJoin={onJoin}
+        services={[documentService]}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Join queue' }))
+    expect(onJoin).not.toHaveBeenCalled()
     expect(screen.getByRole('alert')).toHaveTextContent(
-      'Complete the required service details before joining.',
+      'Add at least one required document before joining.',
     )
   })
 
@@ -222,7 +290,7 @@ describe('CustomerServiceSelection', () => {
     expect(screen.getByRole('button', { name: 'Join queue' })).toBeDisabled()
   })
 
-  it('keeps active tickets distinct and links directly to each ticket view', () => {
+  it('shows the active ticket and blocks joining another service', () => {
     render(
       <CustomerServiceSelection
         activeTickets={[activeTicket]}
@@ -233,7 +301,7 @@ describe('CustomerServiceSelection', () => {
       />,
     )
 
-    expect(screen.getByRole('heading', { name: 'Your active tickets' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Your active ticket' })).toBeInTheDocument()
     expect(screen.getByText('12', { exact: true })).toBeInTheDocument()
     expect(screen.getByText('Waiting', { exact: true })).toBeInTheDocument()
     expect(
@@ -241,48 +309,29 @@ describe('CustomerServiceSelection', () => {
         name: 'View ticket 12 (General Service at Demo Branch). Status: Waiting',
       }),
     ).toHaveAttribute('href', '/tickets/ticket-1')
-    expect(screen.getByRole('radio', { name: /General Service.*Demo Branch/ })).toBeEnabled()
-    expect(screen.getByRole('radio', { name: /Passport Service.*City Branch/ })).toBeEnabled()
+    expect(
+      screen.getByText(
+        'You can hold one active ticket at a time. Finish or cancel it before joining another service.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Join queue' })).not.toBeInTheDocument()
   })
 
-  it('lets the API decide a duplicate join and keeps the active ticket available', async () => {
-    const user = userEvent.setup()
-    const onJoin = vi.fn()
-    render(
-      <CustomerServiceSelection
-        activeTickets={[activeTicket]}
-        error=""
-        joining={false}
-        onJoin={onJoin}
-        services={[generalService]}
-      />,
-    )
-
-    expect(screen.getByRole('button', { name: 'Join queue' })).toBeEnabled()
-    expect(screen.getByRole('link', { name: /View ticket 12/ })).toBeEnabled()
-    await user.click(screen.getByRole('button', { name: 'Join queue' }))
-
-    expect(onJoin).toHaveBeenCalledWith(generalService, 'queue-1', {})
-  })
-
-  it('allows joining today while keeping a previous-day ticket available', async () => {
-    const user = userEvent.setup()
-    const onJoin = vi.fn()
+  it('blocks joining when any active ticket exists, including one from another day', () => {
     render(
       <CustomerServiceSelection
         activeTickets={[previousDayTicket]}
         error=""
         joining={false}
-        onJoin={onJoin}
+        onJoin={vi.fn()}
         services={[generalService]}
       />,
     )
 
     expect(screen.getByRole('link', { name: /View ticket 12/ })).toBeEnabled()
-    expect(screen.getByRole('button', { name: 'Join queue' })).toBeEnabled()
-    await user.click(screen.getByRole('button', { name: 'Join queue' }))
-
-    expect(onJoin).toHaveBeenCalledWith(generalService, 'queue-1', {})
+    expect(screen.getByRole('heading', { name: 'Your active ticket' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Join queue' })).not.toBeInTheDocument()
   })
 
   it('guards against rapid duplicate join events before the pending state rerenders', async () => {
@@ -307,7 +356,7 @@ describe('CustomerServiceSelection', () => {
     render(
       <CustomerServiceSelection
         activeTickets={[activeTicket]}
-        error="You already have an active ticket for this service today."
+        error="You already have an active ticket. Finish or cancel it before joining another service."
         joining={false}
         onJoin={vi.fn()}
         services={[generalService]}
@@ -315,7 +364,7 @@ describe('CustomerServiceSelection', () => {
     )
 
     expect(screen.getByRole('alert')).toHaveTextContent(
-      'You already have an active ticket for this service today.',
+      'You already have an active ticket. Finish or cancel it before joining another service.',
     )
     expect(screen.getByRole('link', { name: /View ticket 12/ })).toBeInTheDocument()
   })

@@ -55,7 +55,7 @@ type TicketResponse struct {
 
 type QueueErrorResponse struct {
 	Code      string `json:"code" binding:"required" example:"active_ticket_exists"`
-	Message   string `json:"message" binding:"required" example:"You already have an active ticket for this service today"`
+	Message   string `json:"message" binding:"required" example:"You already have an active ticket. Finish or cancel it before joining another service."`
 	RequestID string `json:"requestId" binding:"required" example:"0e85b5d4-fdda-48fd-a026-45128b73afc3"`
 }
 
@@ -232,7 +232,7 @@ func (h Handler) joinQueue(c *gin.Context) {
 		return
 	}
 	if errors.Is(err, ErrActiveTicket) {
-		writeQueueError(c, http.StatusConflict, "active_ticket_exists", "You already have an active ticket for this service today")
+		writeQueueError(c, http.StatusConflict, "active_ticket_exists", "You already have an active ticket. Finish or cancel it before joining another service.")
 		return
 	}
 	if errors.Is(err, ErrQueueUnauthorized) {

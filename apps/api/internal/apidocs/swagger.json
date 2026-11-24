@@ -442,7 +442,7 @@
                         "type": "string"
                     },
                     "message": {
-                        "example": "You already have an active ticket for this service today",
+                        "example": "You already have an active ticket. Finish or cancel it before joining another service.",
                         "type": "string"
                     },
                     "requestId": {

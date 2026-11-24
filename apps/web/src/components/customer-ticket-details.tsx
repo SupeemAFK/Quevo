@@ -249,25 +249,39 @@ export function CustomerTicketDetails({
             ) : null}
             {documents.length ? (
               <ul className="mt-4 divide-y border-y">
-                {documents.map((document) => (
-                  <li
-                    className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm"
-                    key={document.id}
-                  >
-                    <span className="min-w-0 truncate">
-                      {document.fileName}{' '}
-                      <span className="text-muted-foreground">
-                        · {(document.byteSize / 1024 / 1024).toFixed(1)} MB
-                      </span>
-                    </span>
-                    <a
-                      className="shrink-0 rounded-sm underline underline-offset-4 focus-visible:outline"
-                      href={`/api/tickets/${encodeURIComponent(ticket.id)}/documents/${encodeURIComponent(document.id)}`}
+                {documents.map((document) => {
+                  const documentURL = `/api/tickets/${encodeURIComponent(ticket.id)}/documents/${encodeURIComponent(document.id)}`
+                  return (
+                    <li
+                      className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm"
+                      key={document.id}
                     >
-                      Download
-                    </a>
-                  </li>
-                ))}
+                      <span className="flex min-w-0 items-center gap-3">
+                        {document.mediaType === 'image/jpeg' ||
+                        document.mediaType === 'image/png' ? (
+                          <img
+                            alt={`Preview of ${document.fileName}`}
+                            className="size-14 shrink-0 rounded-md border object-cover"
+                            src={documentURL}
+                          />
+                        ) : null}
+                        <span className="min-w-0 truncate">
+                          {document.fileName}{' '}
+                          <span className="text-muted-foreground">
+                            · {(document.byteSize / 1024 / 1024).toFixed(1)} MB
+                          </span>
+                        </span>
+                      </span>
+                      <a
+                        className="shrink-0 rounded-sm underline underline-offset-4 focus-visible:outline"
+                        download={document.fileName}
+                        href={documentURL}
+                      >
+                        Download
+                      </a>
+                    </li>
+                  )
+                })}
               </ul>
             ) : null}
           </section>

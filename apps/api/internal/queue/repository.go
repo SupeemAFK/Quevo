@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	ErrActiveTicket            = errors.New("customer already has an active ticket in this queue")
+	ErrActiveTicket            = errors.New("customer already has an active ticket")
 	ErrOperatorHasActiveTicket = errors.New("operator already has an active ticket")
 	ErrQueueUnauthorized       = errors.New("user is not authorized for this queue action")
 	ErrServiceUnavailable      = errors.New("service is not available")
@@ -98,6 +98,24 @@ func (r *Repository) JoinQueue(ctx context.Context, input JoinQueueInput) (Ticke
 		if err != nil {
 			return fmt.Errorf("validate customer and service: %w", err)
 		}
+		var lockedCustomerID string
+		err = tx.Raw(`SELECT id::text FROM users WHERE id = ? AND role = 'CUSTOMER' FOR UPDATE`, input.CustomerID).
+			Row().Scan(&lockedCustomerID)
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrQueueUnauthorized
+		}
+		if err != nil {
+			return fmt.Errorf("lock customer before joining: %w", err)
+		}
+		var exists bool
+		err = tx.Raw(`SELECT EXISTS (SELECT 1 FROM tickets WHERE customer_id = ?
+			AND status IN ('WAITING', 'PENDING', 'OPERATING'))`, input.CustomerID).Row().Scan(&exists)
+		if err != nil {
+			return fmt.Errorf("check customer's active ticket: %w", err)
+		}
+		if exists {
+			return ErrActiveTicket
+		}
 		answers, labels, err := validateServiceAnswers(tx, serviceID, input.RequestAnswers)
 		if err != nil {
 			return err
@@ -110,16 +128,6 @@ func (r *Repository) JoinQueue(ctx context.Context, input JoinQueueInput) (Ticke
 		last, err := lockSequence(tx, branchID, serviceID, queueID, date)
 		if err != nil {
 			return err
-		}
-		var exists bool
-		err = tx.Raw(`SELECT EXISTS (SELECT 1 FROM tickets WHERE customer_id = ? AND branch_id = ?
-			AND queue_id = ? AND business_date = ? AND status IN ('WAITING', 'PENDING', 'OPERATING'))`,
-			input.CustomerID, branchID, queueID, date).Row().Scan(&exists)
-		if err != nil {
-			return fmt.Errorf("check duplicate active ticket: %w", err)
-		}
-		if exists {
-			return ErrActiveTicket
 		}
 		next := last + 1
 		if err := tx.Exec(`UPDATE queue_sequences SET last_issued = ?

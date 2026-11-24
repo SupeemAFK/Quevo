@@ -71,7 +71,8 @@ export const joinQueue = createServerFn({ method: 'POST' })
 
       if (response.status === 409) {
         throw new Error(
-          serverMessage || 'You already have an active ticket for this service today.',
+          serverMessage ||
+            'You already have an active ticket. Finish or cancel it before joining another service.',
         )
       }
       if (response.status === 404) {

@@ -50,6 +50,19 @@ func TestQueueRepositoryPostgres(t *testing.T) {
 	if _, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: database.DemoCustomerID, BranchID: database.DemoBranchID, ServiceID: database.DemoServiceID, BusinessDate: date}); !errors.Is(err, ErrActiveTicket) {
 		t.Fatalf("duplicate join error = %v; want ErrActiveTicket", err)
 	}
+	if _, err := repo.JoinQueue(ctx, JoinQueueInput{
+		CustomerID: database.DemoCustomerID, BranchID: database.DemoBranchID,
+		ServiceID:    "10000000-0000-4000-8000-000000000010",
+		QueueID:      "10000000-0000-4000-8000-000000000010",
+		BusinessDate: date.AddDate(0, 0, 1),
+		RequestAnswers: map[string]string{
+			"10000000-0000-4000-8000-000000000020": "Everyday account",
+			"10000000-0000-4000-8000-000000000025": "Individual",
+			"10000000-0000-4000-8000-000000000026": "Yes, both",
+		},
+	}); !errors.Is(err, ErrActiveTicket) {
+		t.Fatalf("cross-service next-day join error = %v; want ErrActiveTicket", err)
+	}
 	second, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: customer2, BranchID: database.DemoBranchID, ServiceID: database.DemoServiceID, BusinessDate: date})
 	if err != nil || second.TicketNumber != "2" {
 		t.Fatalf("second join = %#v, err %v; want ticket 2 (duplicate must not consume sequence)", second, err)

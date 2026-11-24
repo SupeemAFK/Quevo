@@ -43,15 +43,25 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   const accountType = page.getByRole('combobox', { name: 'What would you like to open?' })
   await accountType.click()
   await page.getByRole('option', { name: 'Savings account' }).click()
+  const accountHolders = page.getByRole('combobox', { name: 'Individual or joint account?' })
+  await accountHolders.click()
+  await page.getByRole('option', { name: 'Individual' }).click()
+  const documentsReady = page.getByRole('combobox', {
+    name: 'Do you have photo ID and proof of address ready?',
+  })
+  await documentsReady.click()
+  await page.getByRole('option', { name: 'Yes, both' }).click()
+  await page.getByLabel('Upload files').setInputFiles({
+    name: 'proof-of-address.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/AAAAAElFTkSuQmCC',
+      'base64',
+    ),
+  })
+  await expect(page.getByAltText('Preview of proof-of-address.png')).toBeVisible()
   await page.getByRole('button', { name: 'Join queue' }).click()
   await expect(page.getByRole('heading', { name: 'Your ticket' })).toBeVisible()
-  await expect(page.getByText('Required before service starts')).toBeVisible()
-  await page.getByLabel('Add document').setInputFiles({
-    name: 'proof-of-address.pdf',
-    mimeType: 'application/pdf',
-    buffer: Buffer.from('%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF'),
-  })
-  await expect(page.getByRole('status')).toHaveText('Document uploaded.')
   await expect(page.getByText('1 document attached')).toBeVisible()
   await page.getByRole('button', { name: 'Leave queue', exact: true }).click()
   const cancelTicketDialog = page.getByRole('alertdialog', { name: 'Leave this queue?' })
@@ -101,7 +111,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await activateWithKeyboard(page, page.getByRole('button', { name: 'Join queue' }))
   await expectMinimumTouchTarget(page.getByRole('button', { name: 'Join queue' }))
   await expect(page.getByRole('alert')).toHaveText(
-    'You already have an active ticket for this service today.',
+    'You already have an active ticket. Finish or cancel it before joining another service.',
   )
   const recoveredTicketLink = page.getByRole('link', {
     name: /View ticket 1 \(General Service at Quevo Demo Branch\)/,

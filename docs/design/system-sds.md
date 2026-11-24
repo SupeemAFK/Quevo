@@ -371,7 +371,7 @@ This ER diagram is conceptual. Exact PostgreSQL types, email format, indexes, an
 | One queue-number counter per branch/service/business date. | Primary or unique key across branch_id, service_id, business_date. |
 | Ticket number is unique in its agreed branch/service/date scope. | Unique constraint across branch_id, service_id, business_date, ticket_number. |
 | Only Sprint 1 ticket states persist. | CHECK constraint for WAITING, PENDING, OPERATING, COMPLETED, SKIPPED. Add CANCELLED or NO_SHOW only in a reviewed migration after their policies are approved. |
-| A customer has at most one active ticket in a queue. | Partial unique index across customer_id, branch_id, service_id, business_date for active statuses. |
+| A customer has at most one active ticket across the product. | Customer-row transaction lock plus a partial unique index on customer_id for active statuses. |
 | An operator has at most one active assigned ticket. | Partial unique index on assigned_operator_id for PENDING and OPERATING tickets. |
 | Queue reads are efficient and FIFO. | Index on branch_id, service_id, business_date, status, joined_at, id. |
 | Session token cannot map to multiple sessions. | Unique token_hash; expiry and revocation are checked by the API. |
@@ -384,13 +384,13 @@ A state/timestamp check should require called_at for PENDING and later states, s
 
 1. Begin a PostgreSQL transaction.
 2. Confirm the branch service exists and is available to customers.
-3. Ensure the QueueSequence row exists for the branch/service/business-date key, then lock it with SELECT FOR UPDATE.
-4. Check for an existing active ticket for this customer and queue.
+3. Lock the customer row with SELECT FOR UPDATE and reject the join if that customer has any WAITING, PENDING, or OPERATING ticket.
+4. Ensure the QueueSequence row exists for the branch/service/business-date key, then lock it with SELECT FOR UPDATE.
 5. Increment last_issued while holding the row lock and format the next ticket number using the agreed policy.
 6. Insert a WAITING ticket with customer, service, branch, number, and joined_at.
 7. Commit. If any step fails, roll back both the counter increment and ticket insert.
 
-The partial unique active-ticket index is the final concurrency guard if two joins race. Map its conflict to the documented conflict response without exposing database details.
+The partial unique active-ticket index is the final concurrency guard if two joins race. Map its conflict to the documented conflict response without exposing database details. The customer row lock serializes cross-service joins from the same customer.
 
 ### 10.3 Call-next transaction
 

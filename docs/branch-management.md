@@ -6,19 +6,19 @@ Branch managers are assigned explicitly to branches and can configure only their
 
 `make seed-demo` creates these synthetic services at the demo branch. The exact products and document checklists should be configured by each institution's compliance and operations teams.
 
-| Demo service | Customer request field | Uploads | Required before service starts |
+| Demo service | Customer request fields | Uploads | Required before service starts |
 | --- | --- | --- | --- |
-| Account Opening | Account type | Yes | Yes |
-| Card Services | Card request type | No | No |
-| Personal Loan Application | Loan type | Yes | Yes |
-| Account Maintenance | Request type | No | No |
-| Digital Banking Help | Support area | No | No |
+| Account Opening | Account type; individual or joint; document readiness | Yes | Yes |
+| Card Services | Request type; debit or credit; card still with customer | No | No |
+| Personal Loan Application | Loan type; new or follow-up; document readiness | Yes | Yes |
+| Account Maintenance | Request type; account type; printed statement needed | No | No |
+| Digital Banking Help | Support area; device; sign-in availability | No | No |
 
-These queue forms deliberately do not collect account or card numbers, government ID numbers, passwords, PINs, OTPs, or income details. Customers see the configured request fields and document checklist after selecting a service. When a service allows uploads, the customer receives a ticket first, then uses **Add document** on the ticket page; this associates each file with the right queue request. Sensitive numeric identifiers and authentication secrets must not be entered in free-text fields.
+These queue forms deliberately do not collect account or card numbers, government ID numbers, passwords, PINs, OTPs, or income details. Customers see configured request fields and the document checklist before joining. The React Hook Form flow validates required answers and files, previews selected images, creates the ticket, and then uploads selected files to that ticket. Customers can use **Add document** on the ticket page to attach further files. The API and database enforce one active ticket per customer across all services and dates. Sensitive numeric identifiers and authentication secrets must not be entered in free-text fields.
 
 ## Document flow and current limits
 
-The ticket page sends attachments to a same-origin web route. That route checks the browser origin and a request marker, reads the HttpOnly session cookie on the server, and proxies the upload to the Go API. The API validates the ticket owner, service upload policy, waiting/called state, count, size, extension, declared MIME type, and detected content type. It accepts at most five PDF, PNG, or JPEG files up to 10 MiB each. Customers can list and download only their ticket's files; branch managers and assigned operators can access documents only for tickets within their authorized branch/queue. Responses use private no-store caching and `nosniff`.
+The customer page selects attachments before joining and uploads them to the newly created ticket through a same-origin web route. The ticket page can also send additional attachments through that route. It checks the browser origin and a request marker, reads the HttpOnly session cookie on the server, and proxies the upload to the Go API. The API validates the ticket owner, service upload policy, waiting/called state, count, size, extension, declared MIME type, and detected content type. It accepts at most five PDF, PNG, or JPEG files up to 10 MiB each. Customers can preview images, list and download only their ticket's files; branch managers and assigned operators can access documents only for tickets within their authorized branch/queue. Responses use private no-store caching and `nosniff`.
 
 Prototype limitations: document bytes are stored in PostgreSQL, there is no malware scanning, no antivirus quarantine, no retention/deletion workflow, and production encryption-at-rest depends on the database deployment. Do not upload real customer documents to this prototype. Before banking production use, move files to private encrypted object storage, scan/quarantine uploads before staff access, define retention and audit policy, and enforce institution-specific document and data-loss controls.
 

@@ -735,7 +735,7 @@ export interface components {
         "queue.QueueErrorResponse": {
             /** @example active_ticket_exists */
             code: string;
-            /** @example You already have an active ticket for this service today */
+            /** @example You already have an active ticket. Finish or cancel it before joining another service. */
             message: string;
             /** @example 0e85b5d4-fdda-48fd-a026-45128b73afc3 */
             requestId: string;

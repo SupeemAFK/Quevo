@@ -79,6 +79,21 @@ func SeedDemo(ctx context.Context, db *gorm.DB, credentials SeedCredentials, del
 			) AS v(id, service_id, options)
 			WHERE NOT EXISTS (SELECT 1 FROM service_form_fields f WHERE f.service_id = v.service_id::uuid)
 			ON CONFLICT (id) DO NOTHING`, nil, nil},
+		{`INSERT INTO service_form_fields (id, service_id, position, field_type, label, required, options)
+			SELECT v.id::uuid, v.service_id::uuid, v.position, 'single_select', v.label, true, v.options::jsonb
+			FROM (VALUES
+			('10000000-0000-4000-8000-000000000025','10000000-0000-4000-8000-000000000010',2,'Individual or joint account?','["Individual","Joint"]'),
+			('10000000-0000-4000-8000-000000000026','10000000-0000-4000-8000-000000000010',3,'Do you have photo ID and proof of address ready?','["Yes, both","Photo ID only","Proof of address only","I need help"]'),
+			('10000000-0000-4000-8000-000000000027','10000000-0000-4000-8000-000000000011',2,'Which card do you need help with?','["Debit card","Credit card","Not sure"]'),
+			('10000000-0000-4000-8000-000000000028','10000000-0000-4000-8000-000000000011',3,'Is the card still with you?','["Yes","No","Not applicable"]'),
+			('10000000-0000-4000-8000-000000000029','10000000-0000-4000-8000-000000000012',2,'Is this a new application or a follow-up?','["New application","Follow-up"]'),
+			('10000000-0000-4000-8000-000000000030','10000000-0000-4000-8000-000000000012',3,'Do you have proof of income and photo ID ready?','["Yes, both","Photo ID only","Proof of income only","I need help"]'),
+			('10000000-0000-4000-8000-000000000031','10000000-0000-4000-8000-000000000013',2,'Which account is this about?','["Personal","Joint","Business","Not sure"]'),
+			('10000000-0000-4000-8000-000000000032','10000000-0000-4000-8000-000000000013',3,'Do you need a printed statement today?','["Yes","No"]'),
+			('10000000-0000-4000-8000-000000000033','10000000-0000-4000-8000-000000000014',2,'Which device are you using?','["Android phone or tablet","iPhone or iPad","Computer","Other"]'),
+			('10000000-0000-4000-8000-000000000034','10000000-0000-4000-8000-000000000014',3,'Can you sign in right now?','["Yes","No","I have not registered"]')
+			) AS v(id, service_id, position, label, options)
+			ON CONFLICT (id) DO NOTHING`, nil, nil},
 		{`INSERT INTO counter_queues (counter_id, queue_id)
 			SELECT c.id, q.id FROM branch_counters c JOIN service_queues q ON q.branch_id = c.branch_id
 			WHERE c.branch_id = ? AND c.name = 'Counter 1' AND q.service_id IN (
