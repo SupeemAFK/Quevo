@@ -152,10 +152,7 @@ func (h Handler) handoffTicket(c *gin.Context) {
 		operatorError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, OperatorHandoffResponse{
-		ID: handoff.ID, TicketNumber: handoff.TicketNumber, Status: handoff.Status,
-		RecipientOperatorID: handoff.RecipientOperatorID, TransferredAt: handoff.TransferredAt,
-	})
+	c.JSON(http.StatusOK, OperatorHandoffResponse(handoff))
 }
 
 // listOperatorQueues godoc
