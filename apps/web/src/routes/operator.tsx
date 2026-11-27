@@ -244,6 +244,10 @@ function OperatorPage() {
                     command.reset()
                     void refresh()
                   }}
+                  onHandoff={(operatorName) => {
+                    setMessage(`Ticket handed off to ${operatorName}.`)
+                    refreshInBackground()
+                  }}
                 />
               ) : null}
             </div>

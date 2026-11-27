@@ -58,6 +58,28 @@ export default async function globalSetup() {
       throw new Error('Seed did not create both demo accounts')
     }
 
+    const handoffOperatorSeed = await postgres.exec([
+      'psql',
+      '-U',
+      'quevo',
+      '-d',
+      'quevo_e2e',
+      '-v',
+      'ON_ERROR_STOP=1',
+      '-c',
+      `WITH recipient AS (
+        INSERT INTO users (id, role, display_name, email, password_hash)
+        SELECT gen_random_uuid(), 'OPERATOR', 'Handoff Operator', 'handoff-operator@quevo.local', password_hash
+        FROM users WHERE email = 'operator@quevo.local'
+        RETURNING id
+      )
+      INSERT INTO operator_services (operator_id, service_id)
+      SELECT recipient.id, '10000000-0000-4000-8000-000000000002'::uuid FROM recipient`,
+    ])
+    if (handoffOperatorSeed.exitCode !== 0) {
+      throw new Error(`Could not seed the Lab 7 handoff operator: ${handoffOperatorSeed.stderr}`)
+    }
+
     execFileSync('go', ['build', '-o', apiBinary, './cmd/server'], {
       cwd: apiRoot,
       stdio: 'inherit',
@@ -78,6 +100,7 @@ export default async function globalSetup() {
     await waitFor('http://127.0.0.1:3000', web, 'web app')
     process.env.QUEVO_E2E_CUSTOMER_PASSWORD = customerPassword
     process.env.QUEVO_E2E_OPERATOR_PASSWORD = operatorPassword
+    process.env.QUEVO_E2E_HANDOFF_OPERATOR_PASSWORD = operatorPassword
   } catch (error) {
     await cleanup()
     throw error

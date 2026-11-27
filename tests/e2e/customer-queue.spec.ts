@@ -1,6 +1,8 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
 const customerPassword = process.env.QUEVO_E2E_CUSTOMER_PASSWORD!
+const handoffOperatorPassword = process.env.QUEVO_E2E_HANDOFF_OPERATOR_PASSWORD
+if (!handoffOperatorPassword) throw new Error('E2E handoff operator password is missing')
 
 async function activateWithKeyboard(page: Page, target: Locator, key = 'Enter') {
   await target.focus()
@@ -222,5 +224,50 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Skip ticket' }))
   await expect(operator.getByText('Ticket skipped.')).toBeVisible()
   await expect(operator.getByText('No customers are waiting.')).toBeFocused()
+
+  await page.goto('/customer')
+  await page.getByRole('button', { name: 'Join queue' }).click()
+  await expect(page.getByTestId('ticket-number')).toHaveText('5')
+  await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Refresh queue' }))
+  await expect(operator.getByText('Ticket 5', { exact: true })).toBeVisible()
+  await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Call next' }))
+  await expect(operator.getByTestId('operator-current-ticket')).toHaveText('5')
+  await operator.getByRole('button', { name: 'Hand off ticket' }).click()
+  await operator.getByRole('combobox', { name: 'Operator' }).click()
+  await operator.getByRole('option', { name: 'Handoff Operator' }).click()
+  await operator.getByRole('button', { name: 'Confirm handoff' }).click()
+  await expect(operator.getByRole('status')).toHaveText('Ticket handed off to Handoff Operator.')
+  await expect(operator.getByText('No customers are waiting.')).toBeVisible()
+  await expect(operator.getByRole('button', { name: 'Start service' })).toHaveCount(0)
+
+  const handoffOperator = await browser.newPage({ viewport: { width: 320, height: 780 } })
+  await handoffOperator.goto('/login')
+  await handoffOperator.getByLabel('Email').fill('handoff-operator@quevo.local')
+  await handoffOperator
+    .getByLabel('Password')
+    .fill(handoffOperatorPassword)
+  await handoffOperator.getByRole('button', { name: 'Sign in' }).click()
+  await activateWithKeyboard(
+    handoffOperator,
+    handoffOperator.getByRole('button', { name: 'Open navigation menu' }),
+  )
+  await activateWithKeyboard(
+    handoffOperator,
+    handoffOperator.getByRole('link', { name: 'Open operator queue' }),
+  )
+  await expect(handoffOperator.getByTestId('operator-current-ticket')).toHaveText('5')
+  await handoffOperator.getByRole('button', { name: 'History' }).click()
+  await expect(handoffOperator.getByText('Handed off from Demo Operator to Handoff Operator')).toBeVisible()
+  await activateWithKeyboard(
+    handoffOperator,
+    handoffOperator.getByRole('button', { name: 'Start service' }),
+  )
+  await expect(handoffOperator.getByText('In service', { exact: true })).toBeVisible()
+  await activateWithKeyboard(
+    handoffOperator,
+    handoffOperator.getByRole('button', { name: 'Complete service' }),
+  )
+  await expect(handoffOperator.getByText('Service completed.')).toBeVisible()
+  await handoffOperator.close()
   await operator.close()
 })

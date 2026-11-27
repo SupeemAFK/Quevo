@@ -11,6 +11,11 @@ import (
 
 var ErrInvalidTransition = errors.New("invalid ticket transition")
 
+type HandoffOperator struct {
+	ID          string
+	DisplayName string
+}
+
 type OperatorQueue struct {
 	BranchID     string
 	BranchName   string
@@ -103,6 +108,117 @@ func (r *Repository) GetOperatorQueue(ctx context.Context, operatorID, branchID,
 		result.Current = &current
 	}
 	return result, nil
+}
+
+// ListHandoffOperators returns same-queue operators who can accept an active ticket.
+func (r *Repository) ListHandoffOperators(ctx context.Context, operatorID, ticketID string) ([]HandoffOperator, error) {
+	var status, queueID string
+	err := r.db.WithContext(ctx).Raw(`SELECT t.status, t.queue_id::text
+		FROM tickets t JOIN service_queues q ON q.id = t.queue_id
+		WHERE t.id = ? AND t.assigned_operator_id = ? AND (
+			EXISTS (SELECT 1 FROM queue_operators qo WHERE qo.queue_id = q.id AND qo.operator_id = ?)
+			OR EXISTS (SELECT 1 FROM counter_queues cq JOIN counter_operators co ON co.counter_id = cq.counter_id WHERE cq.queue_id = q.id AND co.operator_id = ?)
+			OR (q.id = t.service_id AND EXISTS (SELECT 1 FROM operator_services os WHERE os.service_id = t.service_id AND os.operator_id = ?))
+		)`, ticketID, operatorID, operatorID, operatorID, operatorID).Row().Scan(&status, &queueID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrTicketNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("find assigned ticket for handoff: %w", err)
+	}
+	if status != "PENDING" && status != "OPERATING" {
+		return nil, ErrInvalidTransition
+	}
+	var operators []HandoffOperator
+	err = r.db.WithContext(ctx).Raw(`SELECT u.id::text AS id, u.display_name
+		FROM users u JOIN service_queues q ON q.id = ? JOIN services s ON s.id = q.service_id
+		WHERE u.role = 'OPERATOR' AND u.id <> ? AND (
+			EXISTS (SELECT 1 FROM queue_operators qo WHERE qo.queue_id = q.id AND qo.operator_id = u.id)
+			OR EXISTS (SELECT 1 FROM counter_queues cq JOIN counter_operators co ON co.counter_id = cq.counter_id WHERE cq.queue_id = q.id AND co.operator_id = u.id)
+			OR (q.id = s.id AND EXISTS (SELECT 1 FROM operator_services os WHERE os.service_id = s.id AND os.operator_id = u.id))
+		) AND NOT EXISTS (SELECT 1 FROM tickets active WHERE active.assigned_operator_id = u.id AND active.status IN ('PENDING', 'OPERATING'))
+		ORDER BY lower(u.display_name), u.id`, queueID, operatorID).Scan(&operators).Error
+	if err != nil {
+		return nil, fmt.Errorf("list eligible handoff operators: %w", err)
+	}
+	if operators == nil {
+		operators = []HandoffOperator{}
+	}
+	return operators, nil
+}
+
+// HandoffTicket atomically changes the assignee while preserving the ticket lifecycle.
+func (r *Repository) HandoffTicket(ctx context.Context, operatorID, ticketID, recipientID string) (Ticket, error) {
+	if recipientID == operatorID {
+		return Ticket{}, ErrHandoffTargetUnavailable
+	}
+	var ticket Ticket
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var lockedOperators []string
+		if err := tx.Raw(`SELECT id::text FROM users WHERE id IN (?, ?) AND role = 'OPERATOR' ORDER BY id FOR UPDATE`, operatorID, recipientID).Scan(&lockedOperators).Error; err != nil {
+			return fmt.Errorf("lock handoff operators: %w", err)
+		}
+		if len(lockedOperators) != 2 {
+			return ErrHandoffTargetUnavailable
+		}
+
+		var status, queueID string
+		err := tx.Raw(`SELECT t.status, t.queue_id::text FROM tickets t JOIN service_queues q ON q.id = t.queue_id
+			WHERE t.id = ? AND t.assigned_operator_id = ? AND (
+				EXISTS (SELECT 1 FROM queue_operators qo WHERE qo.queue_id = q.id AND qo.operator_id = ?)
+				OR EXISTS (SELECT 1 FROM counter_queues cq JOIN counter_operators co ON co.counter_id = cq.counter_id WHERE cq.queue_id = q.id AND co.operator_id = ?)
+				OR (q.id = t.service_id AND EXISTS (SELECT 1 FROM operator_services os WHERE os.service_id = t.service_id AND os.operator_id = ?))
+			) FOR UPDATE OF t`, ticketID, operatorID, operatorID, operatorID, operatorID).Row().Scan(&status, &queueID)
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrTicketNotFound
+		}
+		if err != nil {
+			return fmt.Errorf("lock assigned ticket for handoff: %w", err)
+		}
+		if status != "PENDING" && status != "OPERATING" {
+			return ErrInvalidTransition
+		}
+
+		var authorized bool
+		if err := tx.Raw(`SELECT EXISTS (
+			SELECT 1 FROM users u JOIN service_queues q ON q.id = ? JOIN services s ON s.id = q.service_id
+			WHERE u.id = ? AND u.role = 'OPERATOR' AND (
+				EXISTS (SELECT 1 FROM queue_operators qo WHERE qo.queue_id = q.id AND qo.operator_id = u.id)
+				OR EXISTS (SELECT 1 FROM counter_queues cq JOIN counter_operators co ON co.counter_id = cq.counter_id WHERE cq.queue_id = q.id AND co.operator_id = u.id)
+				OR (q.id = s.id AND EXISTS (SELECT 1 FROM operator_services os WHERE os.service_id = s.id AND os.operator_id = u.id))
+			))`, queueID, recipientID).Row().Scan(&authorized); err != nil {
+			return fmt.Errorf("check handoff recipient authorization: %w", err)
+		}
+		if !authorized {
+			return ErrHandoffTargetUnavailable
+		}
+
+		var hasActiveTicket bool
+		if err := tx.Raw(`SELECT EXISTS (SELECT 1 FROM tickets WHERE assigned_operator_id = ? AND status IN ('PENDING', 'OPERATING'))`, recipientID).Row().Scan(&hasActiveTicket); err != nil {
+			return fmt.Errorf("check handoff recipient workload: %w", err)
+		}
+		if hasActiveTicket {
+			return ErrHandoffRecipientBusy
+		}
+
+		err = tx.Raw(`UPDATE tickets SET assigned_operator_id = ? WHERE id = ?
+			RETURNING id::text, ticket_number, status, business_date, joined_at`, recipientID, ticketID).
+			Row().Scan(&ticket.ID, &ticket.TicketNumber, &ticket.Status, &ticket.BusinessDate, &ticket.JoinedAt)
+		if err != nil {
+			return fmt.Errorf("assign ticket to handoff recipient: %w", err)
+		}
+		if err := writeTicketHandoffEvent(tx, ticketID, status, operatorID, operatorID, recipientID); err != nil {
+			return err
+		}
+		if err := loadTicketServiceContext(tx, ticketID, &ticket); err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return Ticket{}, err
+	}
+	return ticket, nil
 }
 
 // TransitionTicket locks the assigned ticket and persists the next state and timestamp together.

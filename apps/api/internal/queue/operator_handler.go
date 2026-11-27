@@ -22,6 +22,19 @@ type OperatorTicketResponse struct {
 	JoinedAt          time.Time      `json:"joinedAt" binding:"required"`
 }
 
+type HandoffOperatorResponse struct {
+	ID          string `json:"id" binding:"required"`
+	DisplayName string `json:"displayName" binding:"required"`
+}
+
+type HandoffOperatorsResponse struct {
+	Items []HandoffOperatorResponse `json:"items" binding:"required"`
+}
+
+type handoffTicketRequest struct {
+	OperatorID string `json:"operatorId" binding:"required"`
+}
+
 type OperatorQueueResponse struct {
 	BranchID     string `json:"branchId" binding:"required"`
 	BranchName   string `json:"branchName" binding:"required"`
@@ -56,6 +69,91 @@ func registerOperatorRoutes(routes *gin.RouterGroup, service *auth.Service, repo
 	group.POST("/tickets/:ticketID/complete", h.completeTicket)
 	group.POST("/tickets/:ticketID/skip", h.skipTicket)
 	group.POST("/tickets/:ticketID/no-show", h.noShowTicket)
+	group.GET("/tickets/:ticketID/handoff-targets", h.listHandoffOperators)
+	group.POST("/tickets/:ticketID/handoff", h.handoffTicket)
+}
+
+// listHandoffOperators lists the operators currently eligible to accept the ticket.
+// @Summary List eligible ticket handoff recipients
+// @Tags operator
+// @ID getOperatorTicketHandoffTargets
+// @Produce json
+// @Param ticketId path string true "Ticket ID" format(uuid)
+// @Security BearerAuth
+// @Success 200 {object} HandoffOperatorsResponse
+// @Failure 401 {object} auth.ErrorResponse
+// @Failure 403 {object} auth.ErrorResponse
+// @Failure 404 {object} QueueErrorResponse
+// @Failure 409 {object} QueueErrorResponse
+// @Failure 500 {object} QueueErrorResponse
+// @Failure 503 {object} auth.ErrorResponse
+// @Router /operator/tickets/{ticketId}/handoff-targets [get]
+func (h Handler) listHandoffOperators(c *gin.Context) {
+	if h.repository == nil {
+		writeQueueError(c, http.StatusServiceUnavailable, "service_unavailable", "Tickets are temporarily unavailable")
+		return
+	}
+	ticketID, ok := parsePathUUID(c, "ticketID")
+	if !ok {
+		return
+	}
+	actor, _ := auth.ActorFromContext(c)
+	operators, err := h.repository.ListHandoffOperators(c.Request.Context(), actor.ID, ticketID)
+	if err != nil {
+		operatorError(c, err)
+		return
+	}
+	response := HandoffOperatorsResponse{Items: make([]HandoffOperatorResponse, 0, len(operators))}
+	for _, operator := range operators {
+		response.Items = append(response.Items, HandoffOperatorResponse{ID: operator.ID, DisplayName: operator.DisplayName})
+	}
+	c.JSON(http.StatusOK, response)
+}
+
+// handoffTicket transfers an active ticket to an eligible operator.
+// @Summary Hand off an assigned ticket
+// @Tags operator
+// @ID postOperatorTicketHandoff
+// @Accept json
+// @Produce json
+// @Param ticketId path string true "Ticket ID" format(uuid)
+// @Param request body handoffTicketRequest true "Handoff recipient"
+// @Security BearerAuth
+// @Success 200 {object} OperatorTicketResponse
+// @Failure 400 {object} QueueErrorResponse
+// @Failure 401 {object} auth.ErrorResponse
+// @Failure 403 {object} auth.ErrorResponse
+// @Failure 404 {object} QueueErrorResponse
+// @Failure 409 {object} QueueErrorResponse
+// @Failure 500 {object} QueueErrorResponse
+// @Failure 503 {object} auth.ErrorResponse
+// @Router /operator/tickets/{ticketId}/handoff [post]
+func (h Handler) handoffTicket(c *gin.Context) {
+	if h.repository == nil {
+		writeQueueError(c, http.StatusServiceUnavailable, "service_unavailable", "Tickets are temporarily unavailable")
+		return
+	}
+	ticketID, ok := parsePathUUID(c, "ticketID")
+	if !ok {
+		return
+	}
+	var request handoffTicketRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		queueBadRequest(c)
+		return
+	}
+	operatorID, err := uuid.Parse(request.OperatorID)
+	if err != nil {
+		writeQueueError(c, http.StatusBadRequest, "invalid_request", "A valid operator ID is required")
+		return
+	}
+	actor, _ := auth.ActorFromContext(c)
+	ticket, err := h.repository.HandoffTicket(c.Request.Context(), actor.ID, ticketID, operatorID.String())
+	if err != nil {
+		operatorError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, operatorTicketResponse(ticket))
 }
 
 // getOperatorQueueByID returns the waiting order for one assigned queue.
@@ -321,6 +419,10 @@ func operatorTicketResponse(t Ticket) OperatorTicketResponse {
 
 func operatorError(c *gin.Context, err error) {
 	switch {
+	case errors.Is(err, ErrHandoffRecipientBusy):
+		writeQueueError(c, http.StatusConflict, "handoff_recipient_busy", "The selected operator already has an active ticket")
+	case errors.Is(err, ErrHandoffTargetUnavailable):
+		writeQueueError(c, http.StatusConflict, "handoff_target_unavailable", "The selected operator is not available for this ticket")
 	case errors.Is(err, ErrQueueUnauthorized):
 		writeQueueError(c, http.StatusForbidden, "forbidden", "You do not have permission to access this queue")
 	case errors.Is(err, ErrTicketNotFound):

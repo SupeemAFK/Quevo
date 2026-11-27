@@ -427,6 +427,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/operator/tickets/{ticketId}/handoff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Hand off an assigned ticket */
+        post: operations["postOperatorTicketHandoff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/operator/tickets/{ticketId}/handoff-targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List eligible ticket handoff recipients */
+        get: operations["getOperatorTicketHandoffTargets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/operator/tickets/{ticketId}/history": {
         parameters: {
             query?: never;
@@ -662,6 +696,13 @@ export interface components {
             fields?: components["schemas"]["queue.ServiceFormFieldInput"][];
             requiresDocuments?: boolean;
         };
+        "queue.HandoffOperatorResponse": {
+            displayName: string;
+            id: string;
+        };
+        "queue.HandoffOperatorsResponse": {
+            items: components["schemas"]["queue.HandoffOperatorResponse"][];
+        };
         "queue.JoinTicketRequest": {
             requestAnswers?: components["schemas"]["queue.RequestAnswers"];
             requestLabels?: components["schemas"]["queue.RequestAnswers"];
@@ -796,9 +837,14 @@ export interface components {
         "queue.TicketEvent": {
             actorId?: string;
             actorName?: string;
+            eventType?: string;
+            fromOperatorId?: string;
+            fromOperatorName?: string;
             fromStatus?: string;
             id?: string;
             occurredAt?: string;
+            toOperatorId?: string;
+            toOperatorName?: string;
             toStatus?: string;
         };
         "queue.TicketResponse": {
@@ -831,6 +877,9 @@ export interface components {
         "queue.assignmentInput": {
             operatorIds?: string[];
             queueIds?: string[];
+        };
+        "queue.handoffTicketRequest": {
+            operatorId: string;
         };
         "queue.historyResponse": {
             items: components["schemas"]["queue.TicketEvent"][];
@@ -2079,6 +2128,174 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["queue.QueueErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["auth.ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["auth.ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.QueueErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.QueueErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.QueueErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["auth.ErrorResponse"];
+                };
+            };
+        };
+    };
+    postOperatorTicketHandoff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Ticket ID */
+                ticketId: string;
+            };
+            cookie?: never;
+        };
+        /** @description Handoff recipient */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["queue.handoffTicketRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.OperatorTicketResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.QueueErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["auth.ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["auth.ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.QueueErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.QueueErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.QueueErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["auth.ErrorResponse"];
+                };
+            };
+        };
+    };
+    getOperatorTicketHandoffTargets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Ticket ID */
+                ticketId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["queue.HandoffOperatorsResponse"];
                 };
             };
             /** @description Unauthorized */

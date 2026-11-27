@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import {
+  ArrowRightLeft,
   Check,
   CircleCheck,
   Layers3,
@@ -16,12 +17,17 @@ import {
 import { AnimatePresence, LayoutGroup, MotionConfig, motion } from 'motion/react'
 import { useCallback, useRef, useState } from 'react'
 import type { components } from '@/client/api/schema'
-import { getOperatorTicketHistory } from '@/lib/operator-queue'
+import {
+  getOperatorTicketHandoffTargets,
+  getOperatorTicketHistory,
+  handoffOperatorTicket,
+} from '@/lib/operator-queue'
 import { ticketDocumentsOptions } from '@/lib/ticket-documents'
 import { usePrefersReducedMotion } from '@/lib/use-prefers-reduced-motion'
 import { FeedbackMessage, LoadingMessage } from './feedback-message'
 import { TicketStatus } from './ticket-status'
 import { Button } from './ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 
 type QueueDetail = components['schemas']['queue.OperatorQueueDetailResponse']
 type Action = 'call-next' | 'start' | 'complete' | 'skip' | 'no-show'
@@ -35,6 +41,7 @@ type Props = {
   error: string
   onAction: (action: Action) => void
   onRefresh: () => void
+  onHandoff?: (operatorName: string) => void
   operatorId?: string
 }
 
@@ -47,6 +54,7 @@ export function OperatorQueue({
   error,
   onAction,
   onRefresh,
+  onHandoff,
   operatorId = '',
 }: Props) {
   const { current, waiting } = detail
@@ -225,6 +233,14 @@ export function OperatorQueue({
                         </Button>
                       ) : null}
                     </div>
+                    {operatorId ? (
+                      <TicketHandoffControl
+                        disabled={busy || refreshing}
+                        operatorId={operatorId}
+                        ticketId={current.id}
+                        onHandedOff={onHandoff}
+                      />
+                    ) : null}
                     {Object.entries(current.requestAnswers ?? {}).length > 0 ? (
                       <dl className="mt-6 grid gap-x-5 gap-y-3 border-t pt-4 text-sm sm:grid-cols-2">
                         {Object.entries(current.requestAnswers).map(([id, answer]) => (
@@ -475,8 +491,17 @@ function TicketHistoryDisclosure({
                 {history.data.items.map((event) => (
                   <li className="flex flex-wrap justify-between gap-2 py-2 text-sm" key={event.id}>
                     <span>
-                      <strong>{event.toStatus.replaceAll('_', ' ')}</strong>
-                      {event.actorName ? ` · ${event.actorName}` : ''}
+                      {event.eventType === 'HANDOFF' ? (
+                        <strong>
+                          Handed off from {event.fromOperatorName ?? 'another operator'} to{' '}
+                          {event.toOperatorName ?? 'another operator'}
+                        </strong>
+                      ) : (
+                        <>
+                          <strong>{event.toStatus.replaceAll('_', ' ')}</strong>
+                          {event.actorName ? ` · ${event.actorName}` : ''}
+                        </>
+                      )}
                     </span>
                     <time className="text-muted-foreground" dateTime={event.occurredAt}>
                       {new Date(event.occurredAt).toLocaleString()}
@@ -512,6 +537,132 @@ function TicketHistoryDisclosure({
               ) : null}
             </>
           ) : null}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function TicketHandoffControl({
+  operatorId,
+  ticketId,
+  disabled,
+  onHandedOff,
+}: {
+  operatorId: string
+  ticketId: string
+  disabled: boolean
+  onHandedOff?: (operatorName: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [selectedOperatorId, setSelectedOperatorId] = useState('')
+  const targets = useQuery({
+    queryKey: ['operator', operatorId, 'handoff-targets', ticketId],
+    queryFn: () => getOperatorTicketHandoffTargets({ data: { ticketId } }),
+    enabled: open && Boolean(operatorId && ticketId),
+    retry: false,
+  })
+  const handoff = useMutation({
+    mutationFn: () => {
+      if (!selectedOperatorId) throw new Error('Choose an operator to receive this ticket.')
+      return handoffOperatorTicket({ data: { ticketId, operatorId: selectedOperatorId } })
+    },
+    onSuccess: () => {
+      const recipientName =
+        targets.data?.find((operator) => operator.id === selectedOperatorId)?.displayName ??
+        'another operator'
+      setOpen(false)
+      setSelectedOperatorId('')
+      onHandedOff?.(recipientName)
+    },
+  })
+
+  return (
+    <div className="mt-5 border-t pt-4">
+      <Button
+        aria-expanded={open}
+        className="min-h-10"
+        disabled={disabled || handoff.isPending}
+        onClick={() => {
+          setOpen((value) => !value)
+          handoff.reset()
+        }}
+        variant="outline"
+      >
+        <ArrowRightLeft aria-hidden="true" />
+        {open ? 'Close handoff' : 'Hand off ticket'}
+      </Button>
+      {open ? (
+        <div className="mt-4 max-w-xl space-y-3 rounded-lg border bg-muted/30 p-4">
+          <div>
+            <h3 className="font-medium">Transfer this ticket</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              The new operator will be able to continue this ticket in its current state.
+            </p>
+          </div>
+          {targets.isPending ? (
+            <p aria-live="polite" className="text-sm text-muted-foreground" role="status">
+              Loading available operators…
+            </p>
+          ) : targets.isError ? (
+            <p className="text-sm text-status-danger" role="alert">
+              {targets.error.message}
+            </p>
+          ) : targets.data?.length ? (
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="handoff-operator">
+                Operator
+              </label>
+              <Select value={selectedOperatorId} onValueChange={setSelectedOperatorId}>
+                <SelectTrigger
+                  className="min-h-11 w-full"
+                  disabled={disabled || handoff.isPending}
+                  id="handoff-operator"
+                >
+                  <SelectValue placeholder="Choose an available operator" />
+                </SelectTrigger>
+                <SelectContent>
+                  {targets.data.map((operator) => (
+                    <SelectItem key={operator.id} value={operator.id}>
+                      {operator.displayName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <p aria-live="polite" className="text-sm text-muted-foreground" role="status">
+              No other authorized operator is available right now.
+            </p>
+          )}
+          {handoff.isError ? (
+            <p className="text-sm text-status-danger" role="alert">
+              {handoff.error.message}
+            </p>
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              className="min-h-10"
+              disabled={disabled || handoff.isPending}
+              onClick={() => {
+                setOpen(false)
+                setSelectedOperatorId('')
+                handoff.reset()
+              }}
+              variant="outline"
+            >
+              Cancel
+            </Button>
+            {targets.data?.length ? (
+              <Button
+                className="min-h-10"
+                disabled={disabled || !selectedOperatorId || handoff.isPending || targets.isPending}
+                onClick={() => handoff.mutate()}
+              >
+                {handoff.isPending ? 'Transferring…' : 'Confirm handoff'}
+              </Button>
+            ) : null}
+          </div>
         </div>
       ) : null}
     </div>

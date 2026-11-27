@@ -12,15 +12,20 @@ type OperatorTicket = components['schemas']['queue.OperatorTicketResponse']
 export type TicketHistory = {
   items: {
     id: string
+    eventType: 'STATUS' | 'HANDOFF'
     fromStatus?: string
     toStatus: string
     actorName?: string
+    fromOperatorName?: string
+    toOperatorName?: string
     occurredAt: string
   }[]
   limit: number
   offset: number
   total: number
 }
+
+export type HandoffOperator = { id: string; displayName: string }
 
 export function applyOperatorTicketUpdate(
   detail: OperatorQueueDetail | undefined,
@@ -125,6 +130,45 @@ export const updateOperatorTicket = createServerFn({ method: 'POST' })
     if (!result.response.ok || !result.data)
       throw new Error('Could not update the ticket. Please refresh and try again.')
     return result.data
+  })
+
+export const getOperatorTicketHandoffTargets = createServerFn({ method: 'GET' })
+  .validator((data: { ticketId: string }) => data)
+  .handler(async ({ data }) => {
+    setResponseHeader('Cache-Control', 'private, no-store')
+    const { headers } = api()
+    const base = (process.env.API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '')
+    const response = await fetch(
+      `${base}/api/v1/operator/tickets/${encodeURIComponent(data.ticketId)}/handoff-targets`,
+      { headers, cache: 'no-store' },
+    )
+    if (response.status === 404) throw new Error('This ticket is no longer assigned to you.')
+    if (!response.ok) throw new Error('Could not load eligible operators. Please try again.')
+    const result = (await response.json()) as { items: HandoffOperator[] }
+    return result.items
+  })
+
+export const handoffOperatorTicket = createServerFn({ method: 'POST' })
+  .validator((data: { ticketId: string; operatorId: string }) => data)
+  .handler(async ({ data }) => {
+    setResponseHeader('Cache-Control', 'private, no-store')
+    const { headers } = api()
+    const base = (process.env.API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '')
+    const response = await fetch(
+      `${base}/api/v1/operator/tickets/${encodeURIComponent(data.ticketId)}/handoff`,
+      {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ operatorId: data.operatorId }),
+        cache: 'no-store',
+      },
+    )
+    if (response.status === 404) throw new Error('This ticket is no longer assigned to you.')
+    if (response.status === 409)
+      throw new Error('That operator is no longer available. Refresh the queue and try again.')
+    if (!response.ok || response.status === 204)
+      throw new Error('Could not hand off this ticket. Please refresh and try again.')
+    return (await response.json()) as OperatorTicket
   })
 
 export const operatorQueuesOptions = (operatorID: string) =>

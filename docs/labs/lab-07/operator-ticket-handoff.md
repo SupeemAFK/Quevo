@@ -1,6 +1,6 @@
 # Lab 7 maintenance change: operator ticket handoff
 
-**Status:** Change selected; revised contract requires teammate review before implementation.
+**Status:** Contract reviewed and merged; implementation prepared for code review.
 **Prepared:** 2026-11-27
 **Instructor/TA approval:** Not required, per the Lab 7 spec-sheet announcement.
 **Accepted Sprint 1 baseline:** `82cd9c9693ea4e73f514929a09960647d56ef0ca`
@@ -71,3 +71,26 @@ The revised contract and this test plan must receive teammate review before impl
 | RED | Test commit, tested pre-change SHA, command, and failure output showing the missing handoff behavior. |
 | GREEN and regression | Implementation commit, passing commands/counts, affected regression results, and any failures/skips. |
 | Delivery | Reviewed PR, CI run, merged release commit, deployed revision, and post-deploy smoke test. |
+
+### Contract review
+
+- Contract PR: [#91](https://github.com/SupeemAFK/Quevo/pull/91), merged into `feat/bank-queue-service-workflows` at `8f819a9` before implementation.
+
+### GREEN and regression evidence (local)
+
+- `go test ./...` — passed.
+- `go vet ./...` — passed.
+- `go test -tags=integration -run '^$' ./internal/queue` — passed; this compiles the PostgreSQL integration tests without running them.
+- `bun run typecheck` — passed.
+- `bun run lint` — passed.
+- `bun run check:api` — passed; generated OpenAPI types match the API schema.
+- PostgreSQL integration and browser E2E execution remain pending CI. Docker is unavailable in this environment, and Vitest workers could not start under the local Bun/WSL runtime.
+- Go lint remains pending CI: the installed Windows `golangci-lint` binary could not read the installed Go compiler's export data (`unsupported version: 2`).
+- Pull request and CI results are pending publication.
+
+### RED evidence
+
+- Test-only commit: `11795181a380dad1e48508e9942bfe737d7131b2`.
+- Tested command in CI: `make test`.
+- CI run: [#46038800562](https://github.com/SupeemAFK/Quevo/actions/runs/46038800562), workflow dispatch on the maintenance branch.
+- The web suite (67 tests), API unit suite, Go lint, and integration setup passed. The new PostgreSQL/API test failed at the intended point: `eligible handoff targets = 404 404 page not found; want 200`, confirming the missing endpoint before implementation.

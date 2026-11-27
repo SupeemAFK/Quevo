@@ -123,6 +123,14 @@ func writeTicketEvent(tx *gorm.DB, ticketID, fromStatus, toStatus, actorID strin
 	return nil
 }
 
+func writeTicketHandoffEvent(tx *gorm.DB, ticketID, status, actorID, fromOperatorID, toOperatorID string) error {
+	if err := tx.Exec(`INSERT INTO ticket_events (id, ticket_id, event_type, from_status, to_status, actor_id, from_operator_id, to_operator_id)
+		VALUES (?, ?, 'HANDOFF', ?, ?, ?, ?, ?)`, uuid.NewString(), ticketID, status, status, actorID, fromOperatorID, toOperatorID).Error; err != nil {
+		return fmt.Errorf("record ticket handoff event: %w", err)
+	}
+	return nil
+}
+
 func nullableString(value string) any {
 	if value == "" {
 		return nil
@@ -505,12 +513,17 @@ type ManagerCatalog struct {
 }
 
 type TicketEvent struct {
-	ID         string    `json:"id"`
-	FromStatus *string   `json:"fromStatus,omitempty"`
-	ToStatus   string    `json:"toStatus"`
-	ActorID    *string   `json:"actorId,omitempty"`
-	ActorName  *string   `json:"actorName,omitempty"`
-	OccurredAt time.Time `json:"occurredAt"`
+	ID               string    `json:"id"`
+	EventType        string    `json:"eventType"`
+	FromStatus       *string   `json:"fromStatus,omitempty"`
+	ToStatus         string    `json:"toStatus"`
+	ActorID          *string   `json:"actorId,omitempty"`
+	ActorName        *string   `json:"actorName,omitempty"`
+	FromOperatorID   *string   `json:"fromOperatorId,omitempty"`
+	FromOperatorName *string   `json:"fromOperatorName,omitempty"`
+	ToOperatorID     *string   `json:"toOperatorId,omitempty"`
+	ToOperatorName   *string   `json:"toOperatorName,omitempty"`
+	OccurredAt       time.Time `json:"occurredAt"`
 }
 type TicketHistoryPage struct {
 	Items  []TicketEvent `json:"items"`
@@ -538,9 +551,14 @@ func (r *Repository) TicketHistory(ctx context.Context, actorID, role, ticketID 
 	if err := r.db.WithContext(ctx).Table("ticket_events").Where("ticket_id = ?", ticketID).Count(&page.Total).Error; err != nil {
 		return page, err
 	}
-	err = r.db.WithContext(ctx).Table("ticket_events e").Select(`e.id::text AS id, e.from_status, e.to_status,
-		e.actor_id::text AS actor_id, u.display_name AS actor_name, e.occurred_at`).
-		Joins("LEFT JOIN users u ON u.id = e.actor_id").Where("e.ticket_id = ?", ticketID).
+	err = r.db.WithContext(ctx).Table("ticket_events e").Select(`e.id::text AS id, e.event_type, e.from_status, e.to_status,
+		e.actor_id::text AS actor_id, actor.display_name AS actor_name,
+		e.from_operator_id::text AS from_operator_id, from_operator.display_name AS from_operator_name,
+		e.to_operator_id::text AS to_operator_id, to_operator.display_name AS to_operator_name, e.occurred_at`).
+		Joins("LEFT JOIN users actor ON actor.id = e.actor_id").
+		Joins("LEFT JOIN users from_operator ON from_operator.id = e.from_operator_id").
+		Joins("LEFT JOIN users to_operator ON to_operator.id = e.to_operator_id").
+		Where("e.ticket_id = ?", ticketID).
 		Order("e.occurred_at, e.id").Limit(limit).Offset(offset).Scan(&page.Items).Error
 	if err != nil {
 		return page, fmt.Errorf("read ticket history: %w", err)

@@ -170,6 +170,36 @@
                 },
                 "type": "object"
             },
+            "queue.HandoffOperatorResponse": {
+                "properties": {
+                    "displayName": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "displayName",
+                    "id"
+                ],
+                "type": "object"
+            },
+            "queue.HandoffOperatorsResponse": {
+                "properties": {
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/queue.HandoffOperatorResponse"
+                        },
+                        "type": "array",
+                        "uniqueItems": false
+                    }
+                },
+                "required": [
+                    "items"
+                ],
+                "type": "object"
+            },
             "queue.JoinTicketRequest": {
                 "properties": {
                     "requestAnswers": {
@@ -652,6 +682,15 @@
                     "actorName": {
                         "type": "string"
                     },
+                    "eventType": {
+                        "type": "string"
+                    },
+                    "fromOperatorId": {
+                        "type": "string"
+                    },
+                    "fromOperatorName": {
+                        "type": "string"
+                    },
                     "fromStatus": {
                         "type": "string"
                     },
@@ -659,6 +698,12 @@
                         "type": "string"
                     },
                     "occurredAt": {
+                        "type": "string"
+                    },
+                    "toOperatorId": {
+                        "type": "string"
+                    },
+                    "toOperatorName": {
                         "type": "string"
                     },
                     "toStatus": {
@@ -761,6 +806,17 @@
                         "uniqueItems": false
                     }
                 },
+                "type": "object"
+            },
+            "queue.handoffTicketRequest": {
+                "properties": {
+                    "operatorId": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "operatorId"
+                ],
                 "type": "object"
             },
             "queue.historyResponse": {
@@ -2671,6 +2727,225 @@
                     }
                 ],
                 "summary": "Complete an assigned ticket",
+                "tags": [
+                    "operator"
+                ]
+            }
+        },
+        "/operator/tickets/{ticketId}/handoff": {
+            "post": {
+                "operationId": "postOperatorTicketHandoff",
+                "parameters": [
+                    {
+                        "description": "Ticket ID",
+                        "in": "path",
+                        "name": "ticketId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/queue.handoffTicketRequest",
+                                "summary": "request",
+                                "description": "Handoff recipient"
+                            }
+                        }
+                    },
+                    "description": "Handoff recipient",
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.OperatorTicketResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Hand off an assigned ticket",
+                "tags": [
+                    "operator"
+                ]
+            }
+        },
+        "/operator/tickets/{ticketId}/handoff-targets": {
+            "get": {
+                "operationId": "getOperatorTicketHandoffTargets",
+                "parameters": [
+                    {
+                        "description": "Ticket ID",
+                        "in": "path",
+                        "name": "ticketId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.HandoffOperatorsResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/queue.QueueErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Internal Server Error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/auth.ErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "List eligible ticket handoff recipients",
                 "tags": [
                     "operator"
                 ]
