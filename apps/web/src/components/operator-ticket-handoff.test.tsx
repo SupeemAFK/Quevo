@@ -76,8 +76,7 @@ describe('operator ticket handoff', () => {
     renderQueue(onHandoff)
 
     await user.click(screen.getByRole('button', { name: 'Hand off ticket' }))
-    await screen.findByText('Jordan Lee')
-    await user.click(screen.getByRole('combobox', { name: 'Operator' }))
+    await user.click(await screen.findByRole('combobox', { name: 'Operator' }))
     await user.click(await screen.findByRole('option', { name: 'Jordan Lee' }))
     await user.click(screen.getByRole('button', { name: 'Confirm handoff' }))
 
