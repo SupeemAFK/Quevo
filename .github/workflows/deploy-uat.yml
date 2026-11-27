@@ -2,7 +2,7 @@ name: Deploy UAT
 
 on:
   push:
-    branches: [staging]
+    branches: [uat]
 
 permissions:
   contents: read
@@ -34,24 +34,24 @@ jobs:
       WEB_IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/quevo/web
 
     steps:
-      - name: Check out staging commit
+      - name: Check out UAT commit
         uses: actions/checkout@v4
 
-      - name: Check whether this commit is still latest on staging
+      - name: Check whether this commit is still latest on uat
         id: freshness
         shell: bash
         run: |
           set -euo pipefail
-          latest_staging_sha="$(git ls-remote origin refs/heads/staging | cut -f1)"
-          if [[ -z "$latest_staging_sha" ]]; then
-            echo "Could not read the latest staging commit" >&2
+          latest_uat_sha="$(git ls-remote origin refs/heads/uat | cut -f1)"
+          if [[ -z "$latest_uat_sha" ]]; then
+            echo "Could not read the latest uat commit" >&2
             exit 1
           fi
-          if [[ "$latest_staging_sha" == "$GITHUB_SHA" ]]; then
+          if [[ "$latest_uat_sha" == "$GITHUB_SHA" ]]; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
           else
             echo "deploy=false" >> "$GITHUB_OUTPUT"
-            echo "Commit $GITHUB_SHA was superseded by $latest_staging_sha on staging." >> "$GITHUB_STEP_SUMMARY"
+            echo "Commit $GITHUB_SHA was superseded by $latest_uat_sha on uat." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Check UAT deployment configuration
@@ -137,18 +137,18 @@ jobs:
           echo "api_image=${API_IMAGE}@${api_digest}" >> "$GITHUB_OUTPUT"
           echo "web_image=${WEB_IMAGE}@${web_digest}" >> "$GITHUB_OUTPUT"
 
-      - name: Recheck staging before migrations
+      - name: Recheck uat before migrations
         if: steps.freshness.outputs.deploy == 'true'
         id: migration_freshness
         shell: bash
         run: |
           set -euo pipefail
-          latest_staging_sha="$(git ls-remote origin refs/heads/staging | cut -f1)"
-          if [[ -z "$latest_staging_sha" ]]; then
-            echo "Could not read the latest staging commit" >&2
+          latest_uat_sha="$(git ls-remote origin refs/heads/uat | cut -f1)"
+          if [[ -z "$latest_uat_sha" ]]; then
+            echo "Could not read the latest uat commit" >&2
             exit 1
           fi
-          if [[ "$latest_staging_sha" == "$GITHUB_SHA" ]]; then
+          if [[ "$latest_uat_sha" == "$GITHUB_SHA" ]]; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
           else
             echo "deploy=false" >> "$GITHUB_OUTPUT"

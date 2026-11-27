@@ -1,6 +1,6 @@
 # Lab 6 UAT deployment
 
-The `staging` branch deploys to a separate Cloud Run UAT target. The `main` release workflow remains the production deployment and uses the GitHub `prod` environment. UAT reuses the existing GCP project, region, Cloud SQL instance, and Artifact Registry, but uses a separate database and separate Cloud Run resources.
+The `uat` branch deploys to a separate Cloud Run UAT target. It replaces the former `staging` branch as the UAT deployment branch. The `main` release workflow remains the production deployment and uses the GitHub `prod` environment. UAT reuses the existing GCP project, region, Cloud SQL instance, and Artifact Registry, but uses a separate database and separate Cloud Run resources.
 
 ## Google Cloud resources
 
@@ -17,7 +17,7 @@ The `DATABASE_URL` secret must target `quevo_uat`, and its database account must
 
 ## GitHub configuration
 
-Create a GitHub environment named `uat`, allow only the `staging` branch under **Deployment branches and tags**, and configure these environment variables:
+Create a GitHub environment named `uat`, allow only the `uat` branch under **Deployment branches and tags**, and configure these environment variables:
 
 | Variable | Value |
 | --- | --- |
@@ -27,14 +27,14 @@ Create a GitHub environment named `uat`, allow only the `staging` branch under *
 | `WIF_SERVICE_ACCOUNT` | The GitHub Actions deployment service account |
 | `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT` | The runtime service account used by `quevo-api` |
 
-The WIF provider must trust the `staging` branch for this repository. Do not put the database URL in GitHub variables or secrets.
+The WIF provider must trust the `uat` branch for this repository. When moving from the former `staging` branch, update the `uat` environment's allowed deployment branch and the WIF attribute condition to `refs/heads/uat`; keep the existing `main` / `prod` condition unchanged. Do not put the database URL in GitHub variables or secrets.
 
 Create a GitHub environment named `prod`, allow only the `main` branch under **Deployment branches and tags**, and copy the deployment variables from the previous `demo` environment before merging the workflow rename. Keep `demo` until a production deployment through `prod` has succeeded.
 
 ## Deployment flow
 
-Merging a reviewed pull request into `staging` runs CI, builds immutable API and web images, runs UAT database migrations, deploys the UAT API and web services, and checks their health endpoints. The API and web services use scale-to-zero and a small instance cap for UAT.
+Merging a reviewed pull request into `uat` runs CI, builds immutable API and web images, runs UAT database migrations, deploys the UAT API and web services, and checks their health endpoints. A reviewed release pull request from `uat` to `main` promotes a release to production. The API and web services use scale-to-zero and a small instance cap for UAT.
 
-The first deployment creates the UAT Cloud Run resources. Subsequent staging commits update those UAT resources. The workflow does not deploy to the existing `quevo-api`, `quevo-web`, or `quevo-migrate` production resources.
+The first deployment creates the UAT Cloud Run resources. Subsequent `uat` commits update those UAT resources. The workflow does not deploy to the existing `quevo-api`, `quevo-web`, or `quevo-migrate` production resources.
 
 The UAT database starts empty after migrations. Create synthetic test accounts through the documented private seeding process before sharing the UAT URL with testers; do not expose generated passwords in GitHub Actions logs.
