@@ -1,6 +1,6 @@
 # Lab 7 maintenance change: operator ticket handoff
 
-**Status:** Contract reviewed and merged; implementation prepared for code review.
+**Status:** Contract reviewed and merged; implementation PR #93 is open for review with CI passing.
 **Prepared:** 2026-11-27
 **Instructor/TA approval:** Not required, per the Lab 7 spec-sheet announcement.
 **Accepted Sprint 1 baseline:** `82cd9c9693ea4e73f514929a09960647d56ef0ca`
@@ -76,7 +76,7 @@ The revised contract and this test plan must receive teammate review before impl
 
 - Contract PR: [#91](https://github.com/SupeemAFK/Quevo/pull/91), merged into `feat/bank-queue-service-workflows` at `8f819a9` before implementation.
 
-### GREEN and regression evidence (local)
+### GREEN and regression evidence
 
 - `go test ./...` — passed.
 - `go vet ./...` — passed.
@@ -84,9 +84,11 @@ The revised contract and this test plan must receive teammate review before impl
 - `bun run typecheck` — passed.
 - `bun run lint` — passed.
 - `bun run check:api` — passed; generated OpenAPI types match the API schema.
-- PostgreSQL integration and browser E2E execution remain pending CI. Docker is unavailable in this environment, and Vitest workers could not start under the local Bun/WSL runtime.
-- Go lint remains pending CI: the installed Windows `golangci-lint` binary could not read the installed Go compiler's export data (`unsupported version: 2`).
-- Pull request and CI results are pending publication.
+- CI run [#46058349647](https://github.com/SupeemAFK/Quevo/actions/runs/46058349647) passed on commit `1bd6d04`.
+- CI passed web lint, Go lint, `make test`, all 69 web tests, Go unit and PostgreSQL integration tests, and all 9 Chromium E2E tests. The E2E flow verified customer rejoin after skip, operator handoff, recipient service completion, and the handoff history record.
+- CI built both production container images successfully.
+- Local PostgreSQL integration execution and Vitest workers remain unavailable in this environment: Docker is unavailable, and the local Bun/WSL runtime could not start Vitest workers. CI provided the full execution evidence.
+- Pull request [#93](https://github.com/SupeemAFK/Quevo/pull/93) is open against `feat/bank-queue-service-workflows` for teammate review. The implementation is not merged or deployed yet.
 
 ### RED evidence
 
