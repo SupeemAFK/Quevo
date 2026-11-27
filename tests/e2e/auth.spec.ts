@@ -27,22 +27,15 @@ test('customer can sign in and sign out through an HttpOnly session', async ({ c
   ).toBeGreaterThanOrEqual(44)
   await page.keyboard.press('Enter')
 
-  await page.getByRole('button', { name: 'Open navigation menu' }).focus()
-  await page.keyboard.press('Enter')
-  const openCustomerQueue = page.getByRole('link', { name: 'Open customer queue' })
-  await expect(openCustomerQueue).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Application' })).toBeVisible()
+  const chooseService = page.getByRole('link', { name: 'Choose a service' })
+  await expect(chooseService).toHaveAttribute('aria-current', 'page')
   const sessionCookie = (await context.cookies()).find((cookie) => cookie.name === 'quevo_session')
   expect(sessionCookie?.httpOnly).toBe(true)
   expect(sessionCookie?.sameSite).toBe('Lax')
   expect(await page.evaluate(() => document.cookie)).not.toContain('quevo_session')
 
-  await openCustomerQueue.focus()
-  await page.keyboard.press('Enter')
   await expect(page.getByRole('navigation', { name: 'Application' })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Choose a service' })).toHaveAttribute(
-    'aria-current',
-    'page',
-  )
   await page.getByRole('button', { name: 'Sign out' }).click()
   await expect(
     page.locator('#top').getByRole('link', { name: 'Sign in to Quevo' }),

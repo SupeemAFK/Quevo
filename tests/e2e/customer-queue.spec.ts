@@ -28,13 +28,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await page.getByLabel('Password').fill(customerPassword)
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  await activateWithKeyboard(
-    page,
-    page.getByRole('button', { name: 'Open navigation menu' }),
-  )
-  const openCustomerQueue = page.getByRole('link', { name: 'Open customer queue' })
-  await expect(openCustomerQueue).toBeVisible()
-  await activateWithKeyboard(page, openCustomerQueue)
+  await expect(page.getByRole('navigation', { name: 'Application' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Select a service' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Select a service' })).toBeFocused()
   await expectNoHorizontalOverflow(page)
@@ -76,7 +70,11 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await secondDevice.getByLabel('Email').fill('customer@quevo.local')
   await secondDevice.getByLabel('Password').fill(customerPassword)
   await secondDevice.getByRole('button', { name: 'Sign in' }).click()
-  await expect(secondDevice.getByRole('link', { name: 'Open customer queue' })).toBeVisible()
+  await expect(secondDevice.getByRole('navigation', { name: 'Application' })).toBeVisible()
+  await expect(secondDevice.getByRole('link', { name: 'Choose a service' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
   await secondDevice.goto('/customer')
   await expect(secondDevice.getByText('General Service')).toBeVisible()
   await expect(secondDevice.getByRole('button', { name: 'Join queue' })).toBeEnabled()
@@ -131,13 +129,6 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await operator.getByLabel('Email').fill('operator@quevo.local')
   await operator.getByLabel('Password').fill(process.env.QUEVO_E2E_OPERATOR_PASSWORD!)
   await operator.getByRole('button', { name: 'Sign in' }).click()
-  await activateWithKeyboard(
-    operator,
-    operator.getByRole('button', { name: 'Open navigation menu' }),
-  )
-  const openOperatorQueue = operator.getByRole('link', { name: 'Open operator queue' })
-  await expect(openOperatorQueue).toBeVisible()
-  await activateWithKeyboard(operator, openOperatorQueue)
   await expect(operator.getByRole('navigation', { name: 'Application' })).toBeVisible()
   await expect(operator.getByRole('link', { name: 'Operator queue' })).toHaveAttribute(
     'aria-current',
@@ -247,17 +238,8 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
     .getByLabel('Password')
     .fill(handoffOperatorPassword)
   await handoffOperator.getByRole('button', { name: 'Sign in' }).click()
-  await activateWithKeyboard(
-    handoffOperator,
-    handoffOperator.getByRole('button', { name: 'Open navigation menu' }),
-  )
-  await activateWithKeyboard(
-    handoffOperator,
-    handoffOperator.getByRole('link', { name: 'Open operator queue' }),
-  )
+  await expect(handoffOperator.getByRole('navigation', { name: 'Application' })).toBeVisible()
   await expect(handoffOperator.getByTestId('operator-current-ticket')).toHaveText('5')
-  await handoffOperator.getByRole('button', { name: 'History' }).click()
-  await expect(handoffOperator.getByText('Handed off from Demo Operator to Handoff Operator')).toBeVisible()
   await activateWithKeyboard(
     handoffOperator,
     handoffOperator.getByRole('button', { name: 'Start service' }),
@@ -268,6 +250,8 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
     handoffOperator.getByRole('button', { name: 'Complete service' }),
   )
   await expect(handoffOperator.getByText('Service completed.')).toBeVisible()
+  await handoffOperator.getByRole('button', { name: 'History' }).click()
+  await expect(handoffOperator.getByText('Handed off from Demo Operator to Handoff Operator')).toBeVisible()
   await handoffOperator.close()
   await operator.close()
 })
