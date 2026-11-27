@@ -1,7 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
 const customerPassword = process.env.QUEVO_E2E_CUSTOMER_PASSWORD!
-const handoffCustomerPassword = process.env.QUEVO_E2E_HANDOFF_CUSTOMER_PASSWORD!
 const handoffOperatorPassword = process.env.QUEVO_E2E_HANDOFF_OPERATOR_PASSWORD!
 
 async function activateWithKeyboard(page: Page, target: Locator, key = 'Enter') {
@@ -265,7 +264,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   const handoffCustomer = await browser.newPage({ viewport: { width: 320, height: 780 } })
   await handoffCustomer.goto('/login')
   await handoffCustomer.getByLabel('Email').fill('handoff-customer@quevo.local')
-  await handoffCustomer.getByLabel('Password').fill(handoffCustomerPassword)
+  await handoffCustomer.getByLabel('Password').fill(customerPassword)
   await handoffCustomer.getByRole('button', { name: 'Sign in' }).click()
   await expect(handoffCustomer.getByRole('heading', { name: 'Select a service' })).toBeVisible()
   await selectGeneralService(handoffCustomer)
