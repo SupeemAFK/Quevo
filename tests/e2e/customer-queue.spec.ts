@@ -180,7 +180,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await expectMinimumTouchTarget(operator.getByRole('button', { name: 'Refresh queue' }))
   await expect(operator.getByRole('navigation', { name: 'Assigned queues' })).toHaveCount(0)
   await selectOperatorGeneralService(operator)
-  await expect(operator.getByText('General Service')).toBeVisible()
+  await expect(operator.getByText('General Service', { exact: true })).toBeVisible()
   await expect(operator.getByText('Quevo Demo Branch')).toBeVisible()
   await expect(operator.getByText('1 ticket', { exact: true })).toBeVisible()
   await expect(operator.getByText('Ticket 1', { exact: true })).toBeVisible()
