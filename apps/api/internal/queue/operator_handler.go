@@ -105,7 +105,7 @@ func (h Handler) listHandoffOperators(c *gin.Context) {
 	}
 	response := HandoffOperatorsResponse{Items: make([]HandoffOperatorResponse, 0, len(operators))}
 	for _, operator := range operators {
-		response.Items = append(response.Items, HandoffOperatorResponse{ID: operator.ID, DisplayName: operator.DisplayName})
+		response.Items = append(response.Items, HandoffOperatorResponse(operator))
 	}
 	c.JSON(http.StatusOK, response)
 }
