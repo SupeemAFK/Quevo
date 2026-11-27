@@ -1,7 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
 const customerPassword = process.env.QUEVO_E2E_CUSTOMER_PASSWORD!
-const handoffOperatorPassword = process.env.QUEVO_E2E_HANDOFF_OPERATOR_PASSWORD!
 
 async function activateWithKeyboard(page: Page, target: Locator, key = 'Enter') {
   await target.focus()
@@ -279,12 +278,12 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await expect(operator.getByText('No customers are waiting.')).toBeVisible()
   await expect(operator.getByRole('button', { name: 'Start service' })).toHaveCount(0)
 
-  const handoffOperator = await browser.newPage({ viewport: { width: 320, height: 780 } })
+  const handoffOperator = operator
+  await handoffOperator.getByRole('button', { name: 'Sign out' }).click()
+  await expect(handoffOperator).toHaveURL(/\/$/)
   await handoffOperator.goto('/login')
   await handoffOperator.getByLabel('Email').fill('handoff-operator@quevo.local')
-  await handoffOperator
-    .getByLabel('Password')
-    .fill(handoffOperatorPassword)
+  await handoffOperator.getByLabel('Password').fill(process.env.QUEVO_E2E_OPERATOR_PASSWORD!)
   await handoffOperator.getByRole('button', { name: 'Sign in' }).click()
   await expect(handoffOperator.getByRole('navigation', { name: 'Application' })).toBeVisible()
   await expect(handoffOperator.getByTestId('operator-current-ticket')).toHaveText('5')
@@ -300,6 +299,5 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await expect(handoffOperator.getByText('Service completed.')).toBeVisible()
   await handoffOperator.getByRole('button', { name: 'History' }).click()
   await expect(handoffOperator.getByText('Handed off from Demo Operator to Handoff Operator')).toBeVisible()
-  await handoffOperator.close()
   await operator.close()
 })

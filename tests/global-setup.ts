@@ -100,7 +100,6 @@ export default async function globalSetup() {
     await waitFor('http://127.0.0.1:3000', web, 'web app')
     process.env.QUEVO_E2E_CUSTOMER_PASSWORD = customerPassword
     process.env.QUEVO_E2E_OPERATOR_PASSWORD = operatorPassword
-    process.env.QUEVO_E2E_HANDOFF_OPERATOR_PASSWORD = operatorPassword
   } catch (error) {
     await cleanup()
     throw error
