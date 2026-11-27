@@ -109,14 +109,14 @@ Go tests after the final code change passed on `6132d3e`; web checks were run on
 | GitHub change-request Issue linked to contract/test/code | Issue #95 was created after local implementation began and is linked from PR #94. It does not establish the required issue-before-code sequence. |
 | Teammate contract review before code | Not recorded; sequence requirement is currently unmet. |
 | Teammate code/PR review | Not available; no PR has been created. |
-| CI on the Lab 7 commit | PR #94 run `46079877876` failed Go staticcheck S1016; fix `6132d3e` was pushed. Rerun `46080085875` passed Lint Web, Lint Go, all tests, Chromium E2E, and production image builds. |
+| CI on the Lab 7 commits | PR #94 run `46079877876` failed Go staticcheck S1016; fix `6132d3e` was pushed. Runs `46080085875` and `46081073959` passed Lint Web, Lint Go, all tests, Chromium E2E, and production image builds. |
 | Merge into staging and identify accepted main release | Not done. |
 | Cloud Run UAT deployment/revision | Not verified. |
 | Deployed handoff and preserved Sprint 1 smoke tests | Not run. |
 
 ## Part C — Engineering metrics
 
-Snapshot date: 2026-11-28 Thailand time. Scope is the local Lab 7 candidate; these are not GitHub CI metrics. Re-run after committing and embed the terminal summaries in the final PDF.
+Snapshot time: 2026-11-28 06:15 Thailand time. Scope is PR #94 and its Lab 7 commits; run counts include events observed by this timestamp and exclude later runs.
 
 | ID | Metric definition and window | Value | Source |
 | --- | --- | --- | --- |
@@ -124,7 +124,7 @@ Snapshot date: 2026-11-28 Thailand time. Scope is the local Lab 7 candidate; the
 | M2 | Go/PostgreSQL integration tests; one snapshot run. | 6 test-bearing packages passed; 0 failures, including handoff and migration tests. | `GOCACHE=/tmp/quevo-go-build go test -tags=integration ./...` output. |
 | M3 | Web unit/component tests; PR #94 CI run `46080085875`. | 14/14 files and 60/60 tests passed. | Embedded Vitest summary in CI log. |
 | M4 | Chromium E2E suite; PR #94 CI run `46080085875`. | 9/9 tests passed in 28.4 seconds. | Embedded Playwright summary in CI log. |
-| M5 | PR CI run outcomes for branch `maintenance/lab7-ticket-handoff`, 2026-11-28 Thailand time. | 2 runs: 1 failed (S1016), 1 passed after fix; 1/2 pass at observation close. | Actions run `46079877876` failed; `46080085875` passed. |
+| M5 | PR CI run outcomes for branch `maintenance/lab7-ticket-handoff` through 2026-11-28 06:15 Thailand time. | 3 runs: 1 failed (S1016), 2 passed after fix. The latest run passed. | Actions run `46079877876` failed; `46080085875` and `46081073959` passed. |
 
 **Readable result excerpts:**
 
@@ -136,7 +136,7 @@ Go integration: app/auth/health/config/database/queue passed; 0 failed
 Vitest: Test Files 14 passed (14); Tests 60 passed (60)
 Playwright Chromium: 9 passed (28.4s)
 CI run 46079877876: failed Go staticcheck S1016
-CI run 46080085875: passed Lint Web, Lint Go, all tests, and production image builds
+CI runs 46080085875 and 46081073959: passed Lint Web, Lint Go, all tests, and production image builds
 Biome: Checked 63 files; No fixes applied
 ```
 
@@ -150,7 +150,7 @@ Biome: Checked 63 files; No fixes applied
 | --- | --- | --- |
 | Submitted/deployed version | Candidate commit `6132d3e`; UAT revision unknown. | Peemmapat: complete GitHub review/push flow, then record merge and Cloud Run revision. |
 | Defects | GitHub issue searches for “bug”, “defect”, and “uat” returned no issues as of 2026-11-28; open #95 is a change request and #56 is a chore. This does not prove that no user-found defects exist. The first CI staticcheck failure was corrected in `6132d3e`; final CI passed. | Team: reconcile the Lab 6 UAT team's actual findings and status before PDF. |
-| Automated checks | Go unit/integration, web tests, typecheck, lint, and API schema check passed locally. CI run `46080085875` passed lint, all tests including 9 Chromium tests, and production image builds. | Team: retain the CI URL and commit SHA in the final PDF. |
+| Automated checks | Go unit/integration, web tests, typecheck, lint, and API schema check passed locally. CI runs `46080085875` and `46081073959` passed lint, all tests including 9 Chromium tests, and production image builds. | Team: retain the CI URL and commit SHA in the final PDF. |
 | User checks | No independent post-deployment check of handoff or preserved customer ownership path. | Peeranat: perform UAT smoke after deployment and record expected/actual result and time. |
 | Technical debt | No browser E2E covers the new handoff dialog submission; current UI test checks that transfer is offered only for the current active ticket. The API integration test covers the full authorization and persistence flow. | Priority P1 before final release: add a browser handoff path or record a justified fixture limitation; regenerate OpenAPI annotations in a network-enabled environment. |
 | Configuration/secrets | No new secrets or environment variables. Migration must be applied before API use. | Deployment owner: confirm the normal migration job completed before service rollout. |
