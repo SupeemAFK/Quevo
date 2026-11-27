@@ -282,6 +282,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await handoffOperator.getByRole('button', { name: 'Sign out' }).click()
   await expect(handoffOperator).toHaveURL(/\/$/)
   await handoffOperator.goto('/login')
+  await handoffOperator.waitForLoadState('networkidle')
   await handoffOperator.getByLabel('Email').fill('handoff-operator@quevo.local')
   await handoffOperator.getByLabel('Password').fill(process.env.QUEVO_E2E_OPERATOR_PASSWORD!)
   await handoffOperator.getByRole('button', { name: 'Sign in' }).click()
