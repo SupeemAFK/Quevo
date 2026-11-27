@@ -86,6 +86,7 @@ These are Quevo requirement statements, not verbatim rubric clauses. Their sourc
 | FR-022 | Authorized staff shall be able to view service summaries for a selected branch, service, and date range, including ticket counts and agreed waiting/service-duration measures. |
 | FR-023 | When a service requires additional information, a customer shall be able to submit its service-specific request fields while joining the queue; the service defines the fields and validation. |
 | FR-024 | Authorized staff shall be able to review ticket state-change history, including the acting user and event time. |
+| FR-025 | The operator assigned to an active ticket shall be able to hand it off to another operator authorized for the same queue who has no other active ticket. The ticket state shall remain unchanged, the new assignment shall be persisted, and the handoff shall be recorded in ticket history. |
 
 ## 6. Business rules
 
@@ -97,14 +98,15 @@ These are Quevo requirement statements, not verbatim rubric clauses. Their sourc
 | BR-004 | A customer may hold at most one active ticket across all services, branches, and business dates. |
 | BR-005 | Queue joining and claiming a ticket are atomic PostgreSQL transactions protected against concurrent requests. |
 | BR-006 | An operator may act only on queues to which that operator is authorized. |
-| BR-007 | Only the operator assigned to a ticket may start, complete, or skip it. |
-| BR-008 | An operator may have at most one active ticket at a time. |
+| BR-007 | Only the operator currently assigned to a ticket may start, complete, or skip it. That operator may hand off a PENDING or OPERATING ticket to another operator authorized for the same queue, subject to BR-008. |
+| BR-008 | An operator may have at most one active ticket at a time, including after a handoff. |
 | BR-009 | The allowed ticket transitions are WAITING → PENDING → OPERATING → COMPLETED and PENDING → SKIPPED. Other transitions are rejected. |
 | BR-010 | A customer may read only their own ticket; ticket ownership is checked by the server on every applicable request. |
 | BR-011 | Join, call, start, and completion-or-skip timestamps are persisted with the corresponding ticket lifecycle event. |
 | BR-012 | PostgreSQL is the authoritative source for queue ordering, ticket state, and persisted lifecycle data. |
 | BR-013 | Customer cancellation is excluded from Sprint 1. In a later sprint, cancellation is allowed only from WAITING and transitions the customer's own ticket to CANCELLED. |
 | BR-014 | No-show handling is excluded from Sprint 1. The proposed transition is PENDING → NO_SHOW; the timeout/arrival policy, notification, and rejoin rules must be approved before implementation. |
+| BR-015 | A handoff is permitted only when initiated by the ticket's current assignee for a PENDING or OPERATING ticket, to a different OPERATOR authorized for that queue with no PENDING or OPERATING ticket. The handoff changes only the assignee, records the actor, previous assignee, recipient, and event time, and is atomic. |
 
 ## 7. Non-functional requirements
 

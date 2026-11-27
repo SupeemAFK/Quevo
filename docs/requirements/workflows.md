@@ -26,7 +26,9 @@ flowchart TB
     NOTIFY --> START[Start when customer arrives]
     NOTIFY --> SKIP[Skip while PENDING]
     NOTIFY --> NS[Record no-show while PENDING]
+    NOTIFY --> HO[Assigned operator hands off to eligible queue operator]
     START --> FINISH[Complete service]
+    START --> HO
   end
 
   subgraph Manager
@@ -43,6 +45,7 @@ flowchart TB
   O2 -->|read authorized queues| DB
   OW -->|read waiting tickets| DB
   CALL -->|atomically assign and set PENDING| DB
+  HO -->|atomically change assignee; preserve state; record handoff| DB
   START -->|set OPERATING| DB
   FINISH -->|set COMPLETED| DB
   SKIP -->|set SKIPPED| DB
@@ -59,7 +62,9 @@ The current operator view covers assigned queues, waiting tickets, the operator'
 stateDiagram-v2
   [*] --> WAITING: Customer joins the service queue
   WAITING --> PENDING: Operator calls next; assign operator atomically
+  PENDING --> PENDING: Current assignee hands off to eligible operator
   PENDING --> OPERATING: Assigned operator starts service
+  OPERATING --> OPERATING: Current assignee hands off to eligible operator
   OPERATING --> COMPLETED: Assigned operator finishes service
   PENDING --> SKIPPED: Assigned operator skips ticket
   WAITING --> CANCELLED: Customer cancels own ticket
@@ -72,6 +77,8 @@ stateDiagram-v2
 
 A ticket can be skipped or marked no-show only while PENDING. Customers may cancel only their own WAITING ticket. COMPLETED, SKIPPED, CANCELLED, and NO_SHOW are terminal; ticket numbers are never reused, and a customer may join again after cancellation as a new ticket.
 
+For Lab 7, the current assignee may hand off an active PENDING or OPERATING ticket to a different operator authorized for the same queue if that operator has no other active ticket. The handoff preserves the ticket state and lifecycle timestamps, atomically changes the assignee, and records the actor, previous assignee, recipient, and time. Only the new assignee may perform subsequent ticket actions.
+
 ## Interpretation and open decisions
 
 - The operator dashboard has an overview of assigned queues, a WAITING ticket view, the operator's current ticket, recent terminal tickets, and paginated status history.
@@ -79,3 +86,4 @@ A ticket can be skipped or marked no-show only while PENDING. Customers may canc
 - The journey includes notifying the customer after a call. The diagrams leave the actor and delivery channel open; they do not imply SMS, push, or another integration.
 - The current implementation uses branch-scoped queues and counters with FIFO ordering. Queue configuration and role rules are Quevo product decisions, not claims about requirements in the course brief.
 - FIFO orders tickets by joined time and immutable ticket ID; only the assigned operator can perform the allowed transitions.
+- The Lab 7 handoff contract is documented in [operator-ticket-handoff.md](../labs/lab-07/operator-ticket-handoff.md); it is a controlled assignment change and does not add a ticket lifecycle status.

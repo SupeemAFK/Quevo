@@ -34,6 +34,7 @@ This matrix records planned coverage, not implementation or test results. The ve
 | FR-022 | F-014 | Sprint 3 | After measures are agreed: API/database summary checks and role-protected UI checks. | Theme 9 asks for useful service summaries; specific metrics are proposed. |
 | FR-023 | F-017 | Sprint 3 | If retained: form validation, persistence, and customer E2E after contract definition. | Quevo product proposal; not stated in Theme 9 or D1. |
 | FR-024 | F-015 | Sprint 3 | If retained: state-event persistence and authorized audit-read checks. | Quevo product proposal; not stated in Theme 9 or D1. |
+| FR-025 | F-018 | Lab 7 maintenance of Sprint 1 | PostgreSQL/API handoff tests, authorization and workload boundary tests, operator UI and browser flow. | Team-selected Lab 7 change to existing Sprint 1 operator assignment behavior. |
 
 ## Business rules
 
@@ -53,6 +54,7 @@ This matrix records planned coverage, not implementation or test results. The ve
 | BR-012 | F-003–F-009 | Sprint 1 | API integration test against persistent PostgreSQL. | Group spec §5.1. |
 | BR-013 | F-012 | Sprint 2 | After policy approval: API/PostgreSQL owner and state checks. | Theme 9 later-sprint cancellation; exact transition is proposed. |
 | BR-014 | F-013 | Sprint 2 | After policy approval: API/PostgreSQL actor, state, and timing checks. | Theme 9 later-sprint no-show; exact transition is proposed. |
+| BR-015 | F-018 | Lab 7 maintenance of Sprint 1 | PostgreSQL transaction, audit record, authorization, recipient workload, and concurrency tests. | Team-selected operator handoff rule extending the Sprint 1 assigned-operator workflow. |
 
 ## Non-functional requirements
 
