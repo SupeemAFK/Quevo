@@ -183,7 +183,7 @@ function OperatorPage() {
           <div
             className={
               multipleQueues
-                ? 'grid min-w-0 gap-7 lg:grid-cols-[minmax(13rem,16rem)_minmax(0,1fr)]'
+                ? 'grid min-w-0 grid-cols-[minmax(0,1fr)] gap-7 lg:grid-cols-[minmax(13rem,16rem)_minmax(0,1fr)]'
                 : 'min-w-0'
             }
           >
