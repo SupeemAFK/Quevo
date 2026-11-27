@@ -111,8 +111,8 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
 
   await expect(page.getByText('General Service')).toBeVisible()
   await selectGeneralService(page)
-  await activateWithKeyboard(page, page.getByRole('button', { name: 'Join queue' }))
   await expectMinimumTouchTarget(page.getByRole('button', { name: 'Join queue' }))
+  await activateWithKeyboard(page, page.getByRole('button', { name: 'Join queue' }))
   await expect(page.getByRole('alert')).toHaveText(
     'You already have an active ticket. Finish or cancel it before joining another service.',
   )
