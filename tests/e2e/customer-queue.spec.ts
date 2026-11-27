@@ -9,9 +9,39 @@ async function activateWithKeyboard(page: Page, target: Locator, key = 'Enter') 
 }
 
 async function expectNoHorizontalOverflow(page: Page) {
-  expect(
-    await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
-  ).toBe(true)
+  const overflow = await page.evaluate(() => {
+    const viewportWidth = window.innerWidth
+    const overflowingElements = Array.from(document.querySelectorAll<HTMLElement>('body *'))
+      .map((element) => {
+        const rect = element.getBoundingClientRect()
+        return {
+          element,
+          left: Math.round(rect.left),
+          right: Math.round(rect.right),
+          width: Math.round(rect.width),
+        }
+      })
+      .filter(({ element, left, right, width }) => {
+        const position = getComputedStyle(element).position
+        return width > 0 && position !== 'fixed' && (left < 0 || right > viewportWidth)
+      })
+      .slice(0, 8)
+      .map(({ element, left, right, width }) => {
+        const label = `${element.tagName.toLowerCase()}${element.id ? `#${element.id}` : ''}`
+        const classes = typeof element.className === 'string' ? element.className : ''
+        const text = element.textContent?.trim().replace(/\s+/g, ' ').slice(0, 60) ?? ''
+        return `${label}.${classes} [${left}, ${right}] width=${width} text="${text}"`
+      })
+
+    return {
+      hasOverflow: document.documentElement.scrollWidth > viewportWidth,
+      viewportWidth,
+      documentWidth: document.documentElement.scrollWidth,
+      overflowingElements,
+    }
+  })
+
+  expect(overflow.hasOverflow, JSON.stringify(overflow, null, 2)).toBe(false)
 }
 
 async function expectMinimumTouchTarget(target: Locator) {
