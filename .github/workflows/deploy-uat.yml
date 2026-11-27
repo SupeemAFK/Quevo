@@ -3,6 +3,7 @@ name: Deploy UAT
 on:
   push:
     branches: [uat]
+  workflow_dispatch:
 
 permissions:
   contents: read
