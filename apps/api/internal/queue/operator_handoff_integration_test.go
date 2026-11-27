@@ -80,6 +80,11 @@ func TestOperatorTicketHandoffAPIWithPostgres(t *testing.T) {
 	if _, found, err := repo.CallNext(ctx, CallNextInput{OperatorID: database.DemoOperatorID, BranchID: database.DemoBranchID, QueueID: database.DemoServiceID}); err != nil || !found {
 		t.Fatalf("call next: found=%t err=%v", found, err)
 	}
+	var joinedAtBeforeHandoff, calledAtBeforeHandoff time.Time
+	if err := db.QueryRowContext(ctx, `SELECT joined_at, called_at FROM tickets WHERE id = $1`, ticket.ID).
+		Scan(&joinedAtBeforeHandoff, &calledAtBeforeHandoff); err != nil {
+		t.Fatalf("read original ticket timestamps: %v", err)
+	}
 
 	authService := auth.NewService(auth.NewGORMRepository(gormDB), time.Hour)
 	gin.SetMode(gin.TestMode)
@@ -189,11 +194,10 @@ func TestOperatorTicketHandoffAPIWithPostgres(t *testing.T) {
 	}
 	if assignedOperator != firstRecipient || status != "PENDING" || calledAt == nil || startedAt != nil ||
 		branchID != ticket.BranchID || serviceID != ticket.ServiceID || queueID != ticket.QueueID || customerID != ticket.CustomerID ||
-		ticketNumber != ticket.TicketNumber || !joinedAt.Equal(ticket.JoinedAt) {
+		ticketNumber != ticket.TicketNumber || !joinedAt.Equal(joinedAtBeforeHandoff) || !calledAt.Equal(calledAtBeforeHandoff) {
 		t.Fatalf("pending ticket after handoff = assignee %s, status %s, branch %s, service %s, queue %s, customer %s, number %s, joined %v, called %v, started %v",
 			assignedOperator, status, branchID, serviceID, queueID, customerID, ticketNumber, joinedAt, calledAt, startedAt)
 	}
-	calledAtBeforeHandoff := *calledAt
 	if denied := queueAPIRequest(router, http.MethodPost, ticketPath+"/start", nil, oldOperator); denied.Code != http.StatusNotFound {
 		t.Fatalf("old operator start after handoff = %d %s; want %d", denied.Code, denied.Body.String(), http.StatusNotFound)
 	}
