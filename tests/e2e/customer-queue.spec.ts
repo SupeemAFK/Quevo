@@ -298,7 +298,10 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
     handoffOperator.getByRole('button', { name: 'Complete service' }),
   )
   await expect(handoffOperator.getByText('Service completed.')).toBeVisible()
-  await handoffOperator.getByRole('button', { name: 'History' }).click()
+  await handoffOperator
+    .getByTestId('recent-ticket-5')
+    .getByRole('button', { name: 'History' })
+    .click()
   await expect(handoffOperator.getByText('Handed off from Demo Operator to Handoff Operator')).toBeVisible()
   await operator.close()
 })

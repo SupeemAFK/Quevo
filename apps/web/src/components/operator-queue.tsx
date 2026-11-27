@@ -434,6 +434,7 @@ export function OperatorQueue({
                     <li
                       className="flex flex-wrap items-center justify-between gap-3 py-3"
                       key={ticket.id}
+                      data-testid={`recent-ticket-${ticket.ticketNumber}`}
                     >
                       <span className="flex items-center gap-3">
                         <span className="font-mono font-semibold tabular-nums">
