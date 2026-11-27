@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
 const customerPassword = process.env.QUEVO_E2E_CUSTOMER_PASSWORD!
+const handoffCustomerPassword = process.env.QUEVO_E2E_HANDOFF_CUSTOMER_PASSWORD!
 const handoffOperatorPassword = process.env.QUEVO_E2E_HANDOFF_OPERATOR_PASSWORD!
 
 async function activateWithKeyboard(page: Page, target: Locator, key = 'Enter') {
@@ -261,10 +262,15 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await expect(operator.getByText('Ticket skipped.')).toBeVisible()
   await expect(operator.getByText('No customers are waiting.')).toBeFocused()
 
-  await page.goto('/customer')
-  await selectGeneralService(page)
-  await page.getByRole('button', { name: 'Join queue' }).click()
-  await expect(page.getByTestId('ticket-number')).toHaveText('5')
+  const handoffCustomer = await browser.newPage({ viewport: { width: 320, height: 780 } })
+  await handoffCustomer.goto('/login')
+  await handoffCustomer.getByLabel('Email').fill('handoff-customer@quevo.local')
+  await handoffCustomer.getByLabel('Password').fill(handoffCustomerPassword)
+  await handoffCustomer.getByRole('button', { name: 'Sign in' }).click()
+  await expect(handoffCustomer.getByRole('heading', { name: 'Select a service' })).toBeVisible()
+  await selectGeneralService(handoffCustomer)
+  await handoffCustomer.getByRole('button', { name: 'Join queue' }).click()
+  await expect(handoffCustomer.getByTestId('ticket-number')).toHaveText('5')
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Refresh queue' }))
   await expect(operator.getByText('Ticket 5', { exact: true })).toBeVisible()
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Call next' }))
@@ -299,5 +305,6 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await handoffOperator.getByRole('button', { name: 'History' }).click()
   await expect(handoffOperator.getByText('Handed off from Demo Operator to Handoff Operator')).toBeVisible()
   await handoffOperator.close()
+  await handoffCustomer.close()
   await operator.close()
 })
