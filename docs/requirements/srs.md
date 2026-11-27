@@ -74,7 +74,7 @@ These are Quevo requirement statements, not verbatim rubric clauses. Their sourc
 | FR-010 | The system shall let only the operator assigned to a PENDING ticket start service and move it to OPERATING. |
 | FR-011 | The system shall let only the operator assigned to an OPERATING ticket complete service and move it to COMPLETED. |
 | FR-012 | The system shall let only the operator assigned to a PENDING ticket skip it and move it to SKIPPED. |
-| FR-013 | The system shall enforce authentication, role, queue authorization, ticket assignment, and customer ownership checks on the server. |
+| FR-013 | The system shall enforce authentication, role, queue authorization, ticket assignment, customer ownership, and operator handoff eligibility checks on the server. |
 | FR-014 | The system shall reject invalid ticket state transitions, a customer's duplicate active ticket for the same service queue, and an operator action that would give that operator more than one active ticket. |
 | FR-015 | The system shall persist the timestamps for queue join, ticket call, service start, and completion or skip. |
 | FR-016 | The system shall persist queue and ticket state in PostgreSQL and return committed state on subsequent reads. |
@@ -86,6 +86,7 @@ These are Quevo requirement statements, not verbatim rubric clauses. Their sourc
 | FR-022 | Authorized staff shall be able to view service summaries for a selected branch, service, and date range, including ticket counts and agreed waiting/service-duration measures. |
 | FR-023 | When a service requires additional information, a customer shall be able to submit its service-specific request fields while joining the queue; the service defines the fields and validation. |
 | FR-024 | Authorized staff shall be able to review ticket state-change history, including the acting user and event time. |
+| FR-025 | The operator currently assigned to an active ticket shall be able to transfer it to another operator authorized for the same service and with no active ticket; the system shall preserve state and lifecycle timestamps and record the transfer. |
 
 ## 6. Business rules
 
@@ -97,7 +98,7 @@ These are Quevo requirement statements, not verbatim rubric clauses. Their sourc
 | BR-004 | A customer may not hold duplicate active tickets in the same service queue. |
 | BR-005 | Queue joining and claiming a ticket are atomic PostgreSQL transactions protected against concurrent requests. |
 | BR-006 | An operator may act only on queues to which that operator is authorized. |
-| BR-007 | Only the operator assigned to a ticket may start, complete, or skip it. |
+| BR-007 | Only the operator assigned to a ticket may start, complete, or skip it. The current assignee may transfer an active PENDING or OPERATING ticket under BR-015. |
 | BR-008 | An operator may have at most one active ticket at a time. |
 | BR-009 | The allowed ticket transitions are WAITING → PENDING → OPERATING → COMPLETED and PENDING → SKIPPED. Other transitions are rejected. |
 | BR-010 | A customer may read only their own ticket; ticket ownership is checked by the server on every applicable request. |
@@ -105,6 +106,7 @@ These are Quevo requirement statements, not verbatim rubric clauses. Their sourc
 | BR-012 | PostgreSQL is the authoritative source for queue ordering, ticket state, and persisted lifecycle data. |
 | BR-013 | Customer cancellation is excluded from Sprint 1. In a later sprint, cancellation is allowed only from WAITING and transitions the customer's own ticket to CANCELLED. |
 | BR-014 | No-show handling is excluded from Sprint 1. The proposed transition is PENDING → NO_SHOW; the timeout/arrival policy, notification, and rejoin rules must be approved before implementation. |
+| BR-015 | A handoff is allowed only from the current assignee of a PENDING or OPERATING ticket to a different same-service operator with no active ticket. Assignment and audit record commit atomically; status and lifecycle timestamps do not change. |
 
 ## 7. Non-functional requirements
 

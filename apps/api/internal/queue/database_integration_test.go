@@ -23,8 +23,15 @@ func TestMigrationsAndSeedAreIdempotent(t *testing.T) {
 	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM schema_migrations").Scan(&migrationCount); err != nil {
 		t.Fatalf("count migration records: %v", err)
 	}
-	if migrationCount == 0 {
-		t.Fatal("migration ledger is empty after applying migrations")
+	if migrationCount != 3 {
+		t.Fatalf("migration ledger contains %d records after applying migrations; want 3", migrationCount)
+	}
+	var handoffTableExists bool
+	if err := db.QueryRowContext(ctx, `SELECT to_regclass('public.ticket_handoffs') IS NOT NULL`).Scan(&handoffTableExists); err != nil {
+		t.Fatalf("check ticket handoff audit table: %v", err)
+	}
+	if !handoffTableExists {
+		t.Fatal("ticket handoff audit table is missing after migration")
 	}
 	if err := database.Migrate(ctx, gormDB); err != nil {
 		t.Fatalf("apply migrations a second time: %v", err)

@@ -238,6 +238,7 @@ func TestOperatorQueueProviderMatchesOpenAPI(t *testing.T) {
 		name   string
 		method string
 		path   string
+		body   string
 	}{
 		{name: "list authorized queues", method: http.MethodGet, path: "/api/v1/operator/queues"},
 		{name: "read queue", method: http.MethodGet, path: "/api/v1/operator/branches/" + branchID + "/services/" + serviceID + "/tickets"},
@@ -245,9 +246,14 @@ func TestOperatorQueueProviderMatchesOpenAPI(t *testing.T) {
 		{name: "start ticket", method: http.MethodPost, path: "/api/v1/operator/tickets/" + ticketID + "/start"},
 		{name: "complete ticket", method: http.MethodPost, path: "/api/v1/operator/tickets/" + ticketID + "/complete"},
 		{name: "skip ticket", method: http.MethodPost, path: "/api/v1/operator/tickets/" + ticketID + "/skip"},
+		{name: "list handoff candidates", method: http.MethodGet, path: "/api/v1/operator/tickets/" + ticketID + "/handoff-options"},
+		{name: "handoff ticket", method: http.MethodPost, path: "/api/v1/operator/tickets/" + ticketID + "/handoff", body: `{"recipientOperatorId":"` + branchID + `"}`},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			contractRequest := httptest.NewRequest(test.method, "http://api.test"+test.path, nil)
+			contractRequest := httptest.NewRequest(test.method, "http://api.test"+test.path, strings.NewReader(test.body))
+			if test.body != "" {
+				contractRequest.Header.Set("Content-Type", "application/json")
+			}
 			route, pathParams, err := contractRouter.FindRoute(contractRequest)
 			if err != nil {
 				t.Fatalf("match OpenAPI route: %v", err)
@@ -262,7 +268,8 @@ func TestOperatorQueueProviderMatchesOpenAPI(t *testing.T) {
 				t.Fatalf("validate request: %v", err)
 			}
 
-			providerRequest := httptest.NewRequest(test.method, test.path, nil)
+			providerRequest := httptest.NewRequest(test.method, test.path, strings.NewReader(test.body))
+			providerRequest.Header = contractRequest.Header.Clone()
 			response := httptest.NewRecorder()
 			app.NewRouter(zap.NewNop(), nil, nil).ServeHTTP(response, providerRequest)
 			if response.Code != http.StatusServiceUnavailable {

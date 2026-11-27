@@ -1,4 +1,5 @@
 import {
+  ArrowRightLeft,
   Check,
   CircleCheck,
   Layers3,
@@ -31,6 +32,7 @@ type Props = {
   error: string
   onAction: (action: Action) => void
   onRefresh: () => void
+  onHandoff?: () => void
 }
 
 export function OperatorQueue({
@@ -42,6 +44,7 @@ export function OperatorQueue({
   error,
   onAction,
   onRefresh,
+  onHandoff,
 }: Props) {
   const { current, waiting } = detail
   const restoreActionFocusRef = useRef<HTMLElement | null>(null)
@@ -192,17 +195,41 @@ export function OperatorQueue({
                             <SkipForward aria-hidden="true" />
                             Skip ticket
                           </Button>
+                          {onHandoff ? (
+                            <Button
+                              className="min-h-12 px-5"
+                              disabled={busy}
+                              variant="outline"
+                              onClick={onHandoff}
+                            >
+                              <ArrowRightLeft aria-hidden="true" />
+                              Transfer ticket
+                            </Button>
+                          ) : null}
                         </>
                       ) : current.status === 'OPERATING' ? (
-                        <Button
-                          className="min-h-12 px-5"
-                          disabled={busy}
-                          onClick={(event) => handleAction('complete', event.currentTarget)}
-                          ref={focusTargetRef}
-                        >
-                          <Check aria-hidden="true" />
-                          Complete service
-                        </Button>
+                        <>
+                          <Button
+                            className="min-h-12 px-5"
+                            disabled={busy}
+                            onClick={(event) => handleAction('complete', event.currentTarget)}
+                            ref={focusTargetRef}
+                          >
+                            <Check aria-hidden="true" />
+                            Complete service
+                          </Button>
+                          {onHandoff ? (
+                            <Button
+                              className="min-h-12 px-5"
+                              disabled={busy}
+                              variant="outline"
+                              onClick={onHandoff}
+                            >
+                              <ArrowRightLeft aria-hidden="true" />
+                              Transfer ticket
+                            </Button>
+                          ) : null}
+                        </>
                       ) : null}
                     </div>
                   </motion.div>
