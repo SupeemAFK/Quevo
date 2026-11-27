@@ -49,6 +49,7 @@ export function LoginForm({ signIn, onSuccess }: LoginFormProps) {
           id="email"
           name="email"
           onChange={(event) => setEmail(event.target.value)}
+          required
           type="email"
           value={email}
         />
