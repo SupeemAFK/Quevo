@@ -34,7 +34,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await expectNoHorizontalOverflow(page)
 
   await page.getByRole('radio', { name: /Account Opening.*Quevo Demo Branch/ }).click()
-  await expect(page.getByRole('heading', { name: 'A few details for the team' })).toBeVisible()
+  await expect(page.getByRole('group', { name: 'A few details for the team' })).toBeVisible()
   await expect(page.getByText('Supporting documents')).toBeVisible()
   const accountType = page.getByRole('combobox', { name: 'Which account are you interested in?' })
   await accountType.click()
