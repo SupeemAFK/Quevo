@@ -1,8 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
 const customerPassword = process.env.QUEVO_E2E_CUSTOMER_PASSWORD!
-const handoffOperatorPassword = process.env.QUEVO_E2E_HANDOFF_OPERATOR_PASSWORD
-if (!handoffOperatorPassword) throw new Error('E2E handoff operator password is missing')
+const handoffOperatorPassword = process.env.QUEVO_E2E_HANDOFF_OPERATOR_PASSWORD!
 
 async function activateWithKeyboard(page: Page, target: Locator, key = 'Enter') {
   await target.focus()
@@ -18,6 +17,10 @@ async function expectNoHorizontalOverflow(page: Page) {
 async function expectMinimumTouchTarget(target: Locator) {
   const height = await target.evaluate((element) => element.getBoundingClientRect().height)
   expect(height).toBeGreaterThanOrEqual(44)
+}
+
+async function selectGeneralService(page: Page) {
+  await page.getByRole('radio', { name: /General Service.*Quevo Demo Branch/ }).check()
 }
 
 test('customer joins and recovers a ticket; operator serves and skips tickets', async ({ browser, page }) => {
@@ -77,6 +80,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   )
   await secondDevice.goto('/customer')
   await expect(secondDevice.getByText('General Service')).toBeVisible()
+  await selectGeneralService(secondDevice)
   await expect(secondDevice.getByRole('button', { name: 'Join queue' })).toBeEnabled()
   await secondDevice.getByRole('button', { name: 'Join queue' }).click()
   await expect(secondDevice.getByRole('heading', { name: 'Your ticket' })).toBeVisible()
@@ -106,6 +110,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await secondDevice.close()
 
   await expect(page.getByText('General Service')).toBeVisible()
+  await selectGeneralService(page)
   await activateWithKeyboard(page, page.getByRole('button', { name: 'Join queue' }))
   await expectMinimumTouchTarget(page.getByRole('button', { name: 'Join queue' }))
   await expect(page.getByRole('alert')).toHaveText(
@@ -166,6 +171,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
       name: 'Choose a service',
     }),
   )
+  await selectGeneralService(page)
   await activateWithKeyboard(page, page.getByRole('button', { name: 'Join queue' }))
   await expect(page.getByTestId('ticket-number')).toHaveText('2')
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Refresh queue' }))
@@ -186,6 +192,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
       name: 'Choose a service',
     }),
   )
+  await selectGeneralService(page)
   await activateWithKeyboard(page, page.getByRole('button', { name: 'Join queue' }))
   await expect(page.getByTestId('ticket-number')).toHaveText('3')
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Refresh queue' }))
@@ -206,6 +213,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
       name: 'Choose a service',
     }),
   )
+  await selectGeneralService(page)
   await activateWithKeyboard(page, page.getByRole('button', { name: 'Join queue' }))
   await expect(page.getByTestId('ticket-number')).toHaveText('4')
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Refresh queue' }))
@@ -217,6 +225,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await expect(operator.getByText('No customers are waiting.')).toBeFocused()
 
   await page.goto('/customer')
+  await selectGeneralService(page)
   await page.getByRole('button', { name: 'Join queue' }).click()
   await expect(page.getByTestId('ticket-number')).toHaveText('5')
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Refresh queue' }))
