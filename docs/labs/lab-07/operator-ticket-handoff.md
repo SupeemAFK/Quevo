@@ -13,7 +13,7 @@
 | --- | --- | --- |
 | Accepted Sprint 1 baseline | `82cd9c9693ea4e73f514929a09960647d56ef0ca` | Lab 6 reference release; contains the original assigned-operator and one-active-ticket rules. |
 | Pre-change staging candidate | `675df626b77d048c5e1dcc20577907d7b9995d43` (`origin/staging`) | Source commit for this maintenance change. The Cloud Run revision deployed from this commit has not been independently verified. |
-| Lab 7 release candidate | Not committed yet | Local working tree is based on the pre-change staging candidate. No release tag or deployed revision exists yet. |
+| Lab 7 release candidate | `eb1929c` (`feat(operator): support controlled ticket handoff`) | Local commit based on the pre-change staging candidate. It has not been pushed, reviewed, merged, tagged, or deployed. |
 
 The staging history after the accepted Sprint 1 baseline includes PRs #85 and #87–#92. PR #88 was the Lab 6 intentional validation exercise, #89 adjusted its E2E expectation, and #92 fixed the required email validation. These are intervening changes; this Lab 7 change is isolated from PR #86.
 
@@ -76,7 +76,7 @@ The SRS amendments are FR-013, FR-025, BR-007, and BR-015. The SDS amendments ar
 | Evidence | Command and version | Tested revision | Result |
 | --- | --- | --- | --- |
 | RED | `GOCACHE=/tmp/quevo-go-build /usr/local/go/bin/go test -tags=integration ./internal/queue -run '^TestLab7HandoffOptionsAvailableToAssignedOperator$' -count=1` (Go 1.26.5) | Pre-change `675df626b77d048c5e1dcc20577907d7b9995d43` | **Failed as expected:** `handoff options status = 404, want 200: 404 page not found`; failure is the missing handoff behavior, not a compile or fixture failure. |
-| GREEN | Same command and test | Local implementation based on `675df626`; implementation is not committed yet | **Passed:** `ok example.com/quevo/apps/api/internal/queue`. Re-run after a commit and replace this row with its commit SHA. |
+| GREEN | Same command and test | Local implementation commit `eb1929c` | **Passed:** `ok example.com/quevo/apps/api/internal/queue`. |
 
 The RED fixture creates a synthetic customer ticket, has the seeded operator call it, logs in through the real API router, and requests handoff options as that current assignee. The same assertion fails on the pre-change code and passes with the implementation.
 
@@ -100,7 +100,7 @@ The RED fixture creates a synthetic customer ticket, has the seeded operator cal
 | OpenAPI TypeScript consistency | `bun run check:api` from `apps/web` | Passed. |
 | Browser E2E | Attempted with `bun run test` from `tests`; global setup started PostgreSQL and the API, but Vite exited before browser tests. The installed dependency tree is incomplete (`magic-string` lacks the locked `dist/index.mjs`; `source-map` lacks `lib/quick-sort.js`). | **Failed before test execution; 0 browser cases ran.** Do not count as a pass. Reinstall dependencies from a clean network-enabled environment and rerun CI. |
 
-Counts and outputs above must be refreshed from the committed release candidate before submission. The Go OpenAPI annotation generator was not available because the environment could not reach `proxy.golang.org`; the JSON contract was updated, and `check:api` verified the generated client against it.
+All code checks listed above were run against the source tree committed as `eb1929c`. The Go OpenAPI annotation generator was not available because the environment could not reach `proxy.golang.org`; the JSON contract was updated, and `check:api` verified the generated client against it.
 
 ### Review, CI, deployment, and post-deployment checks
 
@@ -145,7 +145,7 @@ Biome: Checked 63 files; No fixes applied
 
 | Item | State / evidence | Owner and next action |
 | --- | --- | --- |
-| Submitted/deployed version | No committed Lab 7 release; UAT revision unknown. | Peemmapat: complete GitHub review/push flow, then record merge and Cloud Run revision. |
+| Submitted/deployed version | Local commit `eb1929c`; UAT revision unknown. | Peemmapat: complete GitHub review/push flow, then record merge and Cloud Run revision. |
 | Defects | No new automated-test failures on the local candidate. GitHub/UAT defect board was not inspected. | Team: review open Sprint 1 defect records and state/status before PDF. |
 | Automated checks | Go unit, Go integration, web tests, typecheck, lint, API schema check passed. Browser E2E and CI not run. | Team: run complete CI and attach actual output. |
 | User checks | No independent post-deployment check of handoff or preserved customer ownership path. | Peeranat: perform UAT smoke after deployment and record expected/actual result and time. |
@@ -170,4 +170,4 @@ Biome: Checked 63 files; No fixes applied
 | Peeranat Ngamkiatkajorn (67070503429) | Required teammate contract/code review has not yet been recorded. Do not claim a contribution until completed. |
 | Codex AI assistant | Assisted with implementation, tests, and draft documentation. Generated changes and results require team review; AI output is not teammate approval. |
 
-**Known limitations:** No GitHub issue/PR/CI evidence, no independent review, no browser E2E for this behavior, no Cloud Run revision/smoke evidence, and no complete GitHub defect/metrics snapshot. Do not submit this draft as a complete Lab 7 report.
+**Known limitations:** No GitHub issue/PR/CI evidence, no independent review, the browser E2E suite failed before browser startup because of the incomplete local dependency tree, no Cloud Run revision/smoke evidence, and no complete GitHub defect/metrics snapshot. Do not submit this draft as a complete Lab 7 report.
