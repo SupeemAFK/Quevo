@@ -53,6 +53,11 @@ async function selectGeneralService(page: Page) {
   await page.getByRole('radio', { name: /General Service.*Quevo Demo Branch/ }).check()
 }
 
+async function selectOperatorGeneralService(page: Page) {
+  await page.getByRole('combobox', { name: 'Service' }).click()
+  await page.getByRole('option', { name: /General Service.*Quevo Demo Branch/ }).click()
+}
+
 test('customer joins and recovers a ticket; operator serves and skips tickets', async ({ browser, page }) => {
   await page.setViewportSize({ width: 320, height: 780 })
   await page.goto('/login')
@@ -174,6 +179,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await expectNoHorizontalOverflow(operator)
   await expectMinimumTouchTarget(operator.getByRole('button', { name: 'Refresh queue' }))
   await expect(operator.getByRole('navigation', { name: 'Assigned queues' })).toHaveCount(0)
+  await selectOperatorGeneralService(operator)
   await expect(operator.getByText('General Service')).toBeVisible()
   await expect(operator.getByText('Quevo Demo Branch')).toBeVisible()
   await expect(operator.getByText('1 ticket', { exact: true })).toBeVisible()
