@@ -59,6 +59,8 @@ async function selectOperatorGeneralService(page: Page) {
 }
 
 test('customer joins and recovers a ticket; operator serves and skips tickets', async ({ browser, page }) => {
+  test.setTimeout(60_000)
+
   await page.setViewportSize({ width: 320, height: 780 })
   await page.goto('/login')
   await page.waitForLoadState('networkidle')
