@@ -147,7 +147,9 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Refresh queue' }))
   await expect(operator.getByText('Ticket 2', { exact: true })).toBeVisible()
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Call next' }))
-  await expect(operator.getByTestId('operator-current-ticket')).toHaveText('2')
+  await expect(
+    operator.getByTestId('operator-current-ticket').filter({ hasText: /^2$/ }),
+  ).toBeVisible()
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Skip ticket' }))
   await expect(operator.getByText('Ticket skipped.')).toBeVisible()
   await expect(operator.getByText('No customers are waiting.')).toBeFocused()
