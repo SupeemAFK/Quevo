@@ -261,7 +261,7 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await expect(operator.getByText('Ticket skipped.')).toBeVisible()
   await expect(operator.getByText('No customers are waiting.')).toBeFocused()
 
-  const handoffCustomer = await browser.newPage({ viewport: { width: 320, height: 780 } })
+  const handoffCustomer = await browser.newPage()
   await handoffCustomer.goto('/login')
   await handoffCustomer.getByLabel('Email').fill('handoff-customer@quevo.local')
   await handoffCustomer.getByLabel('Password').fill(customerPassword)
