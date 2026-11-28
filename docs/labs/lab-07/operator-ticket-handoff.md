@@ -13,7 +13,7 @@
 | --- | --- | --- |
 | Accepted Sprint 1 baseline | `82cd9c9693ea4e73f514929a09960647d56ef0ca` | Lab 6 reference release; contains the original assigned-operator and one-active-ticket rules. |
 | Pre-change staging candidate | `675df626b77d048c5e1dcc20577907d7b9995d43` (`origin/staging`) | Source commit for this maintenance change. The Cloud Run revision deployed from this commit has not been independently verified. |
-| Lab 7 release candidate | Code commit `803262b`; evidence/report commit `44edbed` | PR #94 targets `staging`; CI run `46123022741` passed. Teammate re-review, merge, and deployment remain outstanding. |
+| Lab 7 release candidate | Code candidate `803262b` with subsequent review/evidence updates | PR #94 targets `staging`; CI runs `46123022741` and `46123593995` passed. Teammate re-review, merge, and deployment remain outstanding. |
 
 The staging history after the accepted Sprint 1 baseline includes PRs #85 and #87–#92. PR #88 was the Lab 6 intentional validation exercise, #89 adjusted its E2E expectation, and #92 fixed the required email validation. These are intervening changes; this Lab 7 change is isolated from PR #86.
 
@@ -98,9 +98,9 @@ The RED fixture creates a synthetic customer ticket, has the seeded operator cal
 | Web typecheck | `bun run typecheck` from `apps/web` (Bun 1.3.13) | Passed (`tsc --noEmit`). |
 | Web lint | `bun run lint` from `apps/web` (Bun 1.3.13) | Passed; 63 files checked, no fixes required. |
 | OpenAPI TypeScript consistency | `bun run check:api` from `apps/web` | Passed. |
-| Browser E2E | Local Playwright `--list` parsed all 9 Chromium tests. The full local run could not start because Docker access is unavailable. CI run `46123022741` passed the updated suite, including transfer, focus restoration, former-assignee removal, recipient sign-in, and completion. | CI: **9 Chromium tests passed**. The two preceding CI attempts exposed test navigation assumptions; those were fixed before the passing run. |
+| Browser E2E | Local Playwright `--list` parsed all 9 Chromium tests. The full local run could not start because Docker access is unavailable. CI run `46123593995` passed the updated suite, including transfer, focus restoration, former-assignee removal, recipient sign-in, and completion. | CI: **9 Chromium tests passed**. The two preceding CI attempts exposed test navigation assumptions; those were fixed before the passing run. |
 
-After the review fixes, local Go unit tests, `go vet ./...`, web lint/typecheck/API consistency, and all 60 web tests passed. The modified PostgreSQL integration test compiled locally; its container execution could not start because this environment cannot access Docker. CI run `46123022741` executed the full PostgreSQL integration suite, all 9 Chromium tests, and production image builds successfully. Earlier CI caught one Go staticcheck issue and two E2E navigation assertions; the code/test corrections passed in runs `46122420288` and `46123022741`. The Go OpenAPI annotation generator was unavailable because the environment could not reach `proxy.golang.org`; the JSON contract was updated, and `check:api` verified the generated client against it.
+After the review fixes, local Go unit tests, `go vet ./...`, web lint/typecheck/API consistency, and all 60 web tests passed. The modified PostgreSQL integration test compiled locally; its container execution could not start because this environment cannot access Docker. CI runs `46123022741` and `46123593995` executed the full PostgreSQL integration suite, all 9 Chromium tests, and production image builds successfully. Earlier CI caught one Go staticcheck issue and two E2E navigation assertions; the code/test corrections passed in runs `46122420288`, `46123022741`, and `46123593995`. The Go OpenAPI annotation generator was unavailable because the environment could not reach `proxy.golang.org`; the JSON contract was updated, and `check:api` verified the generated client against it.
 
 ### Review, CI, deployment, and post-deployment checks
 
@@ -109,7 +109,7 @@ After the review fixes, local Go unit tests, `go vet ./...`, web lint/typecheck/
 | Change request and reviewed contract | Complete: contract-only PR #91 documents CR-L7-01, was approved before the first code commit, and is linked as the pre-implementation change request. Issue #95 was created later as an implementation tracker. |
 | Teammate contract review before code | Complete: `jarbbie` approved contract-only PR #91 at 2026-11-27 23:54 Thailand time; it merged before the first implementation commit at 2026-11-28 00:03. |
 | Teammate code/PR review | `jarbbie` requested browser handoff coverage, focus restoration, and a migration-ledger assertion that does not hard-code the total count. All three are fixed through code commit `803262b`; evidence/report head is `44edbed`; re-review is still required. |
-| CI on the Lab 7 commits | Runs `46079877876` (staticcheck failure), `46080085875`, `46081073959`, `46081524297`, and `46082115861` (pass), `46121740761` and `46122126910` (E2E test assertion failures), and `46122420288` and `46123022741` (pass after corrections). The latest run passed Lint Web, Lint Go, all tests including PostgreSQL integration and 9 Chromium tests, and production image builds. |
+| CI on the Lab 7 commits | Runs `46079877876` (staticcheck failure), `46080085875`, `46081073959`, `46081524297`, and `46082115861` (pass), `46121740761` and `46122126910` (E2E test assertion failures), and `46122420288`, `46123022741`, and `46123593995` (pass after corrections). The latest run passed Lint Web, Lint Go, all tests including PostgreSQL integration and 9 Chromium tests, and production image builds. |
 | Merge into staging and identify accepted main release | Not done. |
 | Cloud Run UAT deployment/revision | Not verified. |
 | Deployed handoff and preserved Sprint 1 smoke tests | Not run. |
@@ -136,7 +136,7 @@ Go integration: app/auth/health/config/database/queue passed; 0 failed
 Vitest: Test Files 14 passed (14); Tests 60 passed (60)
 Playwright Chromium on 46123022741: 9 passed
 CI failures 46079877876 (staticcheck), 46121740761 and 46122126910 (E2E navigation assertions) were corrected
-CI runs 46080085875, 46081073959, 46081524297, 46082115861, 46122420288, and 46123022741: passed Lint Web, Lint Go, all tests, and production image builds
+CI runs 46080085875, 46081073959, 46081524297, 46082115861, 46122420288, 46123022741, and 46123593995: passed Lint Web, Lint Go, all tests, and production image builds
 Biome: Checked 63 files; No fixes applied
 ```
 
@@ -150,7 +150,7 @@ Biome: Checked 63 files; No fixes applied
 | --- | --- | --- |
 | Submitted/deployed version | Code candidate `803262b` / report head `44edbed` in PR #94; UAT revision unknown. | Peemmapat: complete teammate re-review/merge flow, then record merge and Cloud Run revision. |
 | Defects | GitHub issue searches for “bug”, “defect”, and “uat” returned no issues as of 2026-11-28; open #95 is a change request and #56 is a chore. This does not prove that no user-found defects exist. The first CI staticcheck failure was corrected in `6132d3e`; final CI passed. | Team: reconcile the Lab 6 UAT team's actual findings and status before PDF. |
-| Automated checks | Local Go unit/vet, web tests/typecheck/lint/API schema check passed. CI run `46123022741` passed all tests including PostgreSQL integration and 9 Chromium tests, lint, and production image builds on the reviewed code. | Team: retain the CI URL and commit SHA in the final PDF. |
+| Automated checks | Local Go unit/vet, web tests/typecheck/lint/API schema check passed. CI run `46123593995` passed all tests including PostgreSQL integration and 9 Chromium tests, lint, and production image builds on the reviewed code. | Team: retain the CI URL and commit SHA in the final PDF. |
 | User checks | No independent post-deployment check of handoff or preserved customer ownership path. | Peeranat: perform UAT smoke after deployment and record expected/actual result and time. |
 | Technical debt | The requested browser handoff path, keyboard focus restoration, and specific migration-ledger assertion are implemented and passed CI. | Obtain reviewer confirmation. Regenerate OpenAPI annotations in a network-enabled environment if the checked JSON contract changes. |
 | Configuration/secrets | No new secrets or environment variables. Migration must be applied before API use. | Deployment owner: confirm the normal migration job completed before service rollout. |
