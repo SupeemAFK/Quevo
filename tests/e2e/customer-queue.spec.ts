@@ -220,7 +220,16 @@ test('customer joins and recovers a ticket; operator serves, skips, and hands of
   await operator.getByLabel('Email').fill('handoff-operator@quevo.local')
   await operator.getByLabel('Password').fill(process.env.QUEVO_E2E_OPERATOR_PASSWORD!)
   await operator.getByRole('button', { name: 'Sign in' }).click()
+  await activateWithKeyboard(
+    operator,
+    operator.getByRole('button', { name: 'Open navigation menu' }),
+  )
   await expect(operator.getByRole('navigation', { name: 'Application' })).toBeVisible()
+  await activateWithKeyboard(
+    operator,
+    operator.getByRole('link', { name: 'Open operator queue' }),
+  )
+  await expect(operator.getByRole('heading', { name: 'Operator queue' })).toBeVisible()
   await expect(operator.getByTestId('operator-current-ticket')).toHaveText('5')
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Start service' }))
   await expect(operator.getByText('In service', { exact: true })).toBeVisible()
