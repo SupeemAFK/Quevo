@@ -1,6 +1,6 @@
 # Lab 7 — Change request CR-L7-01: operator ticket handoff
 
-**Report status:** UAT readiness READY for the maintained Sprint 1 scope. Production promotion is pending teammate review and merge of PR #96; the report does not claim production is already updated.
+**Report status:** FINAL — the maintained Sprint 1 scope is reviewed, merged to main, deployed to production, and verified. UAT behavior smoke and production deployment evidence are recorded below.
 **Report date:** 2026-11-28 (Thailand time)
 **Project/team:** Quevo · EN-046 · 2 Boys 1 Repo
 **Members:** Peeranat Ngamkiatkajorn (67070503429); Peemmapat Sripongsai (67070503436)
@@ -14,10 +14,11 @@
 | Accepted Sprint 1 baseline | `82cd9c9693ea4e73f514929a09960647d56ef0ca` | Lab 6 reference release; contains the original assigned-operator and one-active-ticket rules. |
 | Pre-change staging candidate | `675df626b77d048c5e1dcc20577907d7b9995d43` | Actual pre-change implementation on staging before CR-L7-01. |
 | Reviewed Lab 7 code | `803262b` with review fixes; report head `9f1642f` | PR #94 received final teammate approval, then merged to staging as `172729ff7b66874cfe8755dca7478a49061158e8` at 2026-11-28 15:17 ICT. |
-| Deployed UAT release | staging commit `172729ff7b66874cfe8755dca7478a49061158e8` | API `quevo-uat-api-sha-172729ff7b66-a1`; web `quevo-uat-web-sha-172729ff7b66-a1`. UAT workflow run `46125113341` passed. |
-| Main production promotion | PR #96, `staging` → `main` | CI run `46126418336` passed. Peer review is pending; production deployment has not run. PR #86 remains open and excluded. |
+| UAT behavior-tested release | staging commit `172729ff7b66874cfe8755dca7478a49061158e8` | UAT workflow `46125113341` passed; API `quevo-uat-api-sha-172729ff7b66-a1`; web `quevo-uat-web-sha-172729ff7b66-a1`. UAT-01 smoke ran against this behavior-tested revision. |
+| Latest UAT deployment | staging commit `8132eded6f2f91a9a7a24a7bece7ecae56a33658` (report-only commit after the behavior smoke) | UAT workflow `46134789501` passed; API `quevo-uat-api-sha-8132eded6f2f-a1`; web `quevo-uat-web-sha-8132eded6f2f-a1`. No application code changed after UAT-01. |
+| Production release | [PR #96](https://github.com/SupeemAFK/Quevo/pull/96) merged to `main` as `9e50d82f5b11ad5dae03090f4100b83468bc906f` | [CD run `46137488769`](https://github.com/SupeemAFK/Quevo/actions/runs/46137488769) passed. API `quevo-api-sha-9e50d82f5b11-a1`; web `quevo-web-sha-9e50d82f5b11-a1`. Both services route 100% traffic to these revisions. PR #86 remains open and excluded. |
 
-The staging history after the accepted Sprint 1 baseline includes PRs #85 and #87–#92. PR #88 was the Lab 6 intentional validation exercise, #89 adjusted its E2E expectation, and #92 fixed required email validation. These intervening changes are part of the evolving application release. PR #86 is still open and is absent from staging and PR #96.
+The release history includes earlier changes that established the accepted Sprint 1 release path. PR #86 remains open and is excluded from staging and the production promotion; it contains later-sprint service workflows.
 
 ## Part A — Change impact and contract
 
@@ -123,7 +124,7 @@ The local environment could run Go unit/vet and web tests, but cannot start Test
 | Staging merge | Complete: PR #94 merged as `172729ff7b66874cfe8755dca7478a49061158e8` at 15:17 ICT on 2026-11-28. |
 | UAT deployment | Complete: run `46125113341` passed CI, migration, Cloud Run deployment, health checks, and deployed image verification. API and web revisions are listed in the version table. |
 | Post-deployment behavior smoke | Complete: 11/11 authenticated API checks passed against UAT at 15:49 ICT. See evidence UAT-01 below. Temporary synthetic data was cleaned up. |
-| Main release | Pending: PR #96 targets `main`, its CI run `46126418336` passed, and Peeranat's re-review is requested. Production deployment will run on merge. |
+| Main release and production deployment | Complete: PR #96 was approved and merged to `main` at 17:56 ICT as `9e50d82f5b11ad5dae03090f4100b83468bc906f`; CD run `46137488769` passed deployment and production verification. |
 
 **UAT-01 — authenticated API smoke (2026-11-28 15:49 ICT; staging SHA `172729f`; UAT API revision `quevo-uat-api-sha-172729ff7b66-a1`):**
 
@@ -142,19 +143,21 @@ PASS 11/11 smoke assertions passed; synthetic test accounts and records were rem
 
 **Review evidence:** Peeranat's detailed PR #94 review confirmed the transaction preserved ticket state and timestamps, checked recipient eligibility, wrote the audit row atomically, and retained the active-ticket uniqueness guard. The three merge-gating requests (Playwright flow, focus restoration, migration-ledger assertion) were fixed in `6126d1e`, `05c2b13`, and `803262b`; the reviewer approved the updated PR at 15:16 ICT.
 
+**PROD-01 — production deployment and endpoint verification (2026-11-28):** [PR #96](https://github.com/SupeemAFK/Quevo/pull/96) was approved and merged to `main` as `9e50d82f5b11ad5dae03090f4100b83468bc906f`. [Main CD run `46137488769`](https://github.com/SupeemAFK/Quevo/actions/runs/46137488769) completed successfully. It ran the database migration job, deployed the API and web images, verified their digests (`quevo-api`: `sha256:06f7e7bd258ea246b208c2856905d0f3a26bfcea6b5ee0855aeb036bf7203b62`; `quevo-web`: `sha256:32d405f5dff920e0194154baf4e3421e72a491471d241406aeaeb1e9d4338921`), and confirmed 100% traffic to API revision `quevo-api-sha-9e50d82f5b11-a1` and web revision `quevo-web-sha-9e50d82f5b11-a1`. The live API health URL (`https://quevo-api-5unjfhgfwa-as.a.run.app/api/v1/health`) and web root (`https://quevo-web-5unjfhgfwa-as.a.run.app/`) both returned HTTP 200. Production ticket state was not mutated.
+
 ## Part C — Engineering metrics
 
-Snapshot: 2026-11-28 15:52 ICT. Metrics are scoped to this repository and the Lab 7 / staging release window; issue #95 is a change request, not a defect.
+Final snapshot: 2026-11-28, after the successful production release. Metrics are scoped to CR-L7-01 and its release path; issue #95 is a change request, not a defect.
 
 | ID | Metric definition and window | Value | Source / evidence |
 | --- | --- | --- | --- |
-| M1 | Pull requests merged 2026-11-27 through 2026-11-28 that directly affected the Lab 6/7 release path. | 5 merged: #88 (staging), #89 (staging), #91 (contract branch), #92 (staging), #94 (staging). Exact merge times appear in the evidence list below. | GitHub pull-request records; merge commits `45349f0`, `3953475`, `8f819a9`, `675df62`, `172729f`. |
+| M1 | Pull requests merged for the Lab 7 contract, implementation, report evidence, and production promotion. | 4 merged: #91 (contract), #94 (implementation to staging), #97 (UAT evidence report), #96 (staging to main). | GitHub pull-request records; PR #96 merge commit `9e50d82f5b11ad5dae03090f4100b83468bc906f`. |
 | M2 | PR #94 CI runs from first run `46079877876` through latest run `46124024679`. | 11 runs: 8 pass, 3 fail (1 staticcheck issue; 2 E2E navigation assertions), all three corrected before merge. | Run IDs: `46079877876`, `46080085875`, `46081073959`, `46081524297`, `46082115861`, `46121740761`, `46122126910`, `46122420288`, `46123022741`, `46123593995`, `46124024679`. |
-| M3 | Automated suite results on final reviewed PR #94 CI run. | Go unit: 4 packages pass; Go integration: 6 packages pass; web: 14 files / 60 tests pass; Chromium E2E: 9 tests pass. | CI run `46124024679`; latest successful staging validation `46125113341`. |
+| M3 | Automated suite results on the final reviewed implementation and release checks. | Go unit: 4 packages pass; Go integration: 6 packages pass; web: 14 files / 60 tests pass; Chromium E2E: 9 tests pass. Production CD also passed migration, image digest, health, and traffic checks. | PR #94 run `46124024679`; UAT runs `46125113341` and `46134789501`; production CD `46137488769`. |
 | M4 | Authenticated post-deployment UAT handoff smoke, 2026-11-28 15:49 ICT. | 11/11 checks pass, including owner access, non-owner denial, transfer, preserved timestamp/audit, former-assignee denial, recipient start/complete. | Evidence UAT-01; synthetic ticket 2 and associated data were removed afterward. |
-| M5 | Lab 7 handoff defects filed in GitHub as of 2026-11-28 15:52 ICT. | 0 handoff defects. Issue #95 is the open CR-L7-01 change request; it is not a defect. No claim is made about unrelated product defects. | GitHub issue list; PR #94 review history; scope limited to the handoff change. |
+| M5 | Lab 7 handoff defects filed in GitHub as of the final report snapshot on 2026-11-28. | 0 handoff defects. Issue #95 is the CR-L7-01 change request, not a defect. This makes no claim about unrelated product areas. | GitHub issue list and PR #94 review history; scope limited to ticket handoff. |
 
-**Embedded source details:** PR #91 merged at 2026-11-27 23:56 ICT; #92 at 2026-11-28 00:22 ICT; #94 at 2026-11-28 15:17 ICT. PRs #88 and #89 merged at 13:15 and 13:39 ICT on 2026-11-27. The Lab 7 branch CI failures were `46079877876` (staticcheck), `46121740761`, and `46122126910` (E2E navigation assertions); successful final runs were `46122420288`, `46123022741`, `46123593995`, and `46124024679`. UAT deployment run `46125113341` completed successfully at 15:24 ICT.
+**Embedded source details:** PR #91 was approved before implementation; PR #94 merged to staging at 15:17 ICT on 28 Nov. PR #97 was approved and merged at 17:21 ICT; its UAT deploy completed successfully. PR #96 was approved and merged to main at 17:56 ICT; production CD run `46137488769` completed successfully. The PR #94 CI failures were `46079877876` (staticcheck), `46121740761`, and `46122126910` (E2E assertions); all were corrected before merge.
 
 **Evidence-based action (under 100 words):** Three of eleven Lab 7 CI attempts failed before the final green run. Keep the two-operator handoff browser journey and PostgreSQL concurrency test as required CI gates, and repeat the authenticated UAT smoke on each release promotion. Peeranat owns confirming both checks remain required before the next production promotion.
 
@@ -166,29 +169,29 @@ Snapshot: 2026-11-28 15:52 ICT. Metrics are scoped to this repository and the La
 
 | Item | State / evidence | Owner / next action |
 | --- | --- | --- |
-| Submitted/deployed version | Maintained Sprint 1 candidate on UAT: staging SHA `172729ff7b66874cfe8755dca7478a49061158e8`; API `quevo-uat-api-sha-172729ff7b66-a1`; web `quevo-uat-web-sha-172729ff7b66-a1`. | Peemmapat: complete the reviewed `staging` → `main` promotion in PR #96 and record production revision. |
-| Defects | No handoff defect is open. The three code-review blockers and three early CI failures were corrected. Issue #95 is CR-L7-01, not a defect. | Team: reconcile any independent user-reported defects before final submission. |
-| Automated checks | Final PR #94 CI passed unit, PostgreSQL integration, web, Playwright, lint, and image-build checks. PR #96 CI run `46126418336` also passed. | Keep the current CI gates on the production promotion. |
-| User / deployed checks | UAT-01: 11/11 authenticated smoke assertions passed, including changed handoff behavior and preserved customer ownership. | Peeranat: optionally repeat after any code change; no production queue mutation is planned for this report. |
+| Submitted/deployed version | Main release SHA `9e50d82f5b11ad5dae03090f4100b83468bc906f`; production API `quevo-api-sha-9e50d82f5b11-a1`; production web `quevo-web-sha-9e50d82f5b11-a1`. Latest UAT revisions are `quevo-uat-api-sha-8132eded6f2f-a1` and `quevo-uat-web-sha-8132eded6f2f-a1`. | Deployment and revision verification complete. |
+| Defects | No handoff defect is open. The three code-review blockers and three early CI failures were corrected. Issue #95 is CR-L7-01, not a defect. | No unresolved Lab 7 defect. |
+| Automated checks | PR #94 full CI passed unit, PostgreSQL integration, web, Playwright, lint, and image builds. PR #96 CI `46134793586` and production CD `46137488769` passed. | All required release checks passed. |
+| User / deployed checks | UAT-01: 11/11 authenticated smoke assertions passed. Production API health and web root both returned HTTP 200; CD verified image digests and 100% traffic to released revisions. | No production ticket mutation was performed. |
 | Technical debt | P2: document the lock-order invariant between call-next and handoff before adding another ticket-reassignment path. P3: consider making candidate lookup a plain read instead of taking a row lock. Both were non-blocking reviewer observations; current concurrency tests pass. | Team: address before adding another assignment workflow; keep the concurrency test as a regression gate. |
-| Configuration / secrets | No new secret or runtime setting. Existing UAT workflow applied migration `000003_sprint1_ticket_handoffs` and verified image digests. | No additional configuration is needed for this change. |
-| Documentation / run instructions | SRS, traceability, and SDS were amended; PR #91 is the reviewed pre-code contract; this report includes UAT evidence. | Include this report and selected excerpts in the single PDF submission. |
-| CI / deployment / smoke | UAT deploy and smoke complete. Production promotion PR #96 is open, checks pass, peer review is pending. | Peemmapat: merge only after Peeranat's review; verify the main deployment workflow before calling the production release complete. |
+| Configuration / secrets | No new secret or runtime setting. UAT and production deployment workflows applied migration `000003_sprint1_ticket_handoffs` and verified deployed images. | No additional configuration is needed for this change. |
+| Documentation / run instructions | SRS, traceability, and SDS were amended; PR #91 is the reviewed pre-code contract; the final report includes UAT and production evidence. | Include this report as the single self-contained PDF submission. |
+| CI / deployment / smoke | UAT deploy/smoke and production migration/deploy/verification are complete. PR #96 merged after teammate approval; production CD run `46137488769` passed. | Release complete; retain the E2E, concurrency, UAT smoke, and production digest checks for future changes. |
 
-**Readiness decision: READY for the maintained Sprint 1 scope in the deployed UAT release.** The changed handoff and preserved customer ownership path passed. The production promotion is not yet complete, so the overall Lab 7 submission remains pending main review, deployment, and production revision evidence. This decision concerns the maintained Sprint 1 scope, not the full three-sprint product.
+**Readiness decision: READY for Lab 7 submission.** The handoff change was reviewed, merged to staging, verified by CI and 11/11 authenticated UAT smoke checks, then promoted through reviewed PR #96. Production CD run `46137488769` passed migration, deployment, image digest, health, and 100% traffic verification. The live production API health endpoint and web root returned HTTP 200. This decision covers the maintained Sprint 1 scope, not the full three-sprint product.
 
 ### Retrospective
 
 - **What helped:** The contract was approved in PR #91 before implementation; the PostgreSQL test asserted state/timestamp preservation, authorization, audit insertion, and the call-next race. Peer review caught missing browser, focus, and migration-ledger evidence before merge.
 - **What hurt:** The issue tracker entry #95 was created after implementation started, even though PR #91 carried the contract first. Early CI also caught a staticcheck issue and two brittle E2E navigation expectations.
-- **What changes for Final Delivery:** Keep the handoff E2E and database concurrency checks mandatory, and run the same synthetic UAT smoke before each promotion; Peeranat will review the release evidence before main merge.
+- **What to keep:** Keep the handoff E2E and database concurrency checks mandatory. Repeat the authenticated UAT smoke before future promotions and retain the exact source SHA, workflow run, image digest, and Cloud Run revisions.
 
 ### Contributions, AI use, and limitations
 
 | Contributor | Work recorded for this change |
 | --- | --- |
 | Peemmapat Sripongsai (67070503436) | Authored the implementation, integration/E2E tests, review fixes, deployment evidence, and report updates in PR #94. |
-| Peeranat Ngamkiatkajorn (67070503429) | Reviewed/approved the contract in PR #91 before implementation; reviewed PR #94, required three fixes, and approved the corrected implementation. Requested re-review on PR #96 after UAT evidence was added. |
+| Peeranat Ngamkiatkajorn (67070503429) | Reviewed and approved the contract in PR #91 before implementation; required and approved three corrections in PR #94; approved the updated report in PR #97 and the production promotion in PR #96. |
 | Codex AI assistant | Assisted with implementation, tests, evidence collection, and report drafting. The student team reviewed and accepted changes; AI output is not a substitute for teammate approval. |
 
-**Known limitations:** Issue #95 was created after implementation work started; the versioned contract PR #91 was approved before code and the timing gap is disclosed. Local PostgreSQL-container execution was unavailable, but CI ran the full integration suite. The UAT smoke was authenticated API-level verification rather than a manual browser session; CI separately passed the Chromium handoff journey. Production promotion is still pending PR #96 review and deployment.
+**Known limitations:** Issue #95 was created after implementation work started; PR #91 is the actual pre-code contract review and the timing gap is disclosed. Local PostgreSQL-container execution was unavailable, but CI ran the full integration suite. UAT smoke was authenticated API-level verification; CI separately passed the Chromium handoff journey. Production verification consisted of the reviewed CD workflow, image digest and 100% traffic checks, plus live HTTP 200 checks for API health and the web root; no production ticket was mutated.
