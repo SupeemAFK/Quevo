@@ -287,6 +287,34 @@ func TestCustomerQueueAPIWithPostgres(t *testing.T) {
 	}
 
 	operatorSession := loginQueueAPIUser(t, router, "operator@quevo.local")
+	cancelPath := "/api/v1/tickets/" + bankTicket.ID + "/cancel"
+	wrongOwnerCancel := queueAPIRequest(router, http.MethodPost, cancelPath, nil, otherCustomerSession)
+	if wrongOwnerCancel.Code != http.StatusNotFound || strings.Contains(wrongOwnerCancel.Body.String(), bankTicket.ID) || strings.Contains(wrongOwnerCancel.Body.String(), "Account Opening") {
+		t.Fatalf("other customer's cancel = %d %s; want safe 404", wrongOwnerCancel.Code, wrongOwnerCancel.Body.String())
+	}
+	assertContractResponse(http.MethodPost, cancelPath, wrongOwnerCancel)
+
+	terminalCancel := queueAPIRequest(router, http.MethodPost, "/api/v1/tickets/"+ticket.ID+"/cancel", nil, customerSession)
+	if terminalCancel.Code != http.StatusConflict || !strings.Contains(terminalCancel.Body.String(), `"code":"invalid_transition"`) {
+		t.Fatalf("cancel of a terminal ticket = %d %s; want invalid-transition conflict", terminalCancel.Code, terminalCancel.Body.String())
+	}
+	assertContractResponse(http.MethodPost, "/api/v1/tickets/"+ticket.ID+"/cancel", terminalCancel)
+
+	bankQueueCallPath := "/api/v1/operator/branches/" + database.DemoBranchID + "/queues/10000000-0000-4000-8000-000000000010/tickets/call-next"
+	called := queueAPIRequest(router, http.MethodPost, bankQueueCallPath, nil, operatorSession)
+	if called.Code != http.StatusOK {
+		t.Fatalf("call next bank ticket = %d %s; want the waiting bank ticket", called.Code, called.Body.String())
+	}
+	var calledTicket OperatorTicketResponse
+	if err := json.Unmarshal(called.Body.Bytes(), &calledTicket); err != nil || calledTicket.ID != bankTicket.ID || calledTicket.Status != "PENDING" {
+		t.Fatalf("called bank ticket = %#v, err %v; want the customer's ticket in PENDING", calledTicket, err)
+	}
+	calledCancel := queueAPIRequest(router, http.MethodPost, cancelPath, nil, customerSession)
+	if calledCancel.Code != http.StatusConflict || !strings.Contains(calledCancel.Body.String(), `"code":"invalid_transition"`) {
+		t.Fatalf("cancel of a called ticket = %d %s; want invalid-transition conflict", calledCancel.Code, calledCancel.Body.String())
+	}
+	assertContractResponse(http.MethodPost, cancelPath, calledCancel)
+
 	if services := queueAPIRequest(router, http.MethodGet, "/api/v1/services", nil, operatorSession); services.Code != http.StatusForbidden {
 		t.Fatalf("operator service-list status = %d, want %d", services.Code, http.StatusForbidden)
 	}
