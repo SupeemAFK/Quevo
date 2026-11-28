@@ -65,7 +65,7 @@ The PDF contains the source excerpts, review decisions, test results, deployment
 | Version and release chain | {{PAGE_CHAIN}} | A-01, B-06–B-08 | Baseline, UAT, staging, main and production lineage |
 | Part A — Change impact and updated contract | {{PAGE_PART_A}} | A-01–A-06 | Sprint 1 baseline, change, impact, revised contract and peer review |
 | Part B — Implementation and regression-safe delivery | {{PAGE_PART_B}} | B-01–B-08 | RED/GREEN, code and migration, tests, CI, review, UAT and screenshots |
-| Part C — Objective engineering metrics | {{PAGE_PART_C}} | C-01–C-05 | Five dated metrics, sources and evidence-based action |
+| Part C — Objective engineering metrics | {{PAGE_PART_C}} | C-01–C-04 | Five dated metrics, sources and evidence-based action |
 | Part D — Readiness and retrospective | {{PAGE_PART_D}} | D-01–D-04 | Readiness, defects/debt, deployment, reflection and limitations |
 | Evidence register and source notes | {{PAGE_EVIDENCE}} | A-01–D-04 | IDs, revisions, artifacts, links and limitations |
 
@@ -318,7 +318,7 @@ CREATE TABLE ticket_handoffs (
 | Go + PostgreSQL integration | `go test -tags=integration ./...` · Go 1.26.5; PostgreSQL 17 service in CI | 6 test-bearing packages passed; 0 failed; migration, ownership, handoff and concurrency coverage included. | Assignment, audit, transaction and preserved database invariants. |
 | Web component/unit tests | `bun run test -- --maxWorkers=1 --no-file-parallelism` · Bun 1.3.13 / Node 24.15.0 | 14 files / 60 tests passed; 0 failed. | Dialog state, operator queue and existing customer/operator UI. |
 | Type and lint checks | `bun run typecheck`; `bun run lint`; `bun run check:api` | All passed; lint checked 63 files. | Type-safe UI/client and checked API contract. |
-| Browser E2E | Playwright Chromium in GitHub Actions | 9 passed; 0 failed; 0 skipped. | Customer join/recovery, operator action, transfer dialog, successful handoff, focus recovery and recipient completion. |
+| Browser E2E | CI command `make test`; E2E target runs `cd tests && bun install --frozen-lockfile && bun run test` (`playwright test`) · Playwright Test 1.64.1 / Chromium. | 9 passed; 0 failed; 0 skipped in run `46146702527` at commit `83dd0fa`. | `tests/e2e/customer-queue.spec.ts`: customer join/recovery, operator action, transfer dialog, successful handoff, focus recovery and recipient completion. |
 | Build/deploy artifacts | CI run `46124024679`; main CD `46143445046` | API/web production images built; migration and deploy succeeded; image digests matched deployed revisions. | Release package and infrastructure integration. |
 
 Local Docker was unavailable, so the author’s local environment could not start Testcontainers. The PostgreSQL 17 integration tests were run in GitHub CI; they were not represented as locally executed.
@@ -551,17 +551,17 @@ Three of the eleven PR #94 CI runs failed before the staging merge: one staticch
 | User/deployed checks | UAT-01 11/11 authenticated API checks; six synthetic Chromium screenshots; production API health and web root both returned HTTP 200. | No production ticket was mutated. |
 | Technical debt | Deferred review observations: handoff-options GET still takes a row lock though POST revalidates; opposite lock order relies on current CallNext behavior; audit record does not snapshot the status at transfer. Details/priorities below. | Keep concurrency tests; document or resolve before adding another assignment/reassignment workflow. |
 | Configuration/secrets | No new runtime secret/configuration was added. CI ran the existing migration job on UAT and production; secret values are absent from this report. | Existing Cloud Run and Secret Manager configuration retained. |
-| Docs/run instructions | SRS, SDS, traceability, test contract and change record updated. UAT/prod pipelines remain the repository’s existing GitHub Actions workflows. | Keep this PDF with the team submission and retain release artifacts. |
+| Docs/run instructions | SRS, SDS, traceability, test contract and change record updated. UAT/prod pipelines remain the repository’s existing GitHub Actions workflows. | Submit the separately rendered self-contained PDF through LEB2; retain the Markdown source and evidence images in the repository. |
 | Deployment/smoke | UAT migration/deploy/image checks passed; production migration/deploy/image/traffic checks passed; current public endpoints HTTP 200. | READY for maintained Sprint 1 scope + CR-L7-01. |
 
 ### D-02 · Defects versus deferred technical debt
 
-| Item | Type / severity | Impact | Priority | Disposition / action |
+| Item | Type / severity | Impact | Priority | Owner / disposition / action |
 | --- | --- | --- | --- | --- |
-| No known handoff defect at snapshot | Defect status | P0: 0; P1: 0; P2: 0; P3: 0. UAT smoke and E2E passed; no handoff defect issue was filed. | None | CR #95 is closed as the completed change request. Reopen only if a reproducible incorrect result is found. |
-| Candidate lookup uses `FOR UPDATE` in `ListHandoffCandidates` | Technical debt | Advisory GET serializes against ticket changes; POST independently revalidates under lock, so the read lock appears unnecessary. | P3 | Consider converting candidate lookup to a plain read; preserve POST revalidation and concurrency coverage. |
-| Lock-order relationship to `CallNext` is not documented at both query sites | Technical debt | Current code is safe under the documented current CallNext behavior, but a future flow that takes locks in reverse order could introduce a deadlock cycle. | P2 | Document the invariant or standardize lock order before another assignment/admin workflow is added. |
-| Audit event does not snapshot status at transfer time | Technical debt | Current state can be inferred from lifecycle timestamps for present reporting, but future audit/reporting may need exact transfer-state evidence. | P3 | Revisit if audit/report requirements need historical state without inference. |
+| No known handoff defect at snapshot | Defect status | P0: 0; P1: 0; P2: 0; P3: 0. UAT smoke and E2E passed; no handoff defect issue was filed. | None | Peemmapat monitors reports; Peeranat reviews any reproducible report. CR #95 is closed as the completed change request. |
+| Candidate lookup uses `FOR UPDATE` in `ListHandoffCandidates` | Technical debt | Advisory GET serializes against ticket changes; POST independently revalidates under lock, so the read lock appears unnecessary. | P3 | Proposed owner: Peemmapat; Peeranat reviews. Consider converting candidate lookup to a plain read; preserve POST revalidation and concurrency coverage. |
+| Lock-order relationship to `CallNext` is not documented at both query sites | Technical debt | Current code is safe under the documented current CallNext behavior, but a future flow that takes locks in reverse order could introduce a deadlock cycle. | P2 | Proposed owner: Peemmapat; Peeranat reviews. Document the invariant or standardize lock order before another assignment/admin workflow is added. |
+| Audit event does not snapshot status at transfer time | Technical debt | Current state can be inferred from lifecycle timestamps for present reporting, but future audit/reporting may need exact transfer-state evidence. | P3 | Proposed owner: Peemmapat; Peeranat reviews. Revisit if audit/report requirements need historical state without inference. |
 
 These are deferred improvements from the reviewer’s non-blocking notes, not known incorrect behavior and not release blockers. The reviewer’s final approval found no new actionable issues after the three requested fixes.
 
