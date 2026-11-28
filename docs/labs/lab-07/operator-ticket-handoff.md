@@ -1,6 +1,6 @@
 # Lab 7 — Change request CR-L7-01: operator ticket handoff
 
-**Report status:** NOT READY for submission. The contract was reviewed before implementation in PR #91. PR #94 has three review requests in progress; staging deployment and deployed smoke evidence are still outstanding.
+**Report status:** NOT READY for submission. The contract was reviewed before implementation in PR #91; the three implementation review requests are fixed and the final CI run passed. Teammate re-review, staging deployment, and deployed smoke evidence are still outstanding.
 **Report date:** 2026-11-28 (Thailand time)
 **Project/team:** Quevo · EN-046 · 2 Boys 1 Repo
 **Members:** Peeranat Ngamkiatkajorn (67070503429); Peemmapat Sripongsai (67070503436)
@@ -13,7 +13,7 @@
 | --- | --- | --- |
 | Accepted Sprint 1 baseline | `82cd9c9693ea4e73f514929a09960647d56ef0ca` | Lab 6 reference release; contains the original assigned-operator and one-active-ticket rules. |
 | Pre-change staging candidate | `675df626b77d048c5e1dcc20577907d7b9995d43` (`origin/staging`) | Source commit for this maintenance change. The Cloud Run revision deployed from this commit has not been independently verified. |
-| Lab 7 release candidate | Code commit `6132d3e` atop `eb1929c`; current PR head `67db6b0` | PR #94 targets `staging`; latest CI run passed. It has not been approved, merged, tagged, or deployed. |
+| Lab 7 release candidate | Code commit `6132d3e` plus review fixes through `803262b` | PR #94 targets `staging`; CI run `46122420288` passed. Teammate re-review, merge, and deployment remain outstanding. |
 
 The staging history after the accepted Sprint 1 baseline includes PRs #85 and #87–#92. PR #88 was the Lab 6 intentional validation exercise, #89 adjusted its E2E expectation, and #92 fixed the required email validation. These are intervening changes; this Lab 7 change is isolated from PR #86.
 
@@ -29,7 +29,7 @@ The staging history after the accepted Sprint 1 baseline includes PRs #85 and #8
 
 **Scope and boundaries:** No transfer for `WAITING`, `COMPLETED`, or `SKIPPED` tickets; no self-transfer; no customer transfer; no cross-service transfer; no transfer to a busy or unauthorized operator. No transition, customer workflow, FIFO rule, or service configuration changes. The current Sprint 1 assignment rule is the thing being amended; this report does not claim that handoff existed in the accepted baseline.
 
-**Approval and review:** The professor's announcement supplied by the team says instructor/TA approval is not required for the Sprint 1 change. Teammate `jarbbie` approved the revised contract in [PR #91](https://github.com/SupeemAFK/Quevo/pull/91) at 2026-11-27 23:54 Thailand time; that contract-only PR merged at 23:56. The first implementation commit was at 2026-11-28 00:03 Thailand time, so the required teammate contract review happened before implementation. Issue #95 was added later as an implementation tracker; it is not the evidence for the pre-code review. PR #94 currently has three requested implementation fixes, which must be completed and reviewed before merge.
+**Approval and review:** The professor's announcement supplied by the team says instructor/TA approval is not required for the Sprint 1 change. Teammate `jarbbie` approved the revised contract in [PR #91](https://github.com/SupeemAFK/Quevo/pull/91) at 2026-11-27 23:54 Thailand time; that contract-only PR merged at 23:56. The first implementation commit was at 2026-11-28 00:03 Thailand time, so the required teammate contract review happened before implementation. Issue #95 was added later as an implementation tracker; it is not the evidence for the pre-code review. The three requested PR #94 fixes are now committed, and teammate re-review is pending.
 
 ### Impact and traceability
 
@@ -98,9 +98,9 @@ The RED fixture creates a synthetic customer ticket, has the seeded operator cal
 | Web typecheck | `bun run typecheck` from `apps/web` (Bun 1.3.13) | Passed (`tsc --noEmit`). |
 | Web lint | `bun run lint` from `apps/web` (Bun 1.3.13) | Passed; 63 files checked, no fixes required. |
 | OpenAPI TypeScript consistency | `bun run check:api` from `apps/web` | Passed. |
-| Browser E2E | Local `bun run test` from `tests` failed during Vite startup because the local dependency tree is incomplete; no local browser cases ran. A Chromium flow for selecting a recipient, handing off, verifying keyboard focus, and completing the ticket as the recipient has now been added in response to review. | Verification of the updated browser flow is pending on the revised PR. Earlier CI run `46081524297` passed the existing 9 Chromium tests but did not include this handoff path. |
+| Browser E2E | Local Playwright `--list` parsed all 9 Chromium tests. The full local run could not start because Docker access is unavailable. CI run `46122420288` passed the updated suite, including transfer, focus restoration, former-assignee removal, recipient sign-in, and completion. | CI: **9 Chromium tests passed**. The two preceding CI attempts exposed test navigation assumptions; those were fixed before the passing run. |
 
-Go tests after the final code change passed on `6132d3e`; web checks were run on the same web source committed in `eb1929c`. PR #94's first CI run failed Go staticcheck S1016 on response mapping. Commit `6132d3e` changes the mapping to a direct conversion; the latest full CI run `46081524297` passed. The Go OpenAPI annotation generator was not available because the environment could not reach `proxy.golang.org`; the JSON contract was updated, and `check:api` verified the generated client against it.
+After the review fixes, local Go unit tests, `go vet ./...`, web lint/typecheck/API consistency, and all 60 web tests passed. The modified PostgreSQL integration test compiled locally; its container execution could not start because this environment cannot access Docker. CI run `46122420288` executed the full PostgreSQL integration suite, all 9 Chromium tests, and production image builds successfully. Earlier CI caught one Go staticcheck issue and two E2E navigation assertions; the code/test corrections passed in this latest run. The Go OpenAPI annotation generator was unavailable because the environment could not reach `proxy.golang.org`; the JSON contract was updated, and `check:api` verified the generated client against it.
 
 ### Review, CI, deployment, and post-deployment checks
 
@@ -108,23 +108,23 @@ Go tests after the final code change passed on `6132d3e`; web checks were run on
 | --- | --- |
 | Change request and reviewed contract | Complete: contract-only PR #91 documents CR-L7-01, was approved before the first code commit, and is linked as the pre-implementation change request. Issue #95 was created later as an implementation tracker. |
 | Teammate contract review before code | Complete: `jarbbie` approved contract-only PR #91 at 2026-11-27 23:54 Thailand time; it merged before the first implementation commit at 2026-11-28 00:03. |
-| Teammate code/PR review | `jarbbie` reviewed PR #94 and requested three fixes: browser handoff coverage, focus restoration, and a migration-ledger assertion that does not hard-code the total count. Those fixes are in progress; re-review is still required. |
-| CI on the Lab 7 commits | PR #94 run `46079877876` failed Go staticcheck S1016; fix `6132d3e` was pushed. Runs `46080085875`, `46081073959`, and `46081524297` passed Lint Web, Lint Go, all tests, Chromium E2E, and production image builds. |
+| Teammate code/PR review | `jarbbie` requested browser handoff coverage, focus restoration, and a migration-ledger assertion that does not hard-code the total count. All three are fixed in the current head (`6126d1e`, `05c2b13`, `803262b`); re-review is still required. |
+| CI on the Lab 7 commits | Runs `46079877876` (staticcheck failure), `46080085875`, `46081073959`, `46081524297`, and `46082115861` (pass), `46121740761` and `46122126910` (E2E test assertion failures), and `46122420288` (pass after corrections). The latest run passed Lint Web, Lint Go, all tests including PostgreSQL integration and 9 Chromium tests, and production image builds. |
 | Merge into staging and identify accepted main release | Not done. |
 | Cloud Run UAT deployment/revision | Not verified. |
 | Deployed handoff and preserved Sprint 1 smoke tests | Not run. |
 
 ## Part C — Engineering metrics
 
-Snapshot time: 2026-11-28 06:20 Thailand time. Scope is PR #94 and its Lab 7 commits; run counts include events observed by this timestamp.
+Snapshot time: 2026-11-28 14:47 Thailand time. Scope is PR #94 and its Lab 7 commits; run counts include events observed by this timestamp.
 
 | ID | Metric definition and window | Value | Source |
 | --- | --- | --- | --- |
 | M1 | Go unit tests; one snapshot run on the Lab 7 candidate. | 4 test-bearing packages passed; 0 failures. | `GOCACHE=/tmp/quevo-go-build go test ./...` output. |
 | M2 | Go/PostgreSQL integration tests; one snapshot run. | 6 test-bearing packages passed; 0 failures, including handoff and migration tests. | `GOCACHE=/tmp/quevo-go-build go test -tags=integration ./...` output. |
-| M3 | Web unit/component tests; PR #94 CI run `46081524297`. | 14/14 files and 60/60 tests passed. | Embedded Vitest summary in CI log. |
-| M4 | Chromium E2E suite; PR #94 CI run `46081524297`. | 9/9 tests passed. | Embedded Playwright summary in CI log. |
-| M5 | PR CI run outcomes for branch `maintenance/lab7-ticket-handoff` through 2026-11-28 06:20 Thailand time. | 4 runs: 1 failed (S1016), 3 passed after fix. The latest run passed. | Actions run `46079877876` failed; `46080085875`, `46081073959`, and `46081524297` passed. |
+| M3 | Web unit/component tests; PR #94 CI run `46122420288`. | 14/14 files and 60/60 tests passed. | Embedded Vitest summary in CI log. |
+| M4 | Chromium E2E suite; PR #94 CI run `46122420288`. | 9/9 tests passed, including the handoff flow. | Embedded Playwright summary in CI log. |
+| M5 | PR CI run outcomes for branch `maintenance/lab7-ticket-handoff` through 2026-11-28 14:47 Thailand time. | 8 runs: 3 failed (one staticcheck issue and two E2E assertion issues); 5 passed. The latest run passed. | Actions runs `46079877876`, `46080085875`, `46081073959`, `46081524297`, `46082115861`, `46121740761`, `46122126910`, and `46122420288`. |
 
 **Readable result excerpts:**
 
@@ -134,13 +134,13 @@ GREEN on local implementation: ok example.com/quevo/apps/api/internal/queue
 Go unit: app/auth/health/config passed; 0 failed
 Go integration: app/auth/health/config/database/queue passed; 0 failed
 Vitest: Test Files 14 passed (14); Tests 60 passed (60)
-Playwright Chromium: 9 passed (28.4s)
-CI run 46079877876: failed Go staticcheck S1016
-CI runs 46080085875, 46081073959, and 46081524297: passed Lint Web, Lint Go, all tests, and production image builds
+Playwright Chromium on 46122420288: 9 passed
+CI failures 46079877876 (staticcheck), 46121740761 and 46122126910 (E2E navigation assertions) were corrected
+CI runs 46080085875, 46081073959, 46081524297, 46082115861, and 46122420288: passed Lint Web, Lint Go, all tests, and production image builds
 Biome: Checked 63 files; No fixes applied
 ```
 
-**Evidence-based action (under 100 words):** The first CI run caught a staticcheck issue that local `go vet` did not catch; the follow-up run passed after commit `6132d3e`. Before the final release, Peemmapat should run the repository-pinned `golangci-lint` version locally before each push, while Peeranat reviews the authorization and race tests. The next milestone is a passing reviewed PR followed by UAT deployment and smoke checks against its merged SHA.
+**Evidence-based action (under 100 words):** CI first caught a staticcheck issue and, after adding the handoff browser journey, two incorrect navigation expectations. The team corrected these and the full test/build workflow passed on run `46122420288`. Before release, Peeranat must re-review the fixes; the team must then merge through staging, deploy to UAT, and record smoke checks against the deployed SHA.
 
 ## Part D — Readiness and retrospective
 
@@ -148,16 +148,16 @@ Biome: Checked 63 files; No fixes applied
 
 | Item | State / evidence | Owner and next action |
 | --- | --- | --- |
-| Submitted/deployed version | Candidate code commit `6132d3e` in PR #94; UAT revision unknown. | Peemmapat: complete teammate review/merge flow, then record merge and Cloud Run revision. |
+| Submitted/deployed version | Candidate head `803262b` in PR #94; UAT revision unknown. | Peemmapat: complete teammate re-review/merge flow, then record merge and Cloud Run revision. |
 | Defects | GitHub issue searches for “bug”, “defect”, and “uat” returned no issues as of 2026-11-28; open #95 is a change request and #56 is a chore. This does not prove that no user-found defects exist. The first CI staticcheck failure was corrected in `6132d3e`; final CI passed. | Team: reconcile the Lab 6 UAT team's actual findings and status before PDF. |
-| Automated checks | Go unit/integration, web tests, typecheck, lint, and API schema check passed locally. CI runs `46080085875`, `46081073959`, and `46081524297` passed lint, all tests including 9 Chromium tests, and production image builds. | Team: retain the CI URL and commit SHA in the final PDF. |
+| Automated checks | Local Go unit/vet, web tests/typecheck/lint/API schema check passed. CI run `46122420288` passed all tests including PostgreSQL integration and 9 Chromium tests, lint, and production image builds on the reviewed code. | Team: retain the CI URL and commit SHA in the final PDF. |
 | User checks | No independent post-deployment check of handoff or preserved customer ownership path. | Peeranat: perform UAT smoke after deployment and record expected/actual result and time. |
-| Technical debt | This revision adds the requested browser handoff path, keyboard focus restoration, and specific migration-ledger assertion. The API integration test covers authorization and persistence. | Re-run the clean-install Chromium CI suite and obtain reviewer confirmation. Regenerate OpenAPI annotations in a network-enabled environment if the checked JSON contract changes. |
+| Technical debt | The requested browser handoff path, keyboard focus restoration, and specific migration-ledger assertion are implemented and passed CI. | Obtain reviewer confirmation. Regenerate OpenAPI annotations in a network-enabled environment if the checked JSON contract changes. |
 | Configuration/secrets | No new secrets or environment variables. Migration must be applied before API use. | Deployment owner: confirm the normal migration job completed before service rollout. |
-| Documentation/run instructions | SRS, SDS, traceability, and this change record are included in PR #94; peer review is pending. | Team: peer-review and include selected excerpts in PDF. |
+| Documentation/run instructions | SRS, SDS, traceability, and this change record are included in PR #94; pre-code contract review is complete, implementation re-review is pending. | Team: complete the implementation review and include selected excerpts in the PDF. |
 | CI/deployment/smoke | CI passed; no staging/main merge, Cloud Run deploy, or deployed smoke test yet. | Team: merge through staging/main after review, deploy, and smoke-test. |
 
-**Readiness decision: NOT READY** for the maintained Sprint 1 scope. The pre-implementation contract review is evidenced by PR #91. PR #94 still needs the requested fixes re-reviewed, then staging/main integration, UAT deployment, and selected deployed smoke tests. No assertion is made that the whole three-sprint product is complete.
+**Readiness decision: NOT READY** for the maintained Sprint 1 scope. The pre-implementation contract review is evidenced by PR #91 and the fixed implementation passed CI. PR #94 still needs teammate re-review, then staging/main integration, UAT deployment, and selected deployed smoke tests. No assertion is made that the whole three-sprint product is complete.
 
 ### Retrospective
 
@@ -173,4 +173,4 @@ Biome: Checked 63 files; No fixes applied
 | Peeranat Ngamkiatkajorn (67070503429) | Reviewed and approved the contract in PR #91 before implementation; reviewed PR #94 and requested three implementation fixes. |
 | Codex AI assistant | Assisted with implementation, tests, and draft documentation. Generated changes and results require team review; AI output is not teammate approval. |
 
-**Known limitations:** Issue #95 was created after implementation started, but the pre-code change contract and its teammate review are documented in PR #91. PR #94's requested fixes still need re-review; the new browser flow has not yet passed CI. Local browser dependencies were incomplete (the earlier clean-install CI suite passed); no Cloud Run revision/smoke evidence or complete GitHub defect/metrics snapshot exists. Do not submit this draft as a complete Lab 7 report.
+**Known limitations:** Issue #95 was created after implementation started, but the pre-code change contract and its teammate review are documented in PR #91. PR #94's latest fixes are awaiting teammate re-review. Local browser/database execution is unavailable without Docker; the clean CI run passed. No Cloud Run revision/smoke evidence or complete GitHub defect/UAT snapshot exists. Do not submit this draft as a complete Lab 7 report.
