@@ -63,3 +63,7 @@ A ticket can be skipped only while PENDING under the current proposal. COMPLETED
 - The journey includes notifying the customer after a call. The diagrams leave the actor and delivery channel open; they do not imply SMS, push, or another integration.
 - This diagram shows the Sprint 1 slice. The official Theme 9 brief puts cancellation/no-show handling, multiple queues/counters, priority policy if applicable, and service summaries in later sprints. Exact transition and rejoin rules are not specified there and remain design decisions.
 - FIFO orders tickets by joined time and immutable ticket ID; only the assigned operator can perform the allowed transitions.
+
+## Lab 7 assignment-change overlay
+
+This section amends the Sprint 1 assignment rule under change request CR-L7-01; it does not rewrite the accepted Sprint 1 baseline above. The current assignee may transfer a `PENDING` or `OPERATING` ticket to another operator authorized for the same service when that operator has no active ticket. A successful transfer changes assignment and appends an audit record atomically. Ticket state and lifecycle timestamps stay unchanged. Afterward, only the new assignee may start, complete, or skip according to the existing state rules. `WAITING`, `COMPLETED`, and `SKIPPED` tickets cannot be transferred.

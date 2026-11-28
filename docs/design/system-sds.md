@@ -124,7 +124,7 @@ These are design boundaries. Final package names and file breakdown belong in fe
 
 ### 4.2 Implemented and planned endpoint shapes
 
-Auth, customer queue, and issue #12 operator paths are implemented contracts.
+Auth, customer queue, and issue #12 operator paths are implemented contracts. The Lab 7 handoff endpoints below are a separately identified amendment to Sprint 1 assignment behavior (CR-L7-01).
 
 | Operation | Example path | Authorization and behavior |
 | --- | --- | --- |
@@ -140,6 +140,8 @@ Auth, customer queue, and issue #12 operator paths are implemented contracts.
 | Start service | POST /api/v1/operator/tickets/{ticketId}/start | Assigned operator; transition PENDING to OPERATING. |
 | Complete service | POST /api/v1/operator/tickets/{ticketId}/complete | Assigned operator; transition OPERATING to COMPLETED. |
 | Skip ticket | POST /api/v1/operator/tickets/{ticketId}/skip | Assigned operator; transition PENDING to SKIPPED. |
+| List handoff options | GET /api/v1/operator/tickets/{ticketId}/handoff-options | Current assignee; return same-service operators with no active ticket. |
+| Transfer an active ticket | POST /api/v1/operator/tickets/{ticketId}/handoff | Current assignee transfers PENDING or OPERATING to an eligible operator; assignment and audit record commit together without changing ticket state or lifecycle timestamps. |
 
 The product queue is identified by branch, service, and branch-local business date. Ticket numbers are decimal sequence strings, unique within that scope. The implemented customer service-list endpoint returns all active services by default and accepts an optional branch filter. Collection pagination is not needed for the single seeded service and remains open for future catalog growth.
 
@@ -262,6 +264,7 @@ Account registration, password reset, SSO, MFA, session lifetime, rotation, and 
 | Start a ticket | Denied | Denied | Only assigned PENDING ticket |
 | Complete a ticket | Denied | Denied | Only assigned OPERATING ticket |
 | Skip a ticket | Denied | Denied | Only assigned PENDING ticket |
+| Transfer an active ticket | Denied | Denied | Current assignee only; recipient must be a different operator authorized for the same service and have no active ticket |
 | Logout | Denied | Own current session | Own current session |
 | Service, queue, counter, and operator-assignment administration | Denied | Denied | Not part of Sprint 1; any later management role and branch scope must be approved first. |
 | Public queue display | No public display selected. If later approved, expose only explicitly allowed non-private status. | Not applicable | Not applicable |
@@ -281,11 +284,13 @@ The API derives the role from the authenticated account. It checks service autho
 
 WAITING, PENDING, and OPERATING are the proposed active states for duplicate-customer and active-operator rules. COMPLETED and SKIPPED are terminal in the Sprint 1 model. Theme 9 explicitly places cancellation/no-show handling in later sprints but does not define these exact transitions. The two future transitions above are Quevo proposals and must be approved before implementation. No other transition is accepted in the Sprint 1 model.
 
+The Lab 7 handoff is an assignment-only operation, not a ticket state transition. It is allowed only from PENDING or OPERATING by the current assignee. It changes the assigned operator, records the handoff, and preserves customer, service, ticket number, status, and lifecycle timestamps.
+
 ## 9. Conceptual data model
 
-![Quevo PostgreSQL ER diagram](assets/quevo-postgresql-erd.png)
+![Quevo PostgreSQL ER diagram for the accepted Sprint 1 baseline](assets/quevo-postgresql-erd.png)
 
-The diagram shows the service ID relationships individually for readability. PostgreSQL enforces composite foreign keys on `(branch_id, service_id)` in `tickets` and `queue_sequences`, ensuring the service belongs to the specified branch. See [the migrations](../../apps/api/internal/platform/database/migrations) for the physical constraints and [the UML sequence diagrams](sprint-1-sequences.md) for request flow.
+The image shows the accepted Sprint 1 baseline. The Lab 7 amendment is shown in the updated Mermaid model below as `TICKET_HANDOFF`. The diagram shows service ID relationships individually for readability. PostgreSQL enforces composite foreign keys on `(branch_id, service_id)` in `tickets` and `queue_sequences`, ensuring the service belongs to the specified branch. See [the migrations](../../apps/api/internal/platform/database/migrations) for physical constraints and [the UML sequence diagrams](sprint-1-sequences.md) for request flow.
 
 For the Sprint 1 slice, the service queue is a logical scope keyed by branch, service, and business date; it does not need to be a separate domain table. QueueSequence is a coordination record used to allocate ticket numbers and serialize queue mutations. Theme 9 lists multiple queues/counters as later-sprint work. If F-011 is retained, add and review explicit Queue, Counter, and operator-assignment entities in that feature contract; their relationship and ownership rules are not defined by the supplied brief, so this initial ERD does not choose them.
 
@@ -344,6 +349,13 @@ erDiagram
     timestamp cancelled_at  "future proposal"
     timestamp no_show_at  "future proposal"
   }
+  TICKET_HANDOFF {
+    uuid id PK
+    uuid ticket_id FK
+    uuid previous_operator_id FK
+    uuid new_operator_id FK
+    timestamp transferred_at
+  }
 
   USER ||--o{ SESSION : owns
   BRANCH ||--o{ SERVICE : offers
@@ -355,6 +367,9 @@ erDiagram
   SERVICE ||--o{ TICKET : contains
   USER ||--o{ TICKET : customer
   USER o|--o{ TICKET : assigned_operator
+  TICKET ||--o{ TICKET_HANDOFF : transfer_history
+  USER ||--o{ TICKET_HANDOFF : previous_assignee
+  USER ||--o{ TICKET_HANDOFF : new_assignee
 ```
 
 This ER diagram is conceptual. Exact PostgreSQL types, email format, indexes, and migration SQL belong in Step 4 feature contracts. Branch-local timezone rules must also be agreed before implementation.
@@ -410,7 +425,16 @@ Use a conditional update or row-locked transaction that matches ticket ID, expec
 
 Use PostgreSQL transactions and constraints as the correctness boundary. Do not rely on a browser check, in-memory mutex, cache, or a read-then-write sequence without locking.
 
-### 10.5 Database setup, migrations, and seed data
+### 10.5 Ticket handoff transaction (Lab 7 change)
+
+1. Begin a PostgreSQL transaction and lock the ticket currently assigned to the authenticated operator.
+2. Require the operator role and same-service authorization; accept only PENDING or OPERATING tickets.
+3. Lock the recipient operator row, confirm same-service authorization, and confirm the recipient has no active ticket.
+4. Update only `assigned_operator_id`; insert a `ticket_handoffs` audit row in the same transaction.
+5. Keep the active-ticket unique index as the final concurrency guard. If a simultaneous call-next wins, roll back the handoff; if handoff wins, call-next observes the active ticket and fails safely.
+6. Commit only when both assignment and audit record succeed. Do not update status or lifecycle timestamps.
+
+### 10.6 Database setup, migrations, and seed data
 
 The repository provides a versioned SQL migration under `apps/api/internal/platform/database/migrations`, an explicit migration command (`make migrate-up` from `apps/api`), and an idempotent synthetic seed command (`make seed-demo`). Apply migrations before seeding or serving database-backed features. The migration ledger is `schema_migrations`; never apply GORM AutoMigrate during API startup. The initial schema includes users and sessions, branches and services, operator-service authorization, queue sequence rows, and Sprint 1 tickets with uniqueness, lifecycle, and active-ticket constraints.
 

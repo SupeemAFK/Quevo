@@ -34,6 +34,7 @@ This matrix records planned coverage, not implementation or test results. The ve
 | FR-022 | F-014 | Sprint 3 | After measures are agreed: API/database summary checks and role-protected UI checks. | Theme 9 asks for useful service summaries; specific metrics are proposed. |
 | FR-023 | F-017 | Sprint 3 | If retained: form validation, persistence, and customer E2E after contract definition. | Quevo product proposal; not stated in Theme 9 or D1. |
 | FR-024 | F-015 | Sprint 3 | If retained: state-event persistence and authorized audit-read checks. | Quevo product proposal; not stated in Theme 9 or D1. |
+| FR-025 | F-005, F-009 | Lab 7 maintenance overlay on Sprint 1 | `TestLab7HandoffOptionsAvailableToAssignedOperator`, `TestOperatorTicketHandoffWithPostgres`, and operator handoff component test. | CR-L7-01 amends existing Sprint 1 assignment/authorization behavior; it is not a Sprint 2/3 backlog feature. |
 
 ## Business rules
 
@@ -53,6 +54,7 @@ This matrix records planned coverage, not implementation or test results. The ve
 | BR-012 | F-003–F-009 | Sprint 1 | API integration test against persistent PostgreSQL. | Group spec §5.1. |
 | BR-013 | F-012 | Sprint 2 | After policy approval: API/PostgreSQL owner and state checks. | Theme 9 later-sprint cancellation; exact transition is proposed. |
 | BR-014 | F-013 | Sprint 2 | After policy approval: API/PostgreSQL actor, state, and timing checks. | Theme 9 later-sprint no-show; exact transition is proposed. |
+| BR-015 | F-005–F-009 | Lab 7 maintenance overlay on Sprint 1 | PostgreSQL/API checks for current assignee, eligible/idle recipient, preserved state and timestamps, audit entry, and call-next race. | CR-L7-01 changes the existing Sprint 1 assigned-operator rule while retaining BR-008's one-active-ticket invariant. |
 
 ## Non-functional requirements
 

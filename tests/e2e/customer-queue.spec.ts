@@ -18,7 +18,9 @@ async function expectMinimumTouchTarget(target: Locator) {
   expect(height).toBeGreaterThanOrEqual(44)
 }
 
-test('customer joins and recovers a ticket; operator serves and skips tickets', async ({ browser, page }) => {
+test('customer joins and recovers a ticket; operator serves, skips, and hands off tickets', async ({ browser, page }) => {
+  test.setTimeout(60_000)
+
   await page.setViewportSize({ width: 320, height: 780 })
   await page.goto('/login')
   await page.waitForLoadState('networkidle')
@@ -193,5 +195,45 @@ test('customer joins and recovers a ticket; operator serves and skips tickets', 
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Skip ticket' }))
   await expect(operator.getByText('Ticket skipped.')).toBeVisible()
   await expect(operator.getByText('No customers are waiting.')).toBeFocused()
+
+  await page.goto('/customer')
+  await page.getByRole('button', { name: 'Join queue' }).click()
+  await expect(page.getByTestId('ticket-number')).toHaveText('5')
+  await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Refresh queue' }))
+  await expect(operator.getByText('Ticket 5', { exact: true })).toBeVisible()
+  await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Call next' }))
+  await expect(operator.getByTestId('operator-current-ticket')).toHaveText('5')
+  await operator.getByRole('button', { name: 'Transfer ticket' }).click()
+  const transferDialog = operator.getByRole('dialog', { name: 'Transfer ticket' })
+  await expect(transferDialog).toBeVisible()
+  await transferDialog.getByLabel('Available operator').selectOption({ label: 'Handoff Operator' })
+  await transferDialog.getByRole('button', { name: 'Transfer ticket' }).click()
+  await expect(operator.getByRole('status')).toHaveText('Ticket 5 transferred to Handoff Operator.')
+  await expect(operator.getByTestId('operator-current-ticket')).toHaveCount(0)
+  await expect(operator.getByRole('button', { name: 'Start service' })).toHaveCount(0)
+  await expect(operator.getByText('No customers are waiting.')).toBeFocused()
+
+  await operator.getByRole('button', { name: 'Sign out' }).click()
+  await expect(operator).toHaveURL(/\/$/)
+  await operator.goto('/login')
+  await operator.waitForLoadState('networkidle')
+  await operator.getByLabel('Email').fill('handoff-operator@quevo.local')
+  await operator.getByLabel('Password').fill(process.env.QUEVO_E2E_OPERATOR_PASSWORD!)
+  await operator.getByRole('button', { name: 'Sign in' }).click()
+  await activateWithKeyboard(
+    operator,
+    operator.getByRole('button', { name: 'Open navigation menu' }),
+  )
+  const openHandoffOperatorQueue = operator.getByRole('link', { name: 'Open operator queue' })
+  await expect(openHandoffOperatorQueue).toBeVisible()
+  await activateWithKeyboard(operator, openHandoffOperatorQueue)
+  await expect(operator.getByRole('navigation', { name: 'Application' })).toBeVisible()
+  await expect(operator.getByRole('heading', { name: 'Operator queue' })).toBeVisible()
+  await expect(operator.getByTestId('operator-current-ticket')).toHaveText('5')
+  await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Start service' }))
+  await expect(operator.getByText('In service', { exact: true })).toBeVisible()
+  await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Complete service' }))
+  await expect(operator.getByText('Service completed.')).toBeVisible()
+
   await operator.close()
 })
