@@ -32,7 +32,7 @@ type Props = {
   error: string
   onAction: (action: Action) => void
   onRefresh: () => void
-  onHandoff?: () => void
+  onHandoff?: (source: HTMLButtonElement) => void
 }
 
 export function OperatorQueue({
@@ -79,6 +79,12 @@ export function OperatorQueue({
     if (busy) return
     restoreActionFocusRef.current = document.activeElement === source ? source : null
     onAction(action)
+  }
+
+  function handleHandoff(source: HTMLButtonElement) {
+    if (busy) return
+    restoreActionFocusRef.current = document.activeElement === source ? source : null
+    onHandoff?.(source)
   }
 
   function handleRefresh() {
@@ -200,7 +206,7 @@ export function OperatorQueue({
                               className="min-h-12 px-5"
                               disabled={busy}
                               variant="outline"
-                              onClick={onHandoff}
+                              onClick={(event) => handleHandoff(event.currentTarget)}
                             >
                               <ArrowRightLeft aria-hidden="true" />
                               Transfer ticket
@@ -223,7 +229,7 @@ export function OperatorQueue({
                               className="min-h-12 px-5"
                               disabled={busy}
                               variant="outline"
-                              onClick={onHandoff}
+                              onClick={(event) => handleHandoff(event.currentTarget)}
                             >
                               <ArrowRightLeft aria-hidden="true" />
                               Transfer ticket

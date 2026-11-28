@@ -1,6 +1,6 @@
 # Lab 7 — Change request CR-L7-01: operator ticket handoff
 
-**Report status:** NOT READY for submission. PR #94's CI passed and change request #95 is open; teammate review, staging deployment, and deployed smoke evidence are still outstanding.
+**Report status:** NOT READY for submission. The contract was reviewed before implementation in PR #91. PR #94 has three review requests in progress; staging deployment and deployed smoke evidence are still outstanding.
 **Report date:** 2026-11-28 (Thailand time)
 **Project/team:** Quevo · EN-046 · 2 Boys 1 Repo
 **Members:** Peeranat Ngamkiatkajorn (67070503429); Peemmapat Sripongsai (67070503436)
@@ -29,7 +29,7 @@ The staging history after the accepted Sprint 1 baseline includes PRs #85 and #8
 
 **Scope and boundaries:** No transfer for `WAITING`, `COMPLETED`, or `SKIPPED` tickets; no self-transfer; no customer transfer; no cross-service transfer; no transfer to a busy or unauthorized operator. No transition, customer workflow, FIFO rule, or service configuration changes. The current Sprint 1 assignment rule is the thing being amended; this report does not claim that handoff existed in the accepted baseline.
 
-**Approval and review:** The professor's announcement supplied by the team says instructor/TA approval is not required for the Sprint 1 change. A teammate's substantive review of the revised contract before implementation is required by Lab 7, but no such review evidence has been captured. Implementation began before that review was recorded, so the required contract-before-code sequence is currently unmet. Do not represent this report as reviewed or approved.
+**Approval and review:** The professor's announcement supplied by the team says instructor/TA approval is not required for the Sprint 1 change. Teammate `jarbbie` approved the revised contract in [PR #91](https://github.com/SupeemAFK/Quevo/pull/91) at 2026-11-27 23:54 Thailand time; that contract-only PR merged at 23:56. The first implementation commit was at 2026-11-28 00:03 Thailand time, so the required teammate contract review happened before implementation. Issue #95 was added later as an implementation tracker; it is not the evidence for the pre-code review. PR #94 currently has three requested implementation fixes, which must be completed and reviewed before merge.
 
 ### Impact and traceability
 
@@ -98,7 +98,7 @@ The RED fixture creates a synthetic customer ticket, has the seeded operator cal
 | Web typecheck | `bun run typecheck` from `apps/web` (Bun 1.3.13) | Passed (`tsc --noEmit`). |
 | Web lint | `bun run lint` from `apps/web` (Bun 1.3.13) | Passed; 63 files checked, no fixes required. |
 | OpenAPI TypeScript consistency | `bun run check:api` from `apps/web` | Passed. |
-| Browser E2E | Local `bun run test` from `tests` failed during Vite startup because the local dependency tree is incomplete; no local browser cases ran. GitHub Actions clean install on PR #94 ran the existing Chromium suite. | Local run: **failed before test execution**. CI run `46081524297`: **9 Chromium tests passed**. The suite does not yet exercise the new dialog submit flow. |
+| Browser E2E | Local `bun run test` from `tests` failed during Vite startup because the local dependency tree is incomplete; no local browser cases ran. A Chromium flow for selecting a recipient, handing off, verifying keyboard focus, and completing the ticket as the recipient has now been added in response to review. | Verification of the updated browser flow is pending on the revised PR. Earlier CI run `46081524297` passed the existing 9 Chromium tests but did not include this handoff path. |
 
 Go tests after the final code change passed on `6132d3e`; web checks were run on the same web source committed in `eb1929c`. PR #94's first CI run failed Go staticcheck S1016 on response mapping. Commit `6132d3e` changes the mapping to a direct conversion; the latest full CI run `46081524297` passed. The Go OpenAPI annotation generator was not available because the environment could not reach `proxy.golang.org`; the JSON contract was updated, and `check:api` verified the generated client against it.
 
@@ -106,9 +106,9 @@ Go tests after the final code change passed on `6132d3e`; web checks were run on
 
 | Required evidence | Status |
 | --- | --- |
-| GitHub change-request Issue linked to contract/test/code | Issue #95 was created after local implementation began and is linked from PR #94. It does not establish the required issue-before-code sequence. |
-| Teammate contract review before code | Not recorded; sequence requirement is currently unmet. |
-| Teammate code/PR review | Requested from `jarbbie` on PR #94; no review has been submitted yet. |
+| Change request and reviewed contract | Complete: contract-only PR #91 documents CR-L7-01, was approved before the first code commit, and is linked as the pre-implementation change request. Issue #95 was created later as an implementation tracker. |
+| Teammate contract review before code | Complete: `jarbbie` approved contract-only PR #91 at 2026-11-27 23:54 Thailand time; it merged before the first implementation commit at 2026-11-28 00:03. |
+| Teammate code/PR review | `jarbbie` reviewed PR #94 and requested three fixes: browser handoff coverage, focus restoration, and a migration-ledger assertion that does not hard-code the total count. Those fixes are in progress; re-review is still required. |
 | CI on the Lab 7 commits | PR #94 run `46079877876` failed Go staticcheck S1016; fix `6132d3e` was pushed. Runs `46080085875`, `46081073959`, and `46081524297` passed Lint Web, Lint Go, all tests, Chromium E2E, and production image builds. |
 | Merge into staging and identify accepted main release | Not done. |
 | Cloud Run UAT deployment/revision | Not verified. |
@@ -152,25 +152,25 @@ Biome: Checked 63 files; No fixes applied
 | Defects | GitHub issue searches for “bug”, “defect”, and “uat” returned no issues as of 2026-11-28; open #95 is a change request and #56 is a chore. This does not prove that no user-found defects exist. The first CI staticcheck failure was corrected in `6132d3e`; final CI passed. | Team: reconcile the Lab 6 UAT team's actual findings and status before PDF. |
 | Automated checks | Go unit/integration, web tests, typecheck, lint, and API schema check passed locally. CI runs `46080085875`, `46081073959`, and `46081524297` passed lint, all tests including 9 Chromium tests, and production image builds. | Team: retain the CI URL and commit SHA in the final PDF. |
 | User checks | No independent post-deployment check of handoff or preserved customer ownership path. | Peeranat: perform UAT smoke after deployment and record expected/actual result and time. |
-| Technical debt | No browser E2E covers the new handoff dialog submission; current UI test checks that transfer is offered only for the current active ticket. The API integration test covers the full authorization and persistence flow. | Priority P1 before final release: add a browser handoff path or record a justified fixture limitation; regenerate OpenAPI annotations in a network-enabled environment. |
+| Technical debt | This revision adds the requested browser handoff path, keyboard focus restoration, and specific migration-ledger assertion. The API integration test covers authorization and persistence. | Re-run the clean-install Chromium CI suite and obtain reviewer confirmation. Regenerate OpenAPI annotations in a network-enabled environment if the checked JSON contract changes. |
 | Configuration/secrets | No new secrets or environment variables. Migration must be applied before API use. | Deployment owner: confirm the normal migration job completed before service rollout. |
 | Documentation/run instructions | SRS, SDS, traceability, and this change record are included in PR #94; peer review is pending. | Team: peer-review and include selected excerpts in PDF. |
 | CI/deployment/smoke | CI passed; no staging/main merge, Cloud Run deploy, or deployed smoke test yet. | Team: merge through staging/main after review, deploy, and smoke-test. |
 
-**Readiness decision: NOT READY** for the maintained Sprint 1 scope. CI passes, but automated checks do not replace the required peer review, staging/main integration, UAT deployment, and selected deployed smoke tests. No assertion is made that the whole three-sprint product is complete.
+**Readiness decision: NOT READY** for the maintained Sprint 1 scope. The pre-implementation contract review is evidenced by PR #91. PR #94 still needs the requested fixes re-reviewed, then staging/main integration, UAT deployment, and selected deployed smoke tests. No assertion is made that the whole three-sprint product is complete.
 
 ### Retrospective
 
-- **What helped:** The Sprint 1 PostgreSQL tests exercise role, assignment, and active-ticket invariants, so the maintenance change could reuse real authorization and transaction boundaries.
-- **What hurt:** The contract review was not captured before implementation, and the local GitHub CLI token initially blocked remote work. Both reduced the evidence chain even though checks passed later.
-- **What changes for Final Delivery:** Peemmapat will publish a short contract-only review before the next implementation starts, then connect its review, test, PR, CI, deploy, and smoke evidence to one commit SHA.
+- **What helped:** The team reviewed and merged the contract in PR #91 before implementation. The Sprint 1 PostgreSQL tests also exercise role, assignment, and active-ticket invariants, so the maintenance change could reuse real authorization and transaction boundaries.
+- **What hurt:** The initial evidence draft omitted PR #91 and incorrectly described the contract review as missing; the report is corrected to cite the approval and its timing. The local GitHub CLI token initially blocked remote work.
+- **What changes for Final Delivery:** The team will link the reviewed #91 contract from the implementation record, then connect review, test, PR, CI, deploy, and smoke evidence to one release SHA.
 
 ### Contributions, AI use, and limitations
 
 | Contributor | Work recorded for this change |
 | --- | --- |
 | Peemmapat Sripongsai (67070503436) | Selected the maintenance scope and requested implementation; final review/acceptance is not yet recorded. |
-| Peeranat Ngamkiatkajorn (67070503429) | Required teammate contract/code review has not yet been recorded. Do not claim a contribution until completed. |
+| Peeranat Ngamkiatkajorn (67070503429) | Reviewed and approved the contract in PR #91 before implementation; reviewed PR #94 and requested three implementation fixes. |
 | Codex AI assistant | Assisted with implementation, tests, and draft documentation. Generated changes and results require team review; AI output is not teammate approval. |
 
-**Known limitations:** Issue #95 was created after implementation started; PR #94 has no independent review; no browser test covers the handoff dialog; local browser dependencies were incomplete (CI's clean-install existing browser suite passed); no Cloud Run revision/smoke evidence or complete GitHub defect/metrics snapshot exists. Do not submit this draft as a complete Lab 7 report.
+**Known limitations:** Issue #95 was created after implementation started, but the pre-code change contract and its teammate review are documented in PR #91. PR #94's requested fixes still need re-review; the new browser flow has not yet passed CI. Local browser dependencies were incomplete (the earlier clean-install CI suite passed); no Cloud Run revision/smoke evidence or complete GitHub defect/metrics snapshot exists. Do not submit this draft as a complete Lab 7 report.

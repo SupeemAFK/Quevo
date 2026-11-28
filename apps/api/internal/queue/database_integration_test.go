@@ -23,8 +23,14 @@ func TestMigrationsAndSeedAreIdempotent(t *testing.T) {
 	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM schema_migrations").Scan(&migrationCount); err != nil {
 		t.Fatalf("count migration records: %v", err)
 	}
-	if migrationCount != 3 {
-		t.Fatalf("migration ledger contains %d records after applying migrations; want 3", migrationCount)
+	var handoffMigrationRecorded bool
+	if err := db.QueryRowContext(ctx, `SELECT EXISTS (
+		SELECT 1 FROM schema_migrations WHERE version = '000003_sprint1_ticket_handoffs'
+	)`).Scan(&handoffMigrationRecorded); err != nil {
+		t.Fatalf("check ticket handoff migration record: %v", err)
+	}
+	if !handoffMigrationRecorded {
+		t.Fatal("ticket handoff migration is missing from the migration ledger")
 	}
 	var handoffTableExists bool
 	if err := db.QueryRowContext(ctx, `SELECT to_regclass('public.ticket_handoffs') IS NOT NULL`).Scan(&handoffTableExists); err != nil {
