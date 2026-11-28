@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { ArrowLeft, RefreshCw, Ticket } from 'lucide-react'
 import { useState } from 'react'
@@ -6,24 +6,9 @@ import { AuthenticatedShell } from '@/components/authenticated-shell'
 import { CustomerTicketDetails } from '@/components/customer-ticket-details'
 import { FeedbackMessage, LoadingMessage } from '@/components/feedback-message'
 import { PageHeading } from '@/components/page-heading'
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { getCurrentUser } from '@/lib/auth'
-import {
-  cancelCustomerTicket,
-  customerQueueOptions,
-  customerTicketOptions,
-} from '@/lib/customer-queue'
-import { ticketDocumentsOptions, uploadTicketDocument } from '@/lib/ticket-documents'
-import { usePageActivity } from '@/lib/use-page-activity'
+import { customerTicketOptions } from '@/lib/customer-queue'
 
 export const Route = createFileRoute('/tickets/$ticketId')({
   component: CustomerTicketPage,
@@ -38,39 +23,13 @@ export const Route = createFileRoute('/tickets/$ticketId')({
 function CustomerTicketPage() {
   const { user } = Route.useRouteContext()
   const { ticketId } = Route.useParams()
-  const queryClient = useQueryClient()
   const [feedback, setFeedback] = useState<{ message: string; kind: 'success' | 'error' } | null>(
     null,
   )
-  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
-  const pageActive = usePageActivity()
   const ticketQuery = useQuery({
     ...customerTicketOptions(user.id, ticketId),
-    refetchInterval: pageActive ? 10_000 : false,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-  })
-  const documentsQuery = useQuery({
-    ...ticketDocumentsOptions(`customer:${user.id}`, ticketId),
-    enabled: Boolean(ticketQuery.data?.allowsUploads),
-  })
-  const uploadMutation = useMutation({
-    mutationFn: (file: File) => uploadTicketDocument(ticketId, file),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ticketDocumentsOptions(`customer:${user.id}`, ticketId).queryKey,
-      })
-      setFeedback({ message: 'Document uploaded.', kind: 'success' })
-    },
-  })
-  const cancelMutation = useMutation({
-    mutationFn: () => cancelCustomerTicket({ data: ticketId }),
-    onSuccess: async (ticket) => {
-      queryClient.setQueryData(customerTicketOptions(user.id, ticketId).queryKey, ticket)
-      await queryClient.invalidateQueries({ queryKey: customerQueueOptions(user.id).queryKey })
-      setFeedback({ message: 'Ticket cancelled.', kind: 'success' })
-      setCancelDialogOpen(false)
-    },
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   })
 
   async function refreshStatus() {
@@ -108,35 +67,9 @@ function CustomerTicketPage() {
           <LoadingMessage>Loading your ticket…</LoadingMessage>
         ) : ticketQuery.data ? (
           <CustomerTicketDetails
-            cancelling={cancelMutation.isPending}
-            documents={documentsQuery.data}
-            documentsError={documentsQuery.isError ? documentsQuery.error.message : ''}
-            feedback={
-              feedback ??
-              (cancelMutation.error
-                ? { message: cancelMutation.error.message, kind: 'error' }
-                : uploadMutation.error
-                  ? { message: uploadMutation.error.message, kind: 'error' }
-                  : ticketQuery.isRefetchError
-                    ? {
-                        message:
-                          'Could not sync the latest status. Showing the last saved ticket; try refreshing again.',
-                        kind: 'error',
-                      }
-                    : null)
-            }
-            onCancel={() => {
-              cancelMutation.reset()
-              setFeedback(null)
-              setCancelDialogOpen(true)
-            }}
+            feedback={feedback}
             onRefresh={() => void refreshStatus()}
-            onUpload={(file) => {
-              setFeedback(null)
-              uploadMutation.mutate(file)
-            }}
             refreshing={ticketQuery.isFetching}
-            uploading={uploadMutation.isPending}
             ticket={ticketQuery.data}
           />
         ) : ticketQuery.isError ? (
@@ -158,39 +91,6 @@ function CustomerTicketPage() {
             </Button>
           </div>
         ) : null}
-        <AlertDialog
-          onOpenChange={(open) => {
-            if (!cancelMutation.isPending) setCancelDialogOpen(open)
-          }}
-          open={cancelDialogOpen}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Leave this queue?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Your waiting ticket will be cancelled and cannot be restored. You can join an active
-                service again if you still need help.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            {cancelMutation.error ? (
-              <p className="text-sm text-status-danger" role="alert">
-                {cancelMutation.error.message}
-              </p>
-            ) : null}
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={cancelMutation.isPending}>
-                Keep my ticket
-              </AlertDialogCancel>
-              <Button
-                disabled={cancelMutation.isPending}
-                onClick={() => cancelMutation.mutate()}
-                variant="destructive"
-              >
-                {cancelMutation.isPending ? 'Cancelling…' : 'Leave queue'}
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </section>
     </AuthenticatedShell>
   )

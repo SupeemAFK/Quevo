@@ -1,7 +1,6 @@
 import { Check, Layers3, MapPin } from 'lucide-react'
 import { motion } from 'motion/react'
 import type { components } from '@/client/api/schema'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 
 type QueueOption = components['schemas']['queue.OperatorQueueResponse']
 
@@ -12,7 +11,7 @@ type Props = {
 }
 
 function keyFor(queue: QueueOption) {
-  return `${queue.branchId}:${queue.queueId}`
+  return `${queue.branchId}:${queue.serviceId}`
 }
 
 export function OperatorServiceNavigation({ queues, selectedQueueKey, onSelect }: Props) {
@@ -20,7 +19,7 @@ export function OperatorServiceNavigation({ queues, selectedQueueKey, onSelect }
 
   return (
     <>
-      <div className="min-w-0 lg:hidden">
+      <div className="lg:hidden">
         <label
           className="mb-2 flex items-center gap-2 text-sm font-medium"
           htmlFor="operator-service-select"
@@ -28,27 +27,21 @@ export function OperatorServiceNavigation({ queues, selectedQueueKey, onSelect }
           <Layers3 aria-hidden="true" size={16} />
           Service
         </label>
-        <Select
-          onValueChange={(value) => {
-            const queue = queues.find((item) => keyFor(item) === value)
+        <select
+          className="min-h-11 w-full rounded-md border border-input bg-card px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          id="operator-service-select"
+          onChange={(event) => {
+            const queue = queues.find((item) => keyFor(item) === event.target.value)
             if (queue) onSelect(queue)
           }}
           value={selectedQueueKey}
         >
-          <SelectTrigger
-            className="min-h-11 w-full min-w-0 [&>span]:min-w-0 [&>span]:truncate"
-            id="operator-service-select"
-          >
-            <SelectValue className="block truncate" />
-          </SelectTrigger>
-          <SelectContent>
-            {queues.map((queue) => (
-              <SelectItem key={keyFor(queue)} value={keyFor(queue)}>
-                {queue.serviceName} · {queue.queueName} · {queue.branchName}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          {queues.map((queue) => (
+            <option key={keyFor(queue)} value={keyFor(queue)}>
+              {queue.serviceName} · {queue.branchName}
+            </option>
+          ))}
+        </select>
       </div>
 
       <nav aria-label="Assigned queues" className="hidden min-w-0 lg:block">
@@ -77,7 +70,7 @@ export function OperatorServiceNavigation({ queues, selectedQueueKey, onSelect }
                   <span className="flex items-center justify-between gap-2 truncate">
                     <span className="flex items-center gap-2 truncate">
                       <Layers3 aria-hidden="true" className="shrink-0" size={16} />
-                      {queue.serviceName} · {queue.queueName}
+                      {queue.serviceName}
                     </span>
                     {active ? (
                       <Check aria-hidden="true" className="shrink-0 text-brand-green" size={16} />

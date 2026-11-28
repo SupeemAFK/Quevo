@@ -1,22 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { screen, render as testingRender, within } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import type { components } from '@/client/api/schema'
-import { applyOperatorTicketUpdate } from '@/lib/operator-queue'
 import { OperatorQueue } from './operator-queue'
 
 type Detail = components['schemas']['queue.OperatorQueueDetailResponse']
-
-function renderQueue(ui: React.ReactElement) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return testingRender(ui, {
-    wrapper: ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={client}>{children}</QueryClientProvider>
-    ),
-  })
-}
 
 const ticket = {
   id: 'ticket-1',
@@ -24,43 +12,25 @@ const ticket = {
   status: 'WAITING',
   businessDate: '2026-11-08',
   joinedAt: '2026-11-08T10:00:00Z',
-  requestAnswers: {},
-  requestLabels: {},
 }
 const detail: Detail = {
   queue: {
     branchId: 'branch',
     branchName: 'Branch',
     serviceId: 'service',
-    queueId: 'queue',
-    queueName: 'Main queue',
     serviceName: 'Service',
     businessDate: '2026-11-08',
     waitingCount: 1,
   },
   waiting: [ticket],
-  recent: [],
 }
 
 describe('OperatorQueue', () => {
-  it('updates the assigned queue data immediately for call and terminal actions', () => {
-    const called = { ...ticket, status: 'PENDING' }
-    const afterCall = applyOperatorTicketUpdate(detail, called, 'call-next')
-    expect(afterCall?.current?.id).toBe(called.id)
-    expect(afterCall?.waiting).toEqual([])
-    expect(afterCall?.queue.waitingCount).toBe(0)
-
-    const completed = { ...called, status: 'COMPLETED' }
-    const afterComplete = applyOperatorTicketUpdate(afterCall, completed, 'complete')
-    expect(afterComplete?.current).toBeUndefined()
-    expect(afterComplete?.recent[0]).toEqual(completed)
-  })
-
   it('supports keyboard queue refresh and call-next in focus order', async () => {
     const user = userEvent.setup()
     const onAction = vi.fn()
     const onRefresh = vi.fn()
-    renderQueue(
+    render(
       <OperatorQueue
         detail={detail}
         busy={false}
@@ -95,7 +65,7 @@ describe('OperatorQueue', () => {
       onAction,
       onRefresh: vi.fn(),
     }
-    const { rerender } = renderQueue(<OperatorQueue {...props} detail={detail} />)
+    const { rerender } = render(<OperatorQueue {...props} detail={detail} />)
     await user.click(screen.getByRole('button', { name: 'Call next' }))
     expect(onAction).toHaveBeenCalledWith('call-next')
 
@@ -138,7 +108,7 @@ describe('OperatorQueue', () => {
       onRefresh: vi.fn(),
       onHandoff,
     }
-    const { rerender } = renderQueue(<OperatorQueue {...props} />)
+    const { rerender } = render(<OperatorQueue {...props} />)
     expect(screen.queryByRole('button', { name: 'Transfer ticket' })).not.toBeInTheDocument()
 
     rerender(
@@ -152,7 +122,7 @@ describe('OperatorQueue', () => {
   })
 
   it('shows a concise empty state without an unavailable call action', () => {
-    renderQueue(
+    render(
       <OperatorQueue
         detail={{ ...detail, waiting: [] }}
         busy={false}
@@ -170,7 +140,7 @@ describe('OperatorQueue', () => {
   })
 
   it('makes the selected queue context and waiting order easy to scan', () => {
-    renderQueue(
+    render(
       <OperatorQueue
         detail={{ ...detail, waiting: [ticket, { ...ticket, id: 'ticket-2', ticketNumber: '2' }] }}
         busy={false}
@@ -196,7 +166,7 @@ describe('OperatorQueue', () => {
   })
 
   it('disables queue actions while a request is pending and retains the current ticket', () => {
-    renderQueue(
+    render(
       <OperatorQueue
         detail={{ ...detail, current: { ...ticket, status: 'PENDING' } }}
         busy
@@ -217,7 +187,7 @@ describe('OperatorQueue', () => {
   })
 
   it('announces a manual queue refresh once and prevents overlapping refreshes', () => {
-    renderQueue(
+    render(
       <OperatorQueue
         detail={detail}
         busy={false}
@@ -245,7 +215,7 @@ describe('OperatorQueue', () => {
       onRefresh: vi.fn(),
       error: '',
     }
-    const { rerender } = renderQueue(<OperatorQueue {...props} message="Service started." />)
+    const { rerender } = render(<OperatorQueue {...props} message="Service started." />)
 
     expect(screen.getByRole('status')).toHaveTextContent('Service started.')
     rerender(
@@ -274,7 +244,7 @@ describe('OperatorQueue', () => {
       } as unknown as MediaQueryList
     })
 
-    renderQueue(
+    render(
       <OperatorQueue
         detail={{ ...detail, current: { ...ticket, status: 'PENDING' } }}
         busy={false}
@@ -306,7 +276,7 @@ describe('OperatorQueue', () => {
       onAction,
       onRefresh: vi.fn(),
     }
-    const { rerender } = renderQueue(<OperatorQueue {...props} error="" />)
+    const { rerender } = render(<OperatorQueue {...props} error="" />)
 
     const callNext = screen.getByRole('button', { name: 'Call next' })
     callNext.focus()
@@ -337,7 +307,7 @@ describe('OperatorQueue', () => {
       onAction: vi.fn(),
       onRefresh: vi.fn(),
     }
-    const { rerender } = renderQueue(<OperatorQueue {...props} detail={detail} />)
+    const { rerender } = render(<OperatorQueue {...props} detail={detail} />)
     await user.click(screen.getByRole('button', { name: 'Call next' }))
 
     rerender(
@@ -398,7 +368,7 @@ describe('OperatorQueue', () => {
       onRefresh: vi.fn(),
     }
     const pendingDetail = { ...detail, current: { ...ticket, status: 'PENDING' }, waiting: [] }
-    const { rerender } = renderQueue(<OperatorQueue {...props} detail={pendingDetail} />)
+    const { rerender } = render(<OperatorQueue {...props} detail={pendingDetail} />)
 
     await user.click(screen.getByRole('button', { name: 'Start service' }))
     rerender(

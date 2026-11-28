@@ -19,18 +19,8 @@ const sections = [{ href: '#workflows', label: 'How it works' }]
 export function LandingNavigation({ user, onSignOut, signOutError }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
-  const appPath =
-    user?.role === 'CUSTOMER'
-      ? '/customer'
-      : user?.role === 'BRANCH_MANAGER'
-        ? '/manager'
-        : '/operator'
-  const appLabel =
-    user?.role === 'CUSTOMER'
-      ? 'Open customer queue'
-      : user?.role === 'BRANCH_MANAGER'
-        ? 'Open branch setup'
-        : 'Open operator queue'
+  const appPath = user?.role === 'CUSTOMER' ? '/customer' : '/operator'
+  const appLabel = user?.role === 'CUSTOMER' ? 'Open customer queue' : 'Open operator queue'
 
   function closeMenu() {
     setMenuOpen(false)

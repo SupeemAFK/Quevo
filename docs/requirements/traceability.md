@@ -34,9 +34,7 @@ This matrix records planned coverage, not implementation or test results. The ve
 | FR-022 | F-014 | Sprint 3 | After measures are agreed: API/database summary checks and role-protected UI checks. | Theme 9 asks for useful service summaries; specific metrics are proposed. |
 | FR-023 | F-017 | Sprint 3 | If retained: form validation, persistence, and customer E2E after contract definition. | Quevo product proposal; not stated in Theme 9 or D1. |
 | FR-024 | F-015 | Sprint 3 | If retained: state-event persistence and authorized audit-read checks. | Quevo product proposal; not stated in Theme 9 or D1. |
-
 | FR-025 | F-005, F-009 | Lab 7 maintenance overlay on Sprint 1 | `TestLab7HandoffOptionsAvailableToAssignedOperator`, `TestOperatorTicketHandoffWithPostgres`, and operator handoff component test. | CR-L7-01 amends existing Sprint 1 assignment/authorization behavior; it is not a Sprint 2/3 backlog feature. |
-
 
 ## Business rules
 
@@ -56,9 +54,7 @@ This matrix records planned coverage, not implementation or test results. The ve
 | BR-012 | F-003–F-009 | Sprint 1 | API integration test against persistent PostgreSQL. | Group spec §5.1. |
 | BR-013 | F-012 | Sprint 2 | After policy approval: API/PostgreSQL owner and state checks. | Theme 9 later-sprint cancellation; exact transition is proposed. |
 | BR-014 | F-013 | Sprint 2 | After policy approval: API/PostgreSQL actor, state, and timing checks. | Theme 9 later-sprint no-show; exact transition is proposed. |
-
 | BR-015 | F-005–F-009 | Lab 7 maintenance overlay on Sprint 1 | PostgreSQL/API checks for current assignee, eligible/idle recipient, preserved state and timestamps, audit entry, and call-next race. | CR-L7-01 changes the existing Sprint 1 assigned-operator rule while retaining BR-008's one-active-ticket invariant. |
-
 
 ## Non-functional requirements
 
@@ -81,10 +77,10 @@ The following rows paraphrase group_work_specs_v1.pdf §6, Theme 9 (pages 8–9 
 | Official Theme 9 scope | Quevo mapping | Planned sprint | Coverage and qualification |
 | --- | --- | --- | --- |
 | Waiting-line workflow supports joining, calling, serving, completing, cancelling, and handling no-shows. | FR-005, FR-009–FR-013, FR-020–FR-021; F-003, F-006–F-008, F-012–F-013 | Join/call/serve/complete in Sprint 1; cancel/no-show in Sprint 2 | Covered in planned scope. Exact cancellation/no-show rules remain proposed until reviewed. |
-| Define queue ordering, service scope, duplicate-entry behavior, and transition permissions. | BR-001–BR-009; F-003, F-006, F-009 | Sprint 1 | FIFO and ticket-number scope are documented; a customer may hold at most one active ticket across services, branches, and dates. Invalid transitions and duplicate joins are rejected. |
+| Define queue ordering, service scope, duplicate-entry behavior, and transition permissions. | BR-001–BR-009; F-003, F-006, F-009 | Sprint 1 | Decisions are documented as proposals: FIFO and branch/service/business-date scope; reject duplicate active entries and invalid transitions. |
 | Advance appointment booking is outside the core scope. | SRS §3.2 | All sprints | Explicitly out of scope. |
 | Sprint 1 example: seed a service queue; customer logs in, joins, and sees queue number/status; operator logs in, calls next eligible entry, and completes service. | FR-001–FR-011; F-001–F-008 | Sprint 1 | Implemented with seeded data, PostgreSQL persistence, and browser coverage. |
-| Generate unique numbers safely, prevent duplicate active entries, and reject out-of-order/invalid transitions. | FR-006, FR-014; BR-002, BR-004–BR-005, BR-009; F-003, F-006, F-009 | Sprint 1 | PostgreSQL constraints/transactions and API rejection tests cover unique ticket numbers and one active ticket per customer. Queue-number formatting remains a design decision. |
+| Generate unique numbers safely, prevent duplicate active entries, and reject out-of-order/invalid transitions. | FR-006, FR-014; BR-002, BR-004–BR-005, BR-009; F-003, F-006, F-009 | Sprint 1 | Planned PostgreSQL constraints/transactions and API rejection tests. Queue-number formatting and exact scope remain design decisions. |
 | Customer and Operator roles; customers see their own detailed entry; operators act only on authorized queues. | FR-001–FR-003, FR-007–FR-008, FR-013; BR-006, BR-010; F-001, F-004–F-006 | Sprint 1 | Implemented with server-side role and queue enforcement plus negative API tests. |
 | Test customer attempts to call/complete entries and operator attempts to access unauthorized queues. | FR-013; F-001, F-005–F-008 | Sprint 1 | Covered by PostgreSQL API tests; wrong-role customer actions and unauthorized queue access are denied. |
 | Public queue displays may show limited non-private status. | D-015; no feature currently selected | Not planned | Optional permission, not a required feature. If later approved, public output must be limited to explicitly approved non-private status. |

@@ -137,7 +137,7 @@ func normalizeEmail(email string) string {
 }
 
 func validRole(role Role) bool {
-	return role == RoleCustomer || role == RoleOperator || role == RoleBranchManager
+	return role == RoleCustomer || role == RoleOperator
 }
 
 func newSessionToken() (string, error) {

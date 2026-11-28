@@ -1,17 +1,12 @@
 import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
 import { getCookie, setResponseHeader } from '@tanstack/react-start/server'
-import type { components } from '@/client/api/schema'
 import { createApiClient } from './api-client'
 import { SESSION_COOKIE_NAME } from './session'
 
-type Ticket = components['schemas']['queue.TicketResponse']
-
 type JoinQueueInput = {
   branchId: string
-  queueId: string
   serviceId: string
-  requestAnswers: Record<string, string>
 }
 
 function apiBaseUrl() {
@@ -52,63 +47,20 @@ export const joinQueue = createServerFn({ method: 'POST' })
   .validator((data: JoinQueueInput) => data)
   .handler(async ({ data }) => {
     setResponseHeader('Cache-Control', 'private, no-store')
-    const response = await fetch(
-      `${apiBaseUrl()}/api/v1/branches/${encodeURIComponent(data.branchId)}/queues/${encodeURIComponent(data.queueId)}/tickets`,
+    const { data: ticket, response } = await createApiClient(`${apiBaseUrl()}/api/v1`).POST(
+      '/branches/{branchId}/services/{serviceId}/tickets',
       {
-        method: 'POST',
-        cache: 'no-store',
-        headers: { Authorization: `Bearer ${sessionToken()}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestAnswers: data.requestAnswers }),
-      },
-    )
-
-    if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as {
-        message?: string
-        requestId?: string
-      } | null
-      const serverMessage = payload?.message?.trim()
-
-      if (response.status === 409) {
-        throw new Error(
-          serverMessage ||
-            'You already have an active ticket. Finish or cancel it before joining another service.',
-        )
-      }
-      if (response.status === 404) {
-        throw new Error(serverMessage || 'This service is no longer available.')
-      }
-      if (response.status === 400) {
-        throw new Error(serverMessage || 'Check the required service details and try again.')
-      }
-      if (response.status === 403) {
-        throw new Error(serverMessage || 'You do not have permission to join this queue.')
-      }
-      if (response.status >= 500) {
-        const reference = payload?.requestId ? ` Reference: ${payload.requestId}.` : ''
-        throw new Error(`The queue could not be joined right now. Please try again.${reference}`)
-      }
-      throw new Error(serverMessage || 'Could not join the queue. Please try again.')
-    }
-    return (await response.json()) as Ticket
-  })
-
-export const cancelCustomerTicket = createServerFn({ method: 'POST' })
-  .validator((ticketId: string) => ticketId)
-  .handler(async ({ data: ticketId }) => {
-    setResponseHeader('Cache-Control', 'private, no-store')
-    const response = await fetch(
-      `${apiBaseUrl()}/api/v1/tickets/${encodeURIComponent(ticketId)}/cancel`,
-      {
-        method: 'POST',
-        cache: 'no-store',
+        params: { path: data },
         headers: { Authorization: `Bearer ${sessionToken()}` },
       },
     )
-    if (response.status === 409)
-      throw new Error('This ticket has already been called and can’t be cancelled.')
-    if (!response.ok) throw new Error('Could not cancel this ticket. Please refresh and try again.')
-    return (await response.json()) as Ticket
+
+    if (response.status === 409) {
+      throw new Error('You already have an active ticket for this service today.')
+    }
+    if (response.status === 404) throw new Error('This service is no longer available.')
+    if (!response.ok || !ticket) throw new Error('Could not join the queue. Please try again.')
+    return ticket
   })
 
 export const getCustomerTicket = createServerFn({ method: 'GET' })

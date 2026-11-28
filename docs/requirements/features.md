@@ -1,6 +1,6 @@
 # Quevo Feature Inventory
 
-**Status:** Baseline and implementation record. Feature interpretations and proposals are labeled in the source-basis column; the 2026-11-24 update below records delivery of the formerly later-sprint work.
+**Status:** Draft baseline cross-checked against the supplied course documents; feature interpretations and proposals are labeled in the source-basis column.
 **Sources:** group_work_specs_v1.pdf (§§5–8; draft for instructor review) and project_deliverable_1_v1.pdf (§§2–3), plus the Quevo product scope in srs.md.
 **Planning note:** Sprint allocations are planning proposals. Step 3 will confirm sprint goals, feasibility, and dependencies.
 
@@ -25,21 +25,9 @@ Feature IDs are stable. Keep an existing ID attached to a feature if its descrip
 | F-015 | Extended audit history | Authorized staff review ticket state changes with actor and event timestamps. | FR-024 | F-003, F-006–F-008; audit event model | Sprint 3 | Proposed product capability; not stated as a Theme 9 or D1 requirement. |
 | F-016 | Real-time queue updates | Optional enhancement to refresh customer/operator views as persisted queue state changes. | Optional; no baseline FR | F-003–F-008; optional delivery mechanism | Optional Sprint 3 | Optional product enhancement; not stated as a Theme 9 or D1 requirement. |
 | F-017 | Service-specific request forms | Customer submits fields configured for a service when joining its queue. | FR-023 | F-003, F-010; configured service fields | Sprint 3 | Proposed product capability; not stated as a Theme 9 or D1 requirement. |
-| F-018 | Operator ticket handoff | Current assignee transfers an active ticket to an eligible operator assigned to the same queue; ticket state is preserved and the reassignment is audited. | FR-025; BR-006–BR-008, BR-015 | F-001, F-005–F-009; existing ticket assignment and operator queue authorization | Lab 7 maintenance of Sprint 1 operator processing | Product change to existing Sprint 1 assignment and authorization behavior; selected for the Lab 7 maintenance exercise. |
 
 ## Sprint boundary
 
 Sprint 1 is the customer/operator vertical slice from identity through ticket completion or skip, with a seeded service queue and persisted ticket state. Sprint 2 is proposed for service/queue administration, counter/operator assignments, cancellation, and no-show handling. Sprint 3 is proposed for summaries, extended audit history, and service-specific request forms. Real-time updates are an optional enhancement after required scope.
 
-The original sprint allocation above was a planning proposal. On 2026-11-24, F-010 through F-017 were implemented together to meet the current sprint scope. The bank demo catalog and document-upload flow are Quevo product choices based on the user's later request; they extend F-017 beyond its original no-upload issue brief. Document storage is prototype-only and must not contain real customer documents. See [branch management and customer documents](../branch-management.md) for behavior and security limitations.
-
-F-018 is a Lab 7 maintenance change to the Sprint 1 operator ticket-assignment behavior. It is tracked separately from the Sprint 2 and Sprint 3 feature allocation above.
-
-## Implementation update — 2026-11-24
-
-- F-010/F-011: branch-scoped manager role, service/queue/counter configuration, and queue/operator assignments.
-- F-012/F-013: customer cancellation while WAITING and operator no-show while PENDING.
-- F-014/F-015: branch-authorized aggregate service summaries and paginated chronological ticket history.
-- F-016: customer and operator polling every ten seconds while visible and online, with stale-data feedback and manual refresh.
-- F-017: configurable customer request forms with validated answers and operator visibility; the current demo also supports service-configured uploads.
-- Cleanup: the placeholder route is removed and its path falls through to the standard not-found route.
+The official Theme 9 text places cancellation/no-show handling, multiple queues/counters, priority policy if applicable, and service summaries in later-sprint scope. Other rows are explicitly marked as Quevo proposals rather than official rubric clauses. Step 3 will review allocations, dependencies, risks, and outcomes. Do not implement future features before their feature contracts are approved.

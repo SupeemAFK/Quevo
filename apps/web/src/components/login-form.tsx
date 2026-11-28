@@ -6,7 +6,7 @@ import type { Identity, LoginInput } from '@/lib/auth'
 
 type LoginFormProps = {
   signIn: (input: LoginInput) => Promise<Identity>
-  onSuccess?: (user: Identity) => void
+  onSuccess?: () => void
 }
 
 export function LoginForm({ signIn, onSuccess }: LoginFormProps) {
@@ -26,9 +26,9 @@ export function LoginForm({ signIn, onSuccess }: LoginFormProps) {
     setPassword('')
 
     try {
-      const user = await signIn({ email, password })
+      await signIn({ email, password })
       setFeedback({ kind: 'success', message: 'Signed in successfully.' })
-      onSuccess?.(user)
+      onSuccess?.()
     } catch {
       setFeedback({ kind: 'error', message: 'Sign in failed. Check your email and password.' })
     } finally {

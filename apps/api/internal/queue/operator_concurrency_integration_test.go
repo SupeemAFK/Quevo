@@ -23,10 +23,6 @@ func TestCallNextPreventsOperatorClaimingAcrossServices(t *testing.T) {
 		VALUES ($1, $2, 'Second Service', true)`, serviceID, database.DemoBranchID); err != nil {
 		t.Fatalf("insert second service: %v", err)
 	}
-	if _, err := db.ExecContext(ctx, `INSERT INTO service_queues (id, branch_id, service_id, name, active)
-		VALUES ($1, $2, $1, 'Main queue', true)`, serviceID, database.DemoBranchID); err != nil {
-		t.Fatalf("insert second service queue: %v", err)
-	}
 	if _, err := db.ExecContext(ctx, `INSERT INTO operator_services (operator_id, service_id)
 		VALUES ($1, $2)`, database.DemoOperatorID, serviceID); err != nil {
 		t.Fatalf("authorize operator for second service: %v", err)

@@ -74,10 +74,8 @@ These are Quevo requirement statements, not verbatim rubric clauses. Their sourc
 | FR-010 | The system shall let only the operator assigned to a PENDING ticket start service and move it to OPERATING. |
 | FR-011 | The system shall let only the operator assigned to an OPERATING ticket complete service and move it to COMPLETED. |
 | FR-012 | The system shall let only the operator assigned to a PENDING ticket skip it and move it to SKIPPED. |
-
 | FR-013 | The system shall enforce authentication, role, queue authorization, ticket assignment, customer ownership, and operator handoff eligibility checks on the server. |
-| FR-014 | The system shall reject invalid ticket state transitions, any attempt by a customer to hold more than one active ticket across services, branches, and business dates, and an operator action that would give that operator more than one active ticket. |
-
+| FR-014 | The system shall reject invalid ticket state transitions, a customer's duplicate active ticket for the same service queue, and an operator action that would give that operator more than one active ticket. |
 | FR-015 | The system shall persist the timestamps for queue join, ticket call, service start, and completion or skip. |
 | FR-016 | The system shall persist queue and ticket state in PostgreSQL and return committed state on subsequent reads. |
 | FR-017 | The system shall provide operators an overview of their authorized queues and a view of WAITING tickets in those queues. A separate COMPLETED/SKIPPED history view is deferred by the scope of issue #12. |
@@ -88,9 +86,7 @@ These are Quevo requirement statements, not verbatim rubric clauses. Their sourc
 | FR-022 | Authorized staff shall be able to view service summaries for a selected branch, service, and date range, including ticket counts and agreed waiting/service-duration measures. |
 | FR-023 | When a service requires additional information, a customer shall be able to submit its service-specific request fields while joining the queue; the service defines the fields and validation. |
 | FR-024 | Authorized staff shall be able to review ticket state-change history, including the acting user and event time. |
-
-| FR-025 | The operator assigned to an active ticket shall be able to hand it off to another operator authorized for the same queue who has no other active ticket. The ticket state shall remain unchanged, the new assignment shall be persisted, and the handoff shall be recorded in ticket history. |
-
+| FR-025 | The operator currently assigned to an active ticket shall be able to transfer it to another operator authorized for the same service and with no active ticket; the system shall preserve state and lifecycle timestamps and record the transfer. |
 
 ## 6. Business rules
 
@@ -99,22 +95,18 @@ These are Quevo requirement statements, not verbatim rubric clauses. Their sourc
 | BR-001 | Waiting tickets are served FIFO, ordered by their join time. A deterministic tie-breaker for equal timestamps must be chosen in the feature contract. |
 | BR-002 | Ticket-number uniqueness is scoped by branch, service, and business date. The business timezone and exact numbering/reset policy are unresolved. |
 | BR-003 | Quevo proposes WAITING, PENDING, and OPERATING as active ticket states for duplicate-ticket and operator workload rules. |
-| BR-004 | A customer may hold at most one active ticket across all services, branches, and business dates. |
+| BR-004 | A customer may not hold duplicate active tickets in the same service queue. |
 | BR-005 | Queue joining and claiming a ticket are atomic PostgreSQL transactions protected against concurrent requests. |
 | BR-006 | An operator may act only on queues to which that operator is authorized. |
-
-| BR-007 | Only the operator currently assigned to a ticket may start, complete, or skip it. That operator may hand off a PENDING or OPERATING ticket to another operator authorized for the same queue, subject to BR-008. |
-| BR-008 | An operator may have at most one active ticket at a time, including after a handoff. |
-
+| BR-007 | Only the operator assigned to a ticket may start, complete, or skip it. The current assignee may transfer an active PENDING or OPERATING ticket under BR-015. |
+| BR-008 | An operator may have at most one active ticket at a time. |
 | BR-009 | The allowed ticket transitions are WAITING → PENDING → OPERATING → COMPLETED and PENDING → SKIPPED. Other transitions are rejected. |
 | BR-010 | A customer may read only their own ticket; ticket ownership is checked by the server on every applicable request. |
 | BR-011 | Join, call, start, and completion-or-skip timestamps are persisted with the corresponding ticket lifecycle event. |
 | BR-012 | PostgreSQL is the authoritative source for queue ordering, ticket state, and persisted lifecycle data. |
 | BR-013 | Customer cancellation is excluded from Sprint 1. In a later sprint, cancellation is allowed only from WAITING and transitions the customer's own ticket to CANCELLED. |
 | BR-014 | No-show handling is excluded from Sprint 1. The proposed transition is PENDING → NO_SHOW; the timeout/arrival policy, notification, and rejoin rules must be approved before implementation. |
-
-| BR-015 | A handoff is permitted only when initiated by the ticket's current assignee for a PENDING or OPERATING ticket, to a different OPERATOR authorized for that queue with no PENDING or OPERATING ticket. The handoff changes only the assignee, records the actor, previous assignee, recipient, and event time, and is atomic. |
-
+| BR-015 | A handoff is allowed only from the current assignee of a PENDING or OPERATING ticket to a different same-service operator with no active ticket. Assignment and audit record commit atomically; status and lifecycle timestamps do not change. |
 
 ## 7. Non-functional requirements
 
@@ -122,7 +114,7 @@ These are proposed product targets to make the baseline measurable. They are not
 
 | ID | Proposed requirement and measure |
 | --- | --- |
-| NFR-001 | **Concurrency integrity:** In PostgreSQL integration tests, 20 simultaneous attempts to claim one waiting ticket shall produce at most one successful claim; simultaneous join attempts by the same customer across different services and dates shall leave at most one active ticket. |
+| NFR-001 | **Concurrency integrity:** In PostgreSQL integration tests, 20 simultaneous attempts to claim one waiting ticket shall produce at most one successful claim; 20 simultaneous duplicate join attempts by the same customer for the same queue shall leave at most one active ticket. |
 | NFR-002 | **Access control:** Every protected endpoint shall have automated tests for unauthenticated access and the relevant wrong-role, wrong-queue, wrong-assignee, or wrong-owner case. All such requests shall be denied and shall not mutate protected data. |
 | NFR-003 | **Responsiveness (proposed):** Under a repeatable test with 50 concurrent clients and 1,000 tickets in the target queue, p95 read latency shall be at most 1 second and p95 state-changing request latency at most 2 seconds. Confirm test hardware and dataset before accepting this target. |
 | NFR-004 | **Usability (proposed):** A customer shall be able to select a service, submit one queue-join action, and reach their ticket-status view without using more than three primary actions after authentication. Confirm the counting method during UI design. |
@@ -173,7 +165,7 @@ Theme 9 identifies cancellation/no-show handling, multiple queues/counters, prio
 | D-005 | Ticket format is described as an example such as A-001, but prefix, padding, reset, uniqueness enforcement, and display rules are unspecified. | Preserve uniqueness scope; define formatting before implementation. | Feature-level design. |
 | D-006 | Equal join timestamps need a stable FIFO tie-breaker. | Proposed tie-breaker is database creation sequence or immutable ticket ID; confirm with the schema design. | Feature-level design. |
 | D-007 | Whether SKIPPED customers can rejoin, and how repeated skips are handled, is unspecified. | Do not automatically requeue skipped tickets. | Product/course review. |
-| D-008 | Customer duplicate-ticket scope was previously open. | Resolved 2026-11-24: a customer may hold at most one active ticket across all services, branches, and business dates (BR-004). | Product decision recorded in the customer ticket flow. |
+| D-008 | “Queue” scope for duplicate customer tickets needs exact branch/service/date interpretation. | Use the proposed key in BR-002; confirm its branch/service/date scope in the queue data-model review. | Product/course review. |
 | D-009 | Service catalog seed data and operator-to-queue authorization data have no management workflow in the first-sprint scope. | A controlled fixture or seed process may be needed for a demonstrable vertical slice; specify it in Step 4 without adding admin features. | Sprint 1 contracts. |
 | D-010 | Performance, usability, and accessibility targets in NFR-003–005 are proposed. | Validate targets, test conditions, and any required standard with the team and official spec. | Requirements review. |
 | D-011 | Data retention, personal data fields, audit access, and deployment security policy are unspecified. | Minimize collected customer data and avoid claiming a compliance posture until requirements are known. | System design and team review. |
@@ -184,7 +176,7 @@ Theme 9 identifies cancellation/no-show handling, multiple queues/counters, prio
 | D-016 | Theme 9 mentions a priority policy “if applicable.” | FIFO is selected in BR-001; no priority feature is planned unless the team approves a scope change. | Product review. |
 | D-017 | The no-show transition is not defined by the supplied theme brief. | PENDING → NO_SHOW is a proposal only; agree on timing, reassignment, customer notification, and rejoin behavior before F-013 implementation. | Sprint 2 feature contract. |
 | D-018 | Theme 9 asks for useful service summaries but does not define measures. | Ticket counts and waiting/service durations are candidate measures; define exact formulas, filters, and privacy before F-014 implementation. | Sprint 3 feature contract. |
-| D-019 | Service-specific request forms are a Quevo product proposal, not an explicit Theme 9 requirement. | The current implementation supports validated single-select, short-answer, and long-answer fields and avoids collecting sensitive banking credentials or identifiers. Institution-specific data and document policy remains to be defined before production use. | Product and compliance review. |
+| D-019 | Service-specific request forms appear in the product's future scope, but field schemas are unspecified. | A service may define validated request fields; finalize allowed field types and handling in the F-017 contract. | Sprint 3 feature contract. |
 | D-020 | Future service, counter, and operator-assignment management does not define a new administrative actor. | Keep management operations unavailable until the authorized role and branch scope are approved; do not infer an administrator role. | Product/course review. |
 
 ## 11. Glossary

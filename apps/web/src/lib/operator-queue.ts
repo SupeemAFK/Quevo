@@ -1,56 +1,11 @@
 import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
 import { getCookie, setResponseHeader } from '@tanstack/react-start/server'
-import type { components } from '@/client/api/schema'
 import { createApiClient } from './api-client'
 import { SESSION_COOKIE_NAME } from './session'
 
-type QueueInput = { branchId: string; queueId: string }
-type TicketAction = 'start' | 'complete' | 'skip' | 'no-show'
-type OperatorQueueDetail = components['schemas']['queue.OperatorQueueDetailResponse']
-type OperatorTicket = components['schemas']['queue.OperatorTicketResponse']
-export type TicketHistory = {
-  items: {
-    id: string
-    fromStatus?: string
-    toStatus: string
-    actorName?: string
-    occurredAt: string
-  }[]
-  limit: number
-  offset: number
-  total: number
-}
-
-export function applyOperatorTicketUpdate(
-  detail: OperatorQueueDetail | undefined,
-  ticket: OperatorTicket | null,
-  action: 'call-next' | TicketAction,
-): OperatorQueueDetail | undefined {
-  if (!detail || !ticket) return detail
-
-  if (action === 'call-next') {
-    return {
-      ...detail,
-      waiting: detail.waiting.filter((waiting) => waiting.id !== ticket.id),
-      current: ticket,
-      queue: {
-        ...detail.queue,
-        waitingCount: Math.max(0, (detail.queue.waitingCount ?? detail.waiting.length) - 1),
-      },
-    }
-  }
-
-  if (ticket.status === 'COMPLETED' || ticket.status === 'SKIPPED' || ticket.status === 'NO_SHOW') {
-    return {
-      ...detail,
-      current: undefined,
-      recent: [ticket, ...detail.recent.filter((recent) => recent.id !== ticket.id)].slice(0, 10),
-    }
-  }
-
-  return { ...detail, current: ticket }
-}
+type QueueInput = { branchId: string; serviceId: string }
+type TicketAction = 'start' | 'complete' | 'skip'
 type HandoffInput = { ticketId: string; recipientOperatorId: string }
 
 function api() {
@@ -75,32 +30,36 @@ export const getOperatorQueue = createServerFn({ method: 'GET' })
   .validator((data: QueueInput) => data)
   .handler(async ({ data: path }) => {
     setResponseHeader('Cache-Control', 'private, no-store')
-    const { headers } = api()
-    const base = (process.env.API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '')
-    const response = await fetch(
-      `${base}/api/v1/operator/branches/${encodeURIComponent(path.branchId)}/queues/${encodeURIComponent(path.queueId)}/tickets`,
-      { headers, cache: 'no-store' },
+    const { client, headers } = api()
+    const { data, response } = await client.GET(
+      '/operator/branches/{branchId}/services/{serviceId}/tickets',
+      {
+        params: { path },
+        headers,
+      },
     )
-    if (!response.ok) throw new Error('Could not load this queue. Please try again.')
-    return (await response.json()) as components['schemas']['queue.OperatorQueueDetailResponse']
+    if (!response.ok || !data) throw new Error('Could not load this queue. Please try again.')
+    return data
   })
 
 export const callNext = createServerFn({ method: 'POST' })
   .validator((data: QueueInput) => data)
   .handler(async ({ data: path }) => {
     setResponseHeader('Cache-Control', 'private, no-store')
-    const { headers } = api()
-    const base = (process.env.API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '')
-    const response = await fetch(
-      `${base}/api/v1/operator/branches/${encodeURIComponent(path.branchId)}/queues/${encodeURIComponent(path.queueId)}/tickets/call-next`,
-      { method: 'POST', headers, cache: 'no-store' },
+    const { client, headers } = api()
+    const { data, response } = await client.POST(
+      '/operator/branches/{branchId}/services/{serviceId}/tickets/call-next',
+      {
+        params: { path },
+        headers,
+      },
     )
     if (response.status === 204) return null
     if (response.status === 409)
       throw new Error('Finish your current ticket before calling another.')
-    if (!response.ok)
+    if (!response.ok || !data)
       throw new Error('Could not call the next ticket. Please refresh and try again.')
-    return (await response.json()) as components['schemas']['queue.OperatorTicketResponse']
+    return data
   })
 
 export const updateOperatorTicket = createServerFn({ method: 'POST' })
@@ -116,9 +75,7 @@ export const updateOperatorTicket = createServerFn({ method: 'POST' })
           ? await client.POST('/operator/tickets/{ticketId}/complete', options)
           : input.action === 'skip'
             ? await client.POST('/operator/tickets/{ticketId}/skip', options)
-            : input.action === 'no-show'
-              ? await client.POST('/operator/tickets/{ticketId}/no-show', options)
-              : null
+            : null
     if (!result) throw new Error('This action is not available.')
     if (result.response.status === 409)
       throw new Error('The ticket has changed. Refresh the queue and try again.')
@@ -167,26 +124,11 @@ export const operatorQueuesOptions = (operatorID: string) =>
     queryFn: () => getOperatorQueues(),
   })
 
-export const operatorQueueOptions = (operatorID: string, branchId: string, queueId: string) =>
+export const operatorQueueOptions = (operatorID: string, branchId: string, serviceId: string) =>
   queryOptions({
-    queryKey: ['operator', operatorID, 'queue', branchId, queueId],
-    queryFn: () => getOperatorQueue({ data: { branchId, queueId } }),
-    enabled: Boolean(branchId && queueId),
-  })
-
-export const getOperatorTicketHistory = createServerFn({ method: 'GET' })
-  .validator((data: { ticketId: string; limit: number; offset: number }) => data)
-  .handler(async ({ data }) => {
-    setResponseHeader('Cache-Control', 'private, no-store')
-    const { headers } = api()
-    const base = (process.env.API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '')
-    const params = new URLSearchParams({ limit: String(data.limit), offset: String(data.offset) })
-    const response = await fetch(
-      `${base}/api/v1/operator/tickets/${encodeURIComponent(data.ticketId)}/history?${params}`,
-      { headers, cache: 'no-store' },
-    )
-    if (!response.ok) throw new Error('Could not load ticket history.')
-    return (await response.json()) as TicketHistory
+    queryKey: ['operator', operatorID, 'queue', branchId, serviceId],
+    queryFn: () => getOperatorQueue({ data: { branchId, serviceId } }),
+    enabled: Boolean(branchId && serviceId),
   })
 
 export const handoffCandidatesOptions = (operatorID: string, ticketId: string) =>

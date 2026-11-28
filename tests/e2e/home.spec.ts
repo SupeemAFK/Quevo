@@ -68,10 +68,8 @@ test('landing page explains Quevo and its sample queue stays local', async ({ pa
     'false',
   )
   await page.getByRole('button', { name: 'Customer', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Your ticket', exact: true })).toBeVisible()
-  await expect(
-    page.getByRole('region', { name: 'Your ticket', exact: true }).getByText('A102'),
-  ).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Your ticket' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Your ticket' }).getByText('A102')).toBeVisible()
   await page.getByRole('button', { name: 'Operator', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Use system theme' })).toHaveAttribute(
     'aria-pressed',

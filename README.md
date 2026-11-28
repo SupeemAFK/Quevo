@@ -19,7 +19,7 @@ docker compose exec api go run ./cmd/migrate
 docker compose exec api go run ./cmd/seed
 ```
 
-Sign in with `customer@quevo.local`, `operator@quevo.local`, or `manager@quevo.local` and use the generated passwords shown in your terminal. Rerunning the seed preserves existing passwords. The seed includes sample bank services, request forms, queues, and one branch manager account. For standalone API setup, use the [development guide](docs/development.md).
+Sign in with `customer@quevo.local` or `operator@quevo.local` and use the generated passwords shown in your terminal. Rerunning the seed preserves existing passwords. For standalone API setup, use the [development guide](docs/development.md).
 
 Stop the foreground stack with `Ctrl+C`, or stop a detached stack with:
 

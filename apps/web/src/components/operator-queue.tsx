@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query'
 import {
   ArrowRightLeft,
   Check,
@@ -12,20 +11,17 @@ import {
   SkipForward,
   Ticket,
   UsersRound,
-  UserX,
 } from 'lucide-react'
 import { AnimatePresence, LayoutGroup, MotionConfig, motion } from 'motion/react'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useRef } from 'react'
 import type { components } from '@/client/api/schema'
-import { getOperatorTicketHistory } from '@/lib/operator-queue'
-import { ticketDocumentsOptions } from '@/lib/ticket-documents'
 import { usePrefersReducedMotion } from '@/lib/use-prefers-reduced-motion'
 import { FeedbackMessage, LoadingMessage } from './feedback-message'
 import { TicketStatus } from './ticket-status'
 import { Button } from './ui/button'
 
 type QueueDetail = components['schemas']['queue.OperatorQueueDetailResponse']
-type Action = 'call-next' | 'start' | 'complete' | 'skip' | 'no-show'
+type Action = 'call-next' | 'start' | 'complete' | 'skip'
 
 type Props = {
   detail: QueueDetail
@@ -36,7 +32,6 @@ type Props = {
   error: string
   onAction: (action: Action) => void
   onRefresh: () => void
-  operatorId?: string
   onHandoff?: (source: HTMLButtonElement) => void
 }
 
@@ -49,14 +44,9 @@ export function OperatorQueue({
   error,
   onAction,
   onRefresh,
-  operatorId = '',
   onHandoff,
 }: Props) {
   const { current, waiting } = detail
-  const documents = useQuery({
-    ...ticketDocumentsOptions(`operator:${operatorId}`, current?.id ?? ''),
-    enabled: Boolean(current?.id && current.allowsUploads && operatorId),
-  })
   const restoreActionFocusRef = useRef<HTMLElement | null>(null)
   const focusTargetRef = useCallback(
     (target: HTMLElement | null) => {
@@ -83,7 +73,6 @@ export function OperatorQueue({
     start: 'Starting service…',
     complete: 'Completing service…',
     skip: 'Skipping ticket…',
-    'no-show': 'Marking ticket no-show…',
   }
 
   function handleAction(action: Action, source: HTMLButtonElement) {
@@ -169,7 +158,7 @@ export function OperatorQueue({
                 {current ? (
                   <motion.div
                     animate={{ opacity: 1 }}
-                    className="min-w-0"
+                    className="flex min-w-0 flex-col gap-6 sm:flex-row sm:items-end sm:justify-between"
                     exit={motionExit}
                     initial={motionInitial}
                     key={current.id}
@@ -212,17 +201,6 @@ export function OperatorQueue({
                             <SkipForward aria-hidden="true" />
                             Skip ticket
                           </Button>
-
-                          <Button
-                            className="min-h-12 px-5"
-                            disabled={busy}
-                            variant="outline"
-                            onClick={(event) => handleAction('no-show', event.currentTarget)}
-                          >
-                            <UserX aria-hidden="true" />
-                            Mark no-show
-                          </Button>
-
                           {onHandoff ? (
                             <Button
                               className="min-h-12 px-5"
@@ -259,46 +237,6 @@ export function OperatorQueue({
                           ) : null}
                         </>
                       ) : null}
-                    </div>
-                    {Object.entries(current.requestAnswers ?? {}).length > 0 ? (
-                      <dl className="mt-6 grid gap-x-5 gap-y-3 border-t pt-4 text-sm sm:grid-cols-2">
-                        {Object.entries(current.requestAnswers).map(([id, answer]) => (
-                          <div key={id}>
-                            <dt className="text-muted-foreground">
-                              {current.requestLabels?.[id] ?? 'Request detail'}
-                            </dt>
-                            <dd className="mt-0.5 font-medium">{answer}</dd>
-                          </div>
-                        ))}
-                      </dl>
-                    ) : null}
-                    {current.allowsUploads ? (
-                      <div className="mt-5 border-t pt-4">
-                        <p className="mb-2 text-sm font-semibold">Customer documents</p>
-                        {documents.isPending ? (
-                          <p className="text-sm text-muted-foreground">Loading documents…</p>
-                        ) : documents.isError ? (
-                          <p className="text-sm text-status-danger">{documents.error.message}</p>
-                        ) : documents.data?.length ? (
-                          <ul className="space-y-2">
-                            {documents.data.map((document) => (
-                              <li key={document.id}>
-                                <a
-                                  className="text-sm font-medium underline underline-offset-4"
-                                  href={`/api/tickets/${encodeURIComponent(current.id)}/documents/${encodeURIComponent(document.id)}`}
-                                >
-                                  {document.fileName}
-                                </a>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="text-sm text-muted-foreground">No documents attached.</p>
-                        )}
-                      </div>
-                    ) : null}
-                    <div className="mt-5 border-t pt-4">
-                      <TicketHistoryDisclosure operatorId={operatorId} ticketId={current.id} />
                     </div>
                   </motion.div>
                 ) : waiting.length > 0 ? (
@@ -442,113 +380,9 @@ export function OperatorQueue({
                 </motion.ol>
               )}
             </AnimatePresence>
-            {detail.recent?.length ? (
-              <div className="mt-8 border-t pt-5">
-                <h3 className="text-base font-semibold">Recent tickets</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Most recently completed, skipped, cancelled, or marked no-show today.
-                </p>
-                <ol className="mt-3 divide-y border-y">
-                  {detail.recent.map((ticket) => (
-                    <li
-                      className="flex flex-wrap items-center justify-between gap-3 py-3"
-                      key={ticket.id}
-                    >
-                      <span className="flex items-center gap-3">
-                        <span className="font-mono font-semibold tabular-nums">
-                          {ticket.ticketNumber}
-                        </span>
-                        <TicketStatus status={ticket.status} />
-                      </span>
-                      <TicketHistoryDisclosure operatorId={operatorId} ticketId={ticket.id} />
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            ) : null}
           </section>
         </div>
       </LayoutGroup>
     </MotionConfig>
-  )
-}
-
-function TicketHistoryDisclosure({
-  operatorId,
-  ticketId,
-}: {
-  operatorId: string
-  ticketId: string
-}) {
-  const [open, setOpen] = useState(false)
-  const [offset, setOffset] = useState(0)
-  const pageSize = 10
-  const history = useQuery({
-    queryKey: ['operator', operatorId, 'ticket-history', ticketId, offset],
-    queryFn: () => getOperatorTicketHistory({ data: { ticketId, limit: pageSize, offset } }),
-    enabled: Boolean(open && operatorId),
-  })
-  return (
-    <div className="min-w-0">
-      <Button
-        aria-expanded={open}
-        className="min-h-9"
-        onClick={() => setOpen((value) => !value)}
-        variant="outline"
-      >
-        {open ? 'Hide history' : 'History'}
-      </Button>
-      {open ? (
-        <div className="mt-2">
-          {history.isPending ? (
-            <p className="text-sm text-muted-foreground">Loading history…</p>
-          ) : history.isError ? (
-            <p className="text-sm text-status-danger">{history.error.message}</p>
-          ) : history.data ? (
-            <>
-              <ol className="divide-y border-y">
-                {history.data.items.map((event) => (
-                  <li className="flex flex-wrap justify-between gap-2 py-2 text-sm" key={event.id}>
-                    <span>
-                      <strong>{event.toStatus.replaceAll('_', ' ')}</strong>
-                      {event.actorName ? ` · ${event.actorName}` : ''}
-                    </span>
-                    <time className="text-muted-foreground" dateTime={event.occurredAt}>
-                      {new Date(event.occurredAt).toLocaleString()}
-                    </time>
-                  </li>
-                ))}
-              </ol>
-              {history.data.total > pageSize ? (
-                <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
-                  <span>
-                    {offset + 1}–{Math.min(offset + history.data.items.length, history.data.total)}{' '}
-                    of {history.data.total}
-                  </span>
-                  <span className="flex gap-2">
-                    <Button
-                      className="min-h-8"
-                      disabled={offset === 0}
-                      onClick={() => setOffset((value) => Math.max(0, value - pageSize))}
-                      variant="outline"
-                    >
-                      Previous
-                    </Button>
-                    <Button
-                      className="min-h-8"
-                      disabled={offset + pageSize >= history.data.total}
-                      onClick={() => setOffset((value) => value + pageSize)}
-                      variant="outline"
-                    >
-                      Next
-                    </Button>
-                  </span>
-                </div>
-              ) : null}
-            </>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
   )
 }
