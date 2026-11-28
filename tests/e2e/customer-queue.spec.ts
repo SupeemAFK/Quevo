@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test'
 
 const customerPassword = process.env.QUEVO_E2E_CUSTOMER_PASSWORD!
 
@@ -18,7 +18,15 @@ async function expectMinimumTouchTarget(target: Locator) {
   expect(height).toBeGreaterThanOrEqual(44)
 }
 
-test('customer joins and recovers a ticket; operator serves, skips, and hands off tickets', async ({ browser, page }) => {
+async function captureLab7Evidence(page: Page, testInfo: TestInfo, filename: string) {
+  await page.screenshot({
+    path: testInfo.outputPath(filename),
+    fullPage: true,
+    animations: 'disabled',
+  })
+}
+
+test('customer joins and recovers a ticket; operator serves, skips, and hands off tickets', async ({ browser, page }, testInfo) => {
   test.setTimeout(60_000)
 
   await page.setViewportSize({ width: 320, height: 780 })
@@ -199,20 +207,28 @@ test('customer joins and recovers a ticket; operator serves, skips, and hands of
   await page.goto('/customer')
   await page.getByRole('button', { name: 'Join queue' }).click()
   await expect(page.getByTestId('ticket-number')).toHaveText('5')
+  await page.setViewportSize({ width: 1280, height: 960 })
+  await captureLab7Evidence(page, testInfo, 'L7-B01-customer-ticket-waiting.png')
+  await page.setViewportSize({ width: 320, height: 780 })
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Refresh queue' }))
   await expect(operator.getByText('Ticket 5', { exact: true })).toBeVisible()
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Call next' }))
   await expect(operator.getByTestId('operator-current-ticket')).toHaveText('5')
+  await operator.setViewportSize({ width: 1280, height: 960 })
+  await captureLab7Evidence(operator, testInfo, 'L7-B02-assigned-operator-active-ticket.png')
   await operator.getByRole('button', { name: 'Transfer ticket' }).click()
   const transferDialog = operator.getByRole('dialog', { name: 'Transfer ticket' })
   await expect(transferDialog).toBeVisible()
   await transferDialog.getByLabel('Available operator').selectOption({ label: 'Handoff Operator' })
+  await captureLab7Evidence(operator, testInfo, 'L7-B03-transfer-dialog-eligible-operator.png')
   await transferDialog.getByRole('button', { name: 'Transfer ticket' }).click()
   await expect(operator.getByRole('status')).toHaveText('Ticket 5 transferred to Handoff Operator.')
   await expect(operator.getByTestId('operator-current-ticket')).toHaveCount(0)
   await expect(operator.getByRole('button', { name: 'Start service' })).toHaveCount(0)
   await expect(operator.getByText('No customers are waiting.')).toBeFocused()
+  await captureLab7Evidence(operator, testInfo, 'L7-B04-former-assignee-no-longer-has-ticket.png')
 
+  await operator.setViewportSize({ width: 320, height: 780 })
   await operator.getByRole('button', { name: 'Sign out' }).click()
   await expect(operator).toHaveURL(/\/$/)
   await operator.goto('/login')
@@ -230,10 +246,13 @@ test('customer joins and recovers a ticket; operator serves, skips, and hands of
   await expect(operator.getByRole('navigation', { name: 'Application' })).toBeVisible()
   await expect(operator.getByRole('heading', { name: 'Operator queue' })).toBeVisible()
   await expect(operator.getByTestId('operator-current-ticket')).toHaveText('5')
+  await operator.setViewportSize({ width: 1280, height: 960 })
+  await captureLab7Evidence(operator, testInfo, 'L7-B05-recipient-operator-inherits-ticket.png')
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Start service' }))
   await expect(operator.getByText('In service', { exact: true })).toBeVisible()
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Complete service' }))
   await expect(operator.getByText('Service completed.')).toBeVisible()
+  await captureLab7Evidence(operator, testInfo, 'L7-B06-recipient-completes-ticket.png')
 
   await operator.close()
 })
