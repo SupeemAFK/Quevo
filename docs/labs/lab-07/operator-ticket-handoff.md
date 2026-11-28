@@ -1,6 +1,6 @@
 # Lab 7 — Change request CR-L7-01: operator ticket handoff
 
-**Report status:** NOT READY for submission. The contract was reviewed before implementation in PR #91; the three implementation review requests are fixed and the final CI run passed. Teammate re-review, staging deployment, and deployed smoke evidence are still outstanding.
+**Report status:** UAT readiness READY for the maintained Sprint 1 scope. Production promotion is pending teammate review and merge of PR #96; the report does not claim production is already updated.
 **Report date:** 2026-11-28 (Thailand time)
 **Project/team:** Quevo · EN-046 · 2 Boys 1 Repo
 **Members:** Peeranat Ngamkiatkajorn (67070503429); Peemmapat Sripongsai (67070503436)
@@ -12,10 +12,12 @@
 | Version | Revision | Meaning |
 | --- | --- | --- |
 | Accepted Sprint 1 baseline | `82cd9c9693ea4e73f514929a09960647d56ef0ca` | Lab 6 reference release; contains the original assigned-operator and one-active-ticket rules. |
-| Pre-change staging candidate | `675df626b77d048c5e1dcc20577907d7b9995d43` (`origin/staging`) | Source commit for this maintenance change. The Cloud Run revision deployed from this commit has not been independently verified. |
-| Lab 7 release candidate | Code candidate `803262b` with subsequent review/evidence updates | PR #94 targets `staging`; CI runs `46123022741` and `46123593995` passed. Teammate re-review, merge, and deployment remain outstanding. |
+| Pre-change staging candidate | `675df626b77d048c5e1dcc20577907d7b9995d43` | Actual pre-change implementation on staging before CR-L7-01. |
+| Reviewed Lab 7 code | `803262b` with review fixes; report head `9f1642f` | PR #94 received final teammate approval, then merged to staging as `172729ff7b66874cfe8755dca7478a49061158e8` at 2026-11-28 15:17 ICT. |
+| Deployed UAT release | staging commit `172729ff7b66874cfe8755dca7478a49061158e8` | API `quevo-uat-api-sha-172729ff7b66-a1`; web `quevo-uat-web-sha-172729ff7b66-a1`. UAT workflow run `46125113341` passed. |
+| Main production promotion | PR #96, `staging` → `main` | CI run `46126418336` passed. Peer review is pending; production deployment has not run. PR #86 remains open and excluded. |
 
-The staging history after the accepted Sprint 1 baseline includes PRs #85 and #87–#92. PR #88 was the Lab 6 intentional validation exercise, #89 adjusted its E2E expectation, and #92 fixed the required email validation. These are intervening changes; this Lab 7 change is isolated from PR #86.
+The staging history after the accepted Sprint 1 baseline includes PRs #85 and #87–#92. PR #88 was the Lab 6 intentional validation exercise, #89 adjusted its E2E expectation, and #92 fixed required email validation. These intervening changes are part of the evolving application release. PR #86 is still open and is absent from staging and PR #96.
 
 ## Part A — Change impact and contract
 
@@ -29,7 +31,18 @@ The staging history after the accepted Sprint 1 baseline includes PRs #85 and #8
 
 **Scope and boundaries:** No transfer for `WAITING`, `COMPLETED`, or `SKIPPED` tickets; no self-transfer; no customer transfer; no cross-service transfer; no transfer to a busy or unauthorized operator. No transition, customer workflow, FIFO rule, or service configuration changes. The current Sprint 1 assignment rule is the thing being amended; this report does not claim that handoff existed in the accepted baseline.
 
-**Approval and review:** The professor's announcement supplied by the team says instructor/TA approval is not required for the Sprint 1 change. Teammate `jarbbie` approved the revised contract in [PR #91](https://github.com/SupeemAFK/Quevo/pull/91) at 2026-11-27 23:54 Thailand time; that contract-only PR merged at 23:56. The first implementation commit was at 2026-11-28 00:03 Thailand time, so the required teammate contract review happened before implementation. Issue #95 was added later as an implementation tracker; it is not the evidence for the pre-code review. The three requested PR #94 fixes are now committed, and teammate re-review is pending.
+**Approval and review:** The professor announced that instructor/TA approval is not required for the Sprint 1 change. Teammate `jarbbie` approved the contract-only PR #91 at 2026-11-27 23:54 ICT; it merged at 23:56. The first implementation commit followed at 2026-11-28 00:03 ICT. Issue #95 itself was created after implementation had begun and explicitly records that timing gap; the pre-code review evidence is PR #91, not issue #95. After three requested fixes, the code PR #94 received final approval at 2026-11-28 15:16 ICT and merged to staging one minute later.
+
+### Revised contract excerpts
+
+| Version | Requirement / rule | Contract text |
+| --- | --- | --- |
+| Sprint 1 baseline | FR-009 / BR-007 | Calling next assigns the waiting ticket to that operator; only the assignee may start, complete, or skip it. |
+| Sprint 1 baseline | BR-008 | An operator may have at most one active ticket. |
+| Lab 7 amendment | FR-025 | The current assignee may transfer an active ticket to an idle operator authorized for the same service; status and lifecycle timestamps are preserved and the transfer is recorded. |
+| Lab 7 amendment | BR-015 | Only the current assignee may transfer `PENDING` or `OPERATING`; assignment and audit commit atomically; status and lifecycle timestamps do not change. |
+
+The course announcement supplied by the team states that instructor/TA approval is not required for this change. Peer contract approval in PR #91 occurred before the first implementation commit.
 
 ### Impact and traceability
 
@@ -90,87 +103,92 @@ The RED fixture creates a synthetic customer ticket, has the seeded operator cal
 
 ### Verification results on the local candidate
 
-| Suite | Command | Result |
+| Suite | Command / version | Result |
 | --- | --- | --- |
-| Go unit suite | `GOCACHE=/tmp/quevo-go-build /usr/local/go/bin/go test ./...` from `apps/api` (Go 1.26.5) | 4 test-bearing packages passed; 0 failed. Other packages reported `[no test files]`. |
-| Go PostgreSQL integration suite | `GOCACHE=/tmp/quevo-go-build /usr/local/go/bin/go test -tags=integration ./...` from `apps/api` (Go 1.26.5) | 6 test-bearing packages passed; 0 failed. Includes migration/seed, queue API, authorization, concurrency, and handoff cases using disposable PostgreSQL 17 via Testcontainers. |
-| Web tests | `PATH=/home/supeem/.bun/bin:/home/supeem/.nvm/versions/node/v24.15.0/bin:$PATH bun run test -- --maxWorkers=1 --no-file-parallelism` from `apps/web` (Bun 1.3.13, Node 24.15.0) | 14 test files passed; 60 tests passed. |
-| Web typecheck | `bun run typecheck` from `apps/web` (Bun 1.3.13) | Passed (`tsc --noEmit`). |
-| Web lint | `bun run lint` from `apps/web` (Bun 1.3.13) | Passed; 63 files checked, no fixes required. |
-| OpenAPI TypeScript consistency | `bun run check:api` from `apps/web` | Passed. |
-| Browser E2E | Local Playwright `--list` parsed all 9 Chromium tests. The full local run could not start because Docker access is unavailable. CI run `46123593995` passed the updated suite, including transfer, focus restoration, former-assignee removal, recipient sign-in, and completion. | CI: **9 Chromium tests passed**. The two preceding CI attempts exposed test navigation assumptions; those were fixed before the passing run. |
+| Go unit tests | `go test ./...` (Go 1.26.5) | 4 test-bearing packages passed; 0 failed. Other packages had no test files. |
+| Go/PostgreSQL integration | `go test -tags=integration ./...` (Go 1.26.5; PostgreSQL 17 Testcontainers in CI) | 6 test-bearing packages passed; 0 failed, including queue, authorization, migration, and concurrency coverage. |
+| Web unit/component tests | `bun run test -- --maxWorkers=1 --no-file-parallelism` (Bun 1.3.13, Node 24.15.0) | 14 files / 60 tests passed. |
+| Web checks | `bun run typecheck`, `bun run lint`, `bun run check:api` | All passed; lint checked 63 files. |
+| Browser E2E | Playwright Chromium, CI | 9/9 passed, including customer join/recovery, operator actions, handoff dialog, focus return, recipient sign-in, and completion. |
 
-After the review fixes, local Go unit tests, `go vet ./...`, web lint/typecheck/API consistency, and all 60 web tests passed. The modified PostgreSQL integration test compiled locally; its container execution could not start because this environment cannot access Docker. CI runs `46123022741` and `46123593995` executed the full PostgreSQL integration suite, all 9 Chromium tests, and production image builds successfully. Earlier CI caught one Go staticcheck issue and two E2E navigation assertions; the code/test corrections passed in runs `46122420288`, `46123022741`, and `46123593995`. The Go OpenAPI annotation generator was unavailable because the environment could not reach `proxy.golang.org`; the JSON contract was updated, and `check:api` verified the generated client against it.
+The local environment could run Go unit/vet and web tests, but cannot start Testcontainers because Docker access is unavailable. CI executed the PostgreSQL integration suite and browser suite on the reviewed commits.
 
 ### Review, CI, deployment, and post-deployment checks
 
-| Required evidence | Status |
+| Required evidence | Result |
 | --- | --- |
-| Change request and reviewed contract | Complete: contract-only PR #91 documents CR-L7-01, was approved before the first code commit, and is linked as the pre-implementation change request. Issue #95 was created later as an implementation tracker. |
-| Teammate contract review before code | Complete: `jarbbie` approved contract-only PR #91 at 2026-11-27 23:54 Thailand time; it merged before the first implementation commit at 2026-11-28 00:03. |
-| Teammate code/PR review | `jarbbie` requested browser handoff coverage, focus restoration, and a migration-ledger assertion that does not hard-code the total count. All three are fixed through code commit `803262b`; evidence/report head is `44edbed`; re-review is still required. |
-| CI on the Lab 7 commits | Runs `46079877876` (staticcheck failure), `46080085875`, `46081073959`, `46081524297`, and `46082115861` (pass), `46121740761` and `46122126910` (E2E test assertion failures), and `46122420288`, `46123022741`, and `46123593995` (pass after corrections). The latest run passed Lint Web, Lint Go, all tests including PostgreSQL integration and 9 Chromium tests, and production image builds. |
-| Merge into staging and identify accepted main release | Not done. |
-| Cloud Run UAT deployment/revision | Not verified. |
-| Deployed handoff and preserved Sprint 1 smoke tests | Not run. |
+| Pre-code contract review | Complete: PR #91 approved by `jarbbie` at 2026-11-27 23:54 ICT, before the first implementation commit at 2026-11-28 00:03 ICT. |
+| Code review | Complete: PR #94 reviewer requested browser handoff coverage, focus restoration, and migration-ledger assertion. All three were fixed; final approval was submitted at 15:16 ICT on 2026-11-28. |
+| Lab 7 branch CI | 11 runs: 8 passed, 3 failed before correction (one staticcheck issue, two E2E navigation assertions). Full run list is in Part C. |
+| Staging merge | Complete: PR #94 merged as `172729ff7b66874cfe8755dca7478a49061158e8` at 15:17 ICT on 2026-11-28. |
+| UAT deployment | Complete: run `46125113341` passed CI, migration, Cloud Run deployment, health checks, and deployed image verification. API and web revisions are listed in the version table. |
+| Post-deployment behavior smoke | Complete: 11/11 authenticated API checks passed against UAT at 15:49 ICT. See evidence UAT-01 below. Temporary synthetic data was cleaned up. |
+| Main release | Pending: PR #96 targets `main`, its CI run `46126418336` passed, and Peeranat's re-review is requested. Production deployment will run on merge. |
+
+**UAT-01 — authenticated API smoke (2026-11-28 15:49 ICT; staging SHA `172729f`; UAT API revision `quevo-uat-api-sha-172729ff7b66-a1`):**
+
+```text
+PASS Customer joined General Service and received ticket 2 (HTTP 201)
+PASS Ticket owner read succeeded (HTTP 200); another customer was denied (HTTP 404)
+PASS Operator A called the waiting ticket: WAITING → PENDING
+PASS Before transfer, DB showed PENDING, Operator A, called_at set, zero handoffs
+PASS Handoff to same-service idle Operator B succeeded and status remained PENDING
+PASS called_at was identical before/after; one audit row recorded Operator A → B
+PASS Former assignee start request was denied (HTTP 404)
+PASS Recipient Operator B started and completed the ticket
+PASS Customer could still read the completed ticket
+PASS 11/11 smoke assertions passed; synthetic test accounts and records were removed
+```
+
+**Review evidence:** Peeranat's detailed PR #94 review confirmed the transaction preserved ticket state and timestamps, checked recipient eligibility, wrote the audit row atomically, and retained the active-ticket uniqueness guard. The three merge-gating requests (Playwright flow, focus restoration, migration-ledger assertion) were fixed in `6126d1e`, `05c2b13`, and `803262b`; the reviewer approved the updated PR at 15:16 ICT.
 
 ## Part C — Engineering metrics
 
-Snapshot time: 2026-11-28 14:54 Thailand time. Scope is PR #94 and its Lab 7 commits; run counts include events observed by this timestamp.
+Snapshot: 2026-11-28 15:52 ICT. Metrics are scoped to this repository and the Lab 7 / staging release window; issue #95 is a change request, not a defect.
 
-| ID | Metric definition and window | Value | Source |
+| ID | Metric definition and window | Value | Source / evidence |
 | --- | --- | --- | --- |
-| M1 | Go unit tests; one snapshot run on the Lab 7 candidate. | 4 test-bearing packages passed; 0 failures. | `GOCACHE=/tmp/quevo-go-build go test ./...` output. |
-| M2 | Go/PostgreSQL integration tests; one snapshot run. | 6 test-bearing packages passed; 0 failures, including handoff and migration tests. | `GOCACHE=/tmp/quevo-go-build go test -tags=integration ./...` output. |
-| M3 | Web unit/component tests; PR #94 CI run `46123022741`. | 14/14 files and 60/60 tests passed. | Embedded Vitest summary in CI log. |
-| M4 | Chromium E2E suite; PR #94 CI run `46123022741`. | 9/9 tests passed, including the handoff flow. | Embedded Playwright summary in CI log. |
-| M5 | PR CI run outcomes for branch `maintenance/lab7-ticket-handoff` through 2026-11-28 14:54 Thailand time. | 9 runs: 3 failed (one staticcheck issue and two E2E assertion issues); 6 passed. The latest run passed. | Actions runs `46079877876`, `46080085875`, `46081073959`, `46081524297`, `46082115861`, `46121740761`, `46122126910`, `46122420288`, and `46123022741`. |
+| M1 | Pull requests merged 2026-11-27 through 2026-11-28 that directly affected the Lab 6/7 release path. | 5 merged: #88 (staging), #89 (staging), #91 (contract branch), #92 (staging), #94 (staging). Exact merge times appear in the evidence list below. | GitHub pull-request records; merge commits `45349f0`, `3953475`, `8f819a9`, `675df62`, `172729f`. |
+| M2 | PR #94 CI runs from first run `46079877876` through latest run `46124024679`. | 11 runs: 8 pass, 3 fail (1 staticcheck issue; 2 E2E navigation assertions), all three corrected before merge. | Run IDs: `46079877876`, `46080085875`, `46081073959`, `46081524297`, `46082115861`, `46121740761`, `46122126910`, `46122420288`, `46123022741`, `46123593995`, `46124024679`. |
+| M3 | Automated suite results on final reviewed PR #94 CI run. | Go unit: 4 packages pass; Go integration: 6 packages pass; web: 14 files / 60 tests pass; Chromium E2E: 9 tests pass. | CI run `46124024679`; latest successful staging validation `46125113341`. |
+| M4 | Authenticated post-deployment UAT handoff smoke, 2026-11-28 15:49 ICT. | 11/11 checks pass, including owner access, non-owner denial, transfer, preserved timestamp/audit, former-assignee denial, recipient start/complete. | Evidence UAT-01; synthetic ticket 2 and associated data were removed afterward. |
+| M5 | Lab 7 handoff defects filed in GitHub as of 2026-11-28 15:52 ICT. | 0 handoff defects. Issue #95 is the open CR-L7-01 change request; it is not a defect. No claim is made about unrelated product defects. | GitHub issue list; PR #94 review history; scope limited to the handoff change. |
 
-**Readable result excerpts:**
+**Embedded source details:** PR #91 merged at 2026-11-27 23:56 ICT; #92 at 2026-11-28 00:22 ICT; #94 at 2026-11-28 15:17 ICT. PRs #88 and #89 merged at 13:15 and 13:39 ICT on 2026-11-27. The Lab 7 branch CI failures were `46079877876` (staticcheck), `46121740761`, and `46122126910` (E2E navigation assertions); successful final runs were `46122420288`, `46123022741`, `46123593995`, and `46124024679`. UAT deployment run `46125113341` completed successfully at 15:24 ICT.
 
-```text
-RED on 675df626: handoff options status = 404, want 200: 404 page not found
-GREEN on local implementation: ok example.com/quevo/apps/api/internal/queue
-Go unit: app/auth/health/config passed; 0 failed
-Go integration: app/auth/health/config/database/queue passed; 0 failed
-Vitest: Test Files 14 passed (14); Tests 60 passed (60)
-Playwright Chromium on 46123022741: 9 passed
-CI failures 46079877876 (staticcheck), 46121740761 and 46122126910 (E2E navigation assertions) were corrected
-CI runs 46080085875, 46081073959, 46081524297, 46082115861, 46122420288, 46123022741, and 46123593995: passed Lint Web, Lint Go, all tests, and production image builds
-Biome: Checked 63 files; No fixes applied
-```
+**Evidence-based action (under 100 words):** Three of eleven Lab 7 CI attempts failed before the final green run. Keep the two-operator handoff browser journey and PostgreSQL concurrency test as required CI gates, and repeat the authenticated UAT smoke on each release promotion. Peeranat owns confirming both checks remain required before the next production promotion.
 
-**Evidence-based action (under 100 words):** CI first caught a staticcheck issue and, after adding the handoff browser journey, two incorrect navigation expectations. The team corrected these and the full test/build workflow passed on run `46122420288`. Before release, Peeranat must re-review the fixes; the team must then merge through staging, deploy to UAT, and record smoke checks against the deployed SHA.
+
 
 ## Part D — Readiness and retrospective
 
 ### Readiness checklist
 
-| Item | State / evidence | Owner and next action |
+| Item | State / evidence | Owner / next action |
 | --- | --- | --- |
-| Submitted/deployed version | Code candidate `803262b` / report head `44edbed` in PR #94; UAT revision unknown. | Peemmapat: complete teammate re-review/merge flow, then record merge and Cloud Run revision. |
-| Defects | GitHub issue searches for “bug”, “defect”, and “uat” returned no issues as of 2026-11-28; open #95 is a change request and #56 is a chore. This does not prove that no user-found defects exist. The first CI staticcheck failure was corrected in `6132d3e`; final CI passed. | Team: reconcile the Lab 6 UAT team's actual findings and status before PDF. |
-| Automated checks | Local Go unit/vet, web tests/typecheck/lint/API schema check passed. CI run `46123593995` passed all tests including PostgreSQL integration and 9 Chromium tests, lint, and production image builds on the reviewed code. | Team: retain the CI URL and commit SHA in the final PDF. |
-| User checks | No independent post-deployment check of handoff or preserved customer ownership path. | Peeranat: perform UAT smoke after deployment and record expected/actual result and time. |
-| Technical debt | The requested browser handoff path, keyboard focus restoration, and specific migration-ledger assertion are implemented and passed CI. | Obtain reviewer confirmation. Regenerate OpenAPI annotations in a network-enabled environment if the checked JSON contract changes. |
-| Configuration/secrets | No new secrets or environment variables. Migration must be applied before API use. | Deployment owner: confirm the normal migration job completed before service rollout. |
-| Documentation/run instructions | SRS, SDS, traceability, and this change record are included in PR #94; pre-code contract review is complete, implementation re-review is pending. | Team: complete the implementation review and include selected excerpts in the PDF. |
-| CI/deployment/smoke | CI passed; no staging/main merge, Cloud Run deploy, or deployed smoke test yet. | Team: merge through staging/main after review, deploy, and smoke-test. |
+| Submitted/deployed version | Maintained Sprint 1 candidate on UAT: staging SHA `172729ff7b66874cfe8755dca7478a49061158e8`; API `quevo-uat-api-sha-172729ff7b66-a1`; web `quevo-uat-web-sha-172729ff7b66-a1`. | Peemmapat: complete the reviewed `staging` → `main` promotion in PR #96 and record production revision. |
+| Defects | No handoff defect is open. The three code-review blockers and three early CI failures were corrected. Issue #95 is CR-L7-01, not a defect. | Team: reconcile any independent user-reported defects before final submission. |
+| Automated checks | Final PR #94 CI passed unit, PostgreSQL integration, web, Playwright, lint, and image-build checks. PR #96 CI run `46126418336` also passed. | Keep the current CI gates on the production promotion. |
+| User / deployed checks | UAT-01: 11/11 authenticated smoke assertions passed, including changed handoff behavior and preserved customer ownership. | Peeranat: optionally repeat after any code change; no production queue mutation is planned for this report. |
+| Technical debt | P2: document the lock-order invariant between call-next and handoff before adding another ticket-reassignment path. P3: consider making candidate lookup a plain read instead of taking a row lock. Both were non-blocking reviewer observations; current concurrency tests pass. | Team: address before adding another assignment workflow; keep the concurrency test as a regression gate. |
+| Configuration / secrets | No new secret or runtime setting. Existing UAT workflow applied migration `000003_sprint1_ticket_handoffs` and verified image digests. | No additional configuration is needed for this change. |
+| Documentation / run instructions | SRS, traceability, and SDS were amended; PR #91 is the reviewed pre-code contract; this report includes UAT evidence. | Include this report and selected excerpts in the single PDF submission. |
+| CI / deployment / smoke | UAT deploy and smoke complete. Production promotion PR #96 is open, checks pass, peer review is pending. | Peemmapat: merge only after Peeranat's review; verify the main deployment workflow before calling the production release complete. |
 
-**Readiness decision: NOT READY** for the maintained Sprint 1 scope. The pre-implementation contract review is evidenced by PR #91 and the fixed implementation passed CI. PR #94 still needs teammate re-review, then staging/main integration, UAT deployment, and selected deployed smoke tests. No assertion is made that the whole three-sprint product is complete.
+**Readiness decision: READY for the maintained Sprint 1 scope in the deployed UAT release.** The changed handoff and preserved customer ownership path passed. The production promotion is not yet complete, so the overall Lab 7 submission remains pending main review, deployment, and production revision evidence. This decision concerns the maintained Sprint 1 scope, not the full three-sprint product.
 
 ### Retrospective
 
-- **What helped:** The team reviewed and merged the contract in PR #91 before implementation. The Sprint 1 PostgreSQL tests also exercise role, assignment, and active-ticket invariants, so the maintenance change could reuse real authorization and transaction boundaries.
-- **What hurt:** The initial evidence draft omitted PR #91 and incorrectly described the contract review as missing; the report is corrected to cite the approval and its timing. The local GitHub CLI token initially blocked remote work.
-- **What changes for Final Delivery:** The team will link the reviewed #91 contract from the implementation record, then connect review, test, PR, CI, deploy, and smoke evidence to one release SHA.
+- **What helped:** The contract was approved in PR #91 before implementation; the PostgreSQL test asserted state/timestamp preservation, authorization, audit insertion, and the call-next race. Peer review caught missing browser, focus, and migration-ledger evidence before merge.
+- **What hurt:** The issue tracker entry #95 was created after implementation started, even though PR #91 carried the contract first. Early CI also caught a staticcheck issue and two brittle E2E navigation expectations.
+- **What changes for Final Delivery:** Keep the handoff E2E and database concurrency checks mandatory, and run the same synthetic UAT smoke before each promotion; Peeranat will review the release evidence before main merge.
 
 ### Contributions, AI use, and limitations
 
 | Contributor | Work recorded for this change |
 | --- | --- |
-| Peemmapat Sripongsai (67070503436) | Selected the maintenance scope and requested implementation; final review/acceptance is not yet recorded. |
-| Peeranat Ngamkiatkajorn (67070503429) | Reviewed and approved the contract in PR #91 before implementation; reviewed PR #94 and requested three implementation fixes. |
-| Codex AI assistant | Assisted with implementation, tests, and draft documentation. Generated changes and results require team review; AI output is not teammate approval. |
+| Peemmapat Sripongsai (67070503436) | Authored the implementation, integration/E2E tests, review fixes, deployment evidence, and report updates in PR #94. |
+| Peeranat Ngamkiatkajorn (67070503429) | Reviewed/approved the contract in PR #91 before implementation; reviewed PR #94, required three fixes, and approved the corrected implementation. Requested re-review on PR #96 after UAT evidence was added. |
+| Codex AI assistant | Assisted with implementation, tests, evidence collection, and report drafting. The student team reviewed and accepted changes; AI output is not a substitute for teammate approval. |
 
-**Known limitations:** Issue #95 was created after implementation started, but the pre-code change contract and its teammate review are documented in PR #91. PR #94's latest fixes are awaiting teammate re-review. Local browser/database execution is unavailable without Docker; the clean CI run passed. No Cloud Run revision/smoke evidence or complete GitHub defect/UAT snapshot exists. Do not submit this draft as a complete Lab 7 report.
+**Known limitations:** Issue #95 was created after implementation work started; the versioned contract PR #91 was approved before code and the timing gap is disclosed. Local PostgreSQL-container execution was unavailable, but CI ran the full integration suite. The UAT smoke was authenticated API-level verification rather than a manual browser session; CI separately passed the Chromium handoff journey. Production promotion is still pending PR #96 review and deployment.
