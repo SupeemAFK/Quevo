@@ -98,7 +98,7 @@ func TestMigrationsAndSeedAreIdempotent(t *testing.T) {
 		want int
 	}{
 		{name: "branches", want: 1},
-		{name: "services", want: 1},
+		{name: "services", want: 6},
 		{name: "users", want: 2},
 		{name: "operator_services", want: 1},
 	} {

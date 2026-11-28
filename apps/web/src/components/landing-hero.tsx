@@ -26,7 +26,12 @@ function reveal(delay: number, reducedMotion: boolean) {
 
 export function LandingHero({ user }: LandingHeroProps) {
   const prefersReducedMotion = usePrefersReducedMotion()
-  const appPath = user?.role === 'CUSTOMER' ? '/customer' : '/operator'
+  const appPath =
+    user?.role === 'CUSTOMER'
+      ? '/customer'
+      : user?.role === 'BRANCH_MANAGER'
+        ? '/manager'
+        : '/operator'
 
   return (
     <MotionConfig reducedMotion="user">

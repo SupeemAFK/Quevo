@@ -12,9 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CustomerRouteImport } from './routes/customer'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ManagerRouteImport } from './routes/manager'
 import { Route as OperatorRouteImport } from './routes/operator'
-import { Route as HahaHelloRouteImport } from './routes/haha/hello'
 import { Route as TicketsTicketIdRouteImport } from './routes/tickets.$ticketId'
+import { Route as ApiTicketsTicketIdDocumentsRouteImport } from './routes/api.tickets.$ticketId.documents'
+import { Route as ApiTicketsTicketIdDocumentsDocumentIdRouteImport } from './routes/api.tickets.$ticketId.documents.$documentId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -31,14 +33,14 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ManagerRoute = ManagerRouteImport.update({
+  id: '/manager',
+  path: '/manager',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OperatorRoute = OperatorRouteImport.update({
   id: '/operator',
   path: '/operator',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HahaHelloRoute = HahaHelloRouteImport.update({
-  id: '/haha/hello',
-  path: '/haha/hello',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TicketsTicketIdRoute = TicketsTicketIdRouteImport.update({
@@ -46,31 +48,49 @@ const TicketsTicketIdRoute = TicketsTicketIdRouteImport.update({
   path: '/tickets/$ticketId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTicketsTicketIdDocumentsRoute =
+  ApiTicketsTicketIdDocumentsRouteImport.update({
+    id: '/api/tickets/$ticketId/documents',
+    path: '/api/tickets/$ticketId/documents',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiTicketsTicketIdDocumentsDocumentIdRoute =
+  ApiTicketsTicketIdDocumentsDocumentIdRouteImport.update({
+    id: '/$documentId',
+    path: '/$documentId',
+    getParentRoute: () => ApiTicketsTicketIdDocumentsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/customer': typeof CustomerRoute
   '/login': typeof LoginRoute
+  '/manager': typeof ManagerRoute
   '/operator': typeof OperatorRoute
-  '/haha/hello': typeof HahaHelloRoute
   '/tickets/$ticketId': typeof TicketsTicketIdRoute
+  '/api/tickets/$ticketId/documents': typeof ApiTicketsTicketIdDocumentsRouteWithChildren
+  '/api/tickets/$ticketId/documents/$documentId': typeof ApiTicketsTicketIdDocumentsDocumentIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/customer': typeof CustomerRoute
   '/login': typeof LoginRoute
+  '/manager': typeof ManagerRoute
   '/operator': typeof OperatorRoute
-  '/haha/hello': typeof HahaHelloRoute
   '/tickets/$ticketId': typeof TicketsTicketIdRoute
+  '/api/tickets/$ticketId/documents': typeof ApiTicketsTicketIdDocumentsRouteWithChildren
+  '/api/tickets/$ticketId/documents/$documentId': typeof ApiTicketsTicketIdDocumentsDocumentIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/customer': typeof CustomerRoute
   '/login': typeof LoginRoute
+  '/manager': typeof ManagerRoute
   '/operator': typeof OperatorRoute
-  '/haha/hello': typeof HahaHelloRoute
   '/tickets/$ticketId': typeof TicketsTicketIdRoute
+  '/api/tickets/$ticketId/documents': typeof ApiTicketsTicketIdDocumentsRouteWithChildren
+  '/api/tickets/$ticketId/documents/$documentId': typeof ApiTicketsTicketIdDocumentsDocumentIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -78,34 +98,41 @@ export interface FileRouteTypes {
     | '/'
     | '/customer'
     | '/login'
+    | '/manager'
     | '/operator'
-    | '/haha/hello'
     | '/tickets/$ticketId'
+    | '/api/tickets/$ticketId/documents'
+    | '/api/tickets/$ticketId/documents/$documentId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/customer'
     | '/login'
+    | '/manager'
     | '/operator'
-    | '/haha/hello'
     | '/tickets/$ticketId'
+    | '/api/tickets/$ticketId/documents'
+    | '/api/tickets/$ticketId/documents/$documentId'
   id:
     | '__root__'
     | '/'
     | '/customer'
     | '/login'
+    | '/manager'
     | '/operator'
-    | '/haha/hello'
     | '/tickets/$ticketId'
+    | '/api/tickets/$ticketId/documents'
+    | '/api/tickets/$ticketId/documents/$documentId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CustomerRoute: typeof CustomerRoute
   LoginRoute: typeof LoginRoute
+  ManagerRoute: typeof ManagerRoute
   OperatorRoute: typeof OperatorRoute
-  HahaHelloRoute: typeof HahaHelloRoute
   TicketsTicketIdRoute: typeof TicketsTicketIdRoute
+  ApiTicketsTicketIdDocumentsRoute: typeof ApiTicketsTicketIdDocumentsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -131,18 +158,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/manager': {
+      id: '/manager'
+      path: '/manager'
+      fullPath: '/manager'
+      preLoaderRoute: typeof ManagerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/operator': {
       id: '/operator'
       path: '/operator'
       fullPath: '/operator'
       preLoaderRoute: typeof OperatorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/haha/hello': {
-      id: '/haha/hello'
-      path: '/haha/hello'
-      fullPath: '/haha/hello'
-      preLoaderRoute: typeof HahaHelloRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tickets/$ticketId': {
@@ -152,16 +179,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TicketsTicketIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/tickets/$ticketId/documents': {
+      id: '/api/tickets/$ticketId/documents'
+      path: '/api/tickets/$ticketId/documents'
+      fullPath: '/api/tickets/$ticketId/documents'
+      preLoaderRoute: typeof ApiTicketsTicketIdDocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tickets/$ticketId/documents/$documentId': {
+      id: '/api/tickets/$ticketId/documents/$documentId'
+      path: '/$documentId'
+      fullPath: '/api/tickets/$ticketId/documents/$documentId'
+      preLoaderRoute: typeof ApiTicketsTicketIdDocumentsDocumentIdRouteImport
+      parentRoute: typeof ApiTicketsTicketIdDocumentsRoute
+    }
   }
 }
+
+interface ApiTicketsTicketIdDocumentsRouteChildren {
+  ApiTicketsTicketIdDocumentsDocumentIdRoute: typeof ApiTicketsTicketIdDocumentsDocumentIdRoute
+}
+
+const ApiTicketsTicketIdDocumentsRouteChildren: ApiTicketsTicketIdDocumentsRouteChildren =
+  {
+    ApiTicketsTicketIdDocumentsDocumentIdRoute:
+      ApiTicketsTicketIdDocumentsDocumentIdRoute,
+  }
+
+const ApiTicketsTicketIdDocumentsRouteWithChildren =
+  ApiTicketsTicketIdDocumentsRoute._addFileChildren(
+    ApiTicketsTicketIdDocumentsRouteChildren,
+  )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CustomerRoute: CustomerRoute,
   LoginRoute: LoginRoute,
+  ManagerRoute: ManagerRoute,
   OperatorRoute: OperatorRoute,
-  HahaHelloRoute: HahaHelloRoute,
   TicketsTicketIdRoute: TicketsTicketIdRoute,
+  ApiTicketsTicketIdDocumentsRoute:
+    ApiTicketsTicketIdDocumentsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

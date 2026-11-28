@@ -9,7 +9,7 @@ The API uses the following PostgreSQL tables, created by the versioned migration
 | Table | Field | Type/meaning |
 | --- | --- | --- |
 | `users` | `id` | UUID primary key |
-| `users` | `role` | `CUSTOMER` or `OPERATOR` |
+| `users` | `role` | `CUSTOMER`, `OPERATOR`, or `BRANCH_MANAGER` |
 | `users` | `display_name` | Name returned by `/auth/me` |
 | `users` | `email` | Unique email; lookup trims whitespace and ignores case |
 | `users` | `password_hash` | bcrypt password hash; plaintext passwords are never stored |
@@ -19,6 +19,7 @@ The API uses the following PostgreSQL tables, created by the versioned migration
 | `sessions` | `created_at`, `expires_at` | UTC session timestamps |
 | `sessions` | `revoked_at` | Nullable UTC revocation timestamp |
 | `operator_services` | `operator_id`, `service_id` | Composite primary key linking an operator to an authorized service |
+| `branch_managers` | `branch_id`, `manager_id` | Composite primary key linking a branch manager to each branch they may configure |
 
 Session tokens contain 256 bits of cryptographic randomness. The API persists only their SHA-256 hashes. Session lifetime defaults to 12 hours and can be changed with `SESSION_TTL`; the API returns the expiry time so the web cookie uses the same lifetime.
 
@@ -36,7 +37,7 @@ The API token is passed from the TanStack Start server function to Go in the `Au
 
 TanStack Start server functions are the only browser-to-API path. Login and logout use POST server functions; Start's request-origin checks protect those calls against cross-site requests. The Go API still enforces sessions and roles, so hiding a UI action is not treated as authorization.
 
-Authentication failures use the shared safe error shape `{ "code", "message", "requestId" }`. Unknown emails and incorrect passwords have the same `401` response. Missing, expired, or revoked sessions return `401`; authenticated users with a wrong role or service assignment receive `403`. Queue handlers should use `RequireOperatorService` with the route's `serviceID` parameter. Customer ticket endpoints must scope their repository read to the authenticated customer and return `404` for another customer's ticket.
+Authentication failures use the shared safe error shape `{ "code", "message", "requestId" }`. Unknown emails and incorrect passwords have the same `401` response. Missing, expired, or revoked sessions return `401`; authenticated users with a wrong role or service assignment receive `403`. Operator reads and mutations are scoped to queue/counter assignments. Branch-manager operations verify an explicit `branch_managers` assignment on every request. Customer ticket reads and cancellation are scoped to the authenticated customer and return `404` for another customer's ticket. Ticket history is restricted to the assigned branch manager or an operator assigned to the ticket's queue.
 
 ## Local readiness
 

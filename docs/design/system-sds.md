@@ -137,6 +137,8 @@ Auth, customer queue, and issue #12 operator paths are implemented contracts. Th
 | Operator queue overview | GET /api/v1/operator/queues | Authenticated operator. Return only authorized queues. |
 | Queue detail | GET /api/v1/operator/branches/{branchId}/services/{serviceId}/tickets | Authenticated operator authorized for that service. Return only permitted waiting tickets and that operator's current ticket. |
 | Call next | POST /api/v1/operator/branches/{branchId}/services/{serviceId}/tickets/call-next | Authenticated authorized operator. Atomically assign the oldest eligible ticket and set PENDING. |
+| Handoff recipients | GET /api/v1/operator/tickets/{ticketId}/handoff-targets | Current assignee of an active ticket. Return only other operators authorized for the same queue who have no active ticket. |
+| Handoff ticket | POST /api/v1/operator/tickets/{ticketId}/handoff | Current assignee transfers a PENDING or OPERATING ticket to an eligible same-queue operator. Atomically change assignment, preserve lifecycle state, and record handoff audit details. |
 | Start service | POST /api/v1/operator/tickets/{ticketId}/start | Assigned operator; transition PENDING to OPERATING. |
 | Complete service | POST /api/v1/operator/tickets/{ticketId}/complete | Assigned operator; transition OPERATING to COMPLETED. |
 | Skip ticket | POST /api/v1/operator/tickets/{ticketId}/skip | Assigned operator; transition PENDING to SKIPPED. |
@@ -161,6 +163,8 @@ The product queue is identified by branch, service, and branch-local business da
 | Unexpected service failure | 500 Internal Server Error |
 
 Use one documented JSON error envelope with a stable machine-readable code, safe user-facing message, request ID, and optional field errors. Final names and exact mapping are set with the OpenAPI contracts. Do not expose whether an inaccessible customer ticket belongs to another user.
+
+The Lab 7 handoff command locks the involved operators and ticket in one transaction, verifies that the actor owns the active ticket, verifies recipient queue authorization and workload, updates `assigned_operator_id`, and records an audit event with the previous and new assignee. A versioned migration extends the ticket event record for handoffs; deployment must apply migrations before the new API uses that record.
 
 ## 5. Web and UI conventions
 
@@ -386,7 +390,7 @@ This ER diagram is conceptual. Exact PostgreSQL types, email format, indexes, an
 | One queue-number counter per branch/service/business date. | Primary or unique key across branch_id, service_id, business_date. |
 | Ticket number is unique in its agreed branch/service/date scope. | Unique constraint across branch_id, service_id, business_date, ticket_number. |
 | Only Sprint 1 ticket states persist. | CHECK constraint for WAITING, PENDING, OPERATING, COMPLETED, SKIPPED. Add CANCELLED or NO_SHOW only in a reviewed migration after their policies are approved. |
-| A customer has at most one active ticket in a queue. | Partial unique index across customer_id, branch_id, service_id, business_date for active statuses. |
+| A customer has at most one active ticket across the product. | Customer-row transaction lock plus a partial unique index on customer_id for active statuses. |
 | An operator has at most one active assigned ticket. | Partial unique index on assigned_operator_id for PENDING and OPERATING tickets. |
 | Queue reads are efficient and FIFO. | Index on branch_id, service_id, business_date, status, joined_at, id. |
 | Session token cannot map to multiple sessions. | Unique token_hash; expiry and revocation are checked by the API. |
@@ -399,13 +403,13 @@ A state/timestamp check should require called_at for PENDING and later states, s
 
 1. Begin a PostgreSQL transaction.
 2. Confirm the branch service exists and is available to customers.
-3. Ensure the QueueSequence row exists for the branch/service/business-date key, then lock it with SELECT FOR UPDATE.
-4. Check for an existing active ticket for this customer and queue.
+3. Lock the customer row with SELECT FOR UPDATE and reject the join if that customer has any WAITING, PENDING, or OPERATING ticket.
+4. Ensure the QueueSequence row exists for the branch/service/business-date key, then lock it with SELECT FOR UPDATE.
 5. Increment last_issued while holding the row lock and format the next ticket number using the agreed policy.
 6. Insert a WAITING ticket with customer, service, branch, number, and joined_at.
 7. Commit. If any step fails, roll back both the counter increment and ticket insert.
 
-The partial unique active-ticket index is the final concurrency guard if two joins race. Map its conflict to the documented conflict response without exposing database details.
+The partial unique active-ticket index is the final concurrency guard if two joins race. Map its conflict to the documented conflict response without exposing database details. The customer row lock serializes cross-service joins from the same customer.
 
 ### 10.3 Call-next transaction
 

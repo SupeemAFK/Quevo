@@ -50,6 +50,19 @@ func TestQueueRepositoryPostgres(t *testing.T) {
 	if _, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: database.DemoCustomerID, BranchID: database.DemoBranchID, ServiceID: database.DemoServiceID, BusinessDate: date}); !errors.Is(err, ErrActiveTicket) {
 		t.Fatalf("duplicate join error = %v; want ErrActiveTicket", err)
 	}
+	if _, err := repo.JoinQueue(ctx, JoinQueueInput{
+		CustomerID: database.DemoCustomerID, BranchID: database.DemoBranchID,
+		ServiceID:    "10000000-0000-4000-8000-000000000010",
+		QueueID:      "10000000-0000-4000-8000-000000000010",
+		BusinessDate: date.AddDate(0, 0, 1),
+		RequestAnswers: map[string]string{
+			"10000000-0000-4000-8000-000000000020": "Everyday account",
+			"10000000-0000-4000-8000-000000000025": "Individual",
+			"10000000-0000-4000-8000-000000000026": "I am opening an everyday account.",
+		},
+	}); !errors.Is(err, ErrActiveTicket) {
+		t.Fatalf("cross-service next-day join error = %v; want ErrActiveTicket", err)
+	}
 	second, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: customer2, BranchID: database.DemoBranchID, ServiceID: database.DemoServiceID, BusinessDate: date})
 	if err != nil || second.TicketNumber != "2" {
 		t.Fatalf("second join = %#v, err %v; want ticket 2 (duplicate must not consume sequence)", second, err)
@@ -59,8 +72,8 @@ func TestQueueRepositoryPostgres(t *testing.T) {
 	}
 
 	rollbackDate := date.AddDate(0, 0, 1)
-	if _, err := db.ExecContext(ctx, `INSERT INTO queue_sequences (branch_id, service_id, business_date, last_issued)
-		VALUES ($1, $2, $3, 42)`, database.DemoBranchID, database.DemoServiceID, rollbackDate); err != nil {
+	if _, err := db.ExecContext(ctx, `INSERT INTO queue_sequences (branch_id, service_id, queue_id, business_date, last_issued)
+		VALUES ($1, $2, $2, $3, 42)`, database.DemoBranchID, database.DemoServiceID, rollbackDate); err != nil {
 		t.Fatalf("prepare rollback queue sequence: %v", err)
 	}
 	assertJoinRollsBackSequence(t, ctx, db, repo, rollbackDate, customer5)
@@ -162,7 +175,7 @@ func assertJoinRollsBackSequence(t *testing.T, ctx context.Context, db *sql.DB, 
 		t.Fatal("join succeeded despite the test ticket constraint")
 	}
 	var lastIssued int64
-	if err := db.QueryRowContext(ctx, `SELECT last_issued FROM queue_sequences WHERE branch_id = $1 AND service_id = $2 AND business_date = $3`, database.DemoBranchID, database.DemoServiceID, date).Scan(&lastIssued); err != nil || lastIssued != 42 {
+	if err := db.QueryRowContext(ctx, `SELECT last_issued FROM queue_sequences WHERE branch_id = $1 AND queue_id = $2 AND business_date = $3`, database.DemoBranchID, database.DemoServiceID, date).Scan(&lastIssued); err != nil || lastIssued != 42 {
 		t.Fatalf("queue sequence after failed join = %d, err %v; want 42", lastIssued, err)
 	}
 	var ticketCount int

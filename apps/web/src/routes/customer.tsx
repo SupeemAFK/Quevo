@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { RefreshCw, TicketCheck } from 'lucide-react'
+import { useState } from 'react'
 import { AuthenticatedShell } from '@/components/authenticated-shell'
 import { CustomerServiceSelection } from '@/components/customer-service-selection'
 import { FeedbackMessage, LoadingMessage } from '@/components/feedback-message'
@@ -8,6 +9,7 @@ import { PageHeading } from '@/components/page-heading'
 import { Button } from '@/components/ui/button'
 import { getCurrentUser } from '@/lib/auth'
 import { customerQueueOptions, customerTicketOptions, joinQueue } from '@/lib/customer-queue'
+import { uploadTicketDocument } from '@/lib/ticket-documents'
 
 export const Route = createFileRoute('/customer')({
   beforeLoad: async () => {
@@ -27,24 +29,50 @@ function CustomerServicesPage() {
   })
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const [notice, setNotice] = useState('')
   const joinMutation = useMutation({
-    mutationFn: (service: { branchId: string; serviceId: string }) => joinQueue({ data: service }),
+    mutationFn: async (service: {
+      branchId: string
+      serviceId: string
+      queueId: string
+      requestAnswers: Record<string, string>
+      documents: File[]
+    }) => {
+      const { documents, ...joinInput } = service
+      const ticket = await joinQueue({ data: joinInput })
+      const uploadResults = await Promise.all(
+        documents.map(async (file) => {
+          try {
+            await uploadTicketDocument(ticket.id, file)
+            return ''
+          } catch (uploadError) {
+            return uploadError instanceof Error
+              ? uploadError.message
+              : 'A document could not be uploaded.'
+          }
+        }),
+      )
+      return { ticket, uploadError: uploadResults.find(Boolean) ?? '' }
+    },
     onError: async () => {
       await queryClient.invalidateQueries({ queryKey: customerQueueOptions(user.id).queryKey })
     },
-    onSuccess: async (ticket) => {
+    onSuccess: async ({ ticket, uploadError }) => {
       queryClient.setQueryData(customerTicketOptions(user.id, ticket.id).queryKey, ticket)
       queryClient.setQueryData(customerQueueOptions(user.id).queryKey, (current) =>
         current
           ? {
               ...current,
-              activeTickets: [
-                ticket,
-                ...current.activeTickets.filter((activeTicket) => activeTicket.id !== ticket.id),
-              ],
+              activeTickets: [ticket],
             }
           : current,
       )
+      if (uploadError) {
+        setNotice(
+          `Ticket ${ticket.ticketNumber} was created, but a document could not be uploaded (${uploadError}). Open your ticket below to try again.`,
+        )
+        return
+      }
       await navigate({
         to: '/tickets/$ticketId',
         params: { ticketId: ticket.id },
@@ -95,9 +123,17 @@ function CustomerServicesPage() {
             error={joinMutation.error?.message ?? ''}
             activeTickets={queueQuery.data.activeTickets}
             joining={joinMutation.isPending}
-            onJoin={(service) => {
+            notice={notice}
+            onJoin={(service, queueID, requestAnswers, documents) => {
               joinMutation.reset()
-              joinMutation.mutate({ branchId: service.branchId, serviceId: service.id })
+              setNotice('')
+              joinMutation.mutate({
+                branchId: service.branchId,
+                serviceId: service.id,
+                queueId: queueID,
+                requestAnswers,
+                documents,
+              })
             }}
             services={queueQuery.data.services}
           />

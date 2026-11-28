@@ -23,7 +23,7 @@ make migrate-up
 make seed-demo
 ```
 
-The seed creates one UTC demo branch, one active service, a customer, an operator, and the operator's service authorization. It generates a random password for each new account and stores the bcrypt hash in PostgreSQL. Run it in a private terminal and save the generated login details when they appear. Rerunning the seed preserves existing passwords.
+The seed creates one UTC demo branch, a sample bank service catalog with service-specific request forms, six default queues, one counter and its operator assignments, and customer/operator/branch-manager accounts. Account Opening and Personal Loan Application require an uploaded supporting document before an operator can start service. Attachments are private to the ticket and limited to five PDF, PNG, or JPG files of at most 10 MiB each. The demo upload path does not include malware scanning; production deployment must add a private object store, encryption-at-rest policy, document scanning, and retention controls before accepting real customer files. See [branch management and customer documents](../../docs/branch-management.md). The seed generates a random password for each new account and stores the bcrypt hash in PostgreSQL. Run it in a private terminal and save the generated login details when they appear. Rerunning the seed preserves existing passwords.
 
 ## Logging
 

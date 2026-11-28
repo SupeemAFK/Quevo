@@ -28,16 +28,40 @@ test('customer joins and recovers a ticket; operator serves, skips, and hands of
   await page.getByLabel('Password').fill(customerPassword)
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  await activateWithKeyboard(
-    page,
-    page.getByRole('button', { name: 'Open navigation menu' }),
-  )
-  const openCustomerQueue = page.getByRole('link', { name: 'Open customer queue' })
-  await expect(openCustomerQueue).toBeVisible()
-  await activateWithKeyboard(page, openCustomerQueue)
   await expect(page.getByRole('heading', { name: 'Select a service' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Select a service' })).toBeFocused()
   await expectNoHorizontalOverflow(page)
+
+  await page.getByRole('radio', { name: /Account Opening.*Quevo Demo Branch/ }).click()
+  await expect(page.getByRole('group', { name: 'A few details for the team' })).toBeVisible()
+  await expect(page.getByText('Supporting documents')).toBeVisible()
+  const accountType = page.getByRole('combobox', { name: 'Which account are you interested in?' })
+  await accountType.click()
+  await page.getByRole('option', { name: 'Savings account' }).click()
+  const accountHolders = page.getByRole('combobox', { name: 'Individual or joint account?' })
+  await accountHolders.click()
+  await page.getByRole('option', { name: 'Individual' }).click()
+  await page
+    .getByRole('textbox', { name: 'What would you like to ask the account team?' })
+    .fill('I would like to compare the available savings accounts.')
+  await page.getByLabel('Upload files').setInputFiles({
+    name: 'proof-of-address.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/AAAAAElFTkSuQmCC',
+      'base64',
+    ),
+  })
+  await expect(page.getByAltText('Preview of proof-of-address.png')).toBeVisible()
+  await page.getByRole('button', { name: 'Join queue' }).click()
+  await expect(page.getByRole('heading', { name: 'Your ticket' })).toBeVisible()
+  await expect(page.getByText('1 document attached')).toBeVisible()
+  await page.getByRole('button', { name: 'Leave queue', exact: true }).click()
+  const cancelTicketDialog = page.getByRole('alertdialog', { name: 'Leave this queue?' })
+  await expect(cancelTicketDialog).toBeVisible()
+  await cancelTicketDialog.getByRole('button', { name: 'Leave queue', exact: true }).click()
+  await expect(page.getByRole('status')).toHaveText('Ticket cancelled.')
+  await page.goto('/customer')
 
   const secondDevice = await browser.newPage()
   await secondDevice.goto('/login')
@@ -45,8 +69,9 @@ test('customer joins and recovers a ticket; operator serves, skips, and hands of
   await secondDevice.getByLabel('Email').fill('customer@quevo.local')
   await secondDevice.getByLabel('Password').fill(customerPassword)
   await secondDevice.getByRole('button', { name: 'Sign in' }).click()
-  await expect(secondDevice.getByRole('link', { name: 'Open customer queue' })).toBeVisible()
+  await expect(secondDevice.getByRole('navigation', { name: 'Application' })).toBeVisible()
   await secondDevice.goto('/customer')
+  await secondDevice.getByRole('radio', { name: /General Service.*Quevo Demo Branch/ }).click()
   await expect(secondDevice.getByText('General Service')).toBeVisible()
   await expect(secondDevice.getByRole('button', { name: 'Join queue' })).toBeEnabled()
   await secondDevice.getByRole('button', { name: 'Join queue' }).click()
@@ -77,10 +102,12 @@ test('customer joins and recovers a ticket; operator serves, skips, and hands of
   await secondDevice.close()
 
   await expect(page.getByText('General Service')).toBeVisible()
-  await activateWithKeyboard(page, page.getByRole('button', { name: 'Join queue' }))
+  await page.getByRole('radio', { name: /General Service.*Quevo Demo Branch/ }).click()
   await expectMinimumTouchTarget(page.getByRole('button', { name: 'Join queue' }))
+  await page.getByRole('radio', { name: /General Service.*Quevo Demo Branch/ }).click()
+  await activateWithKeyboard(page, page.getByRole('button', { name: 'Join queue' }))
   await expect(page.getByRole('alert')).toHaveText(
-    'You already have an active ticket for this service today.',
+    'You already have an active ticket. Finish or cancel it before joining another service.',
   )
   const recoveredTicketLink = page.getByRole('link', {
     name: /View ticket 1 \(General Service at Quevo Demo Branch\)/,
@@ -100,13 +127,6 @@ test('customer joins and recovers a ticket; operator serves, skips, and hands of
   await operator.getByLabel('Email').fill('operator@quevo.local')
   await operator.getByLabel('Password').fill(process.env.QUEVO_E2E_OPERATOR_PASSWORD!)
   await operator.getByRole('button', { name: 'Sign in' }).click()
-  await activateWithKeyboard(
-    operator,
-    operator.getByRole('button', { name: 'Open navigation menu' }),
-  )
-  const openOperatorQueue = operator.getByRole('link', { name: 'Open operator queue' })
-  await expect(openOperatorQueue).toBeVisible()
-  await activateWithKeyboard(operator, openOperatorQueue)
   await expect(operator.getByRole('navigation', { name: 'Application' })).toBeVisible()
   await expect(operator.getByRole('link', { name: 'Operator queue' })).toHaveAttribute(
     'aria-current',
@@ -117,8 +137,12 @@ test('customer joins and recovers a ticket; operator serves, skips, and hands of
   await expectNoHorizontalOverflow(operator)
   await expectMinimumTouchTarget(operator.getByRole('button', { name: 'Refresh queue' }))
   await expect(operator.getByRole('navigation', { name: 'Assigned queues' })).toHaveCount(0)
-  await expect(operator.getByText('General Service')).toBeVisible()
-  await expect(operator.getByText('Quevo Demo Branch')).toBeVisible()
+  await operator.getByRole('combobox', { name: 'Service' }).click()
+  await operator.getByRole('option', { name: /General Service/ }).click()
+  await expect(operator.getByText('General Service', { exact: true })).toBeVisible()
+  await expect(
+    operator.getByRole('region', { name: 'Current ticket' }).getByText('Quevo Demo Branch'),
+  ).toBeVisible()
   await expect(operator.getByText('1 ticket', { exact: true })).toBeVisible()
   await expect(operator.getByText('Ticket 1', { exact: true })).toBeVisible()
   await expectMinimumTouchTarget(operator.getByRole('button', { name: 'Call next' }))
@@ -144,6 +168,7 @@ test('customer joins and recovers a ticket; operator serves, skips, and hands of
       name: 'Choose a service',
     }),
   )
+  await page.getByRole('radio', { name: /General Service.*Quevo Demo Branch/ }).click()
   await activateWithKeyboard(page, page.getByRole('button', { name: 'Join queue' }))
   await expect(page.getByTestId('ticket-number')).toHaveText('2')
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Refresh queue' }))
@@ -166,6 +191,7 @@ test('customer joins and recovers a ticket; operator serves, skips, and hands of
       name: 'Choose a service',
     }),
   )
+  await page.getByRole('radio', { name: /General Service.*Quevo Demo Branch/ }).click()
   await activateWithKeyboard(page, page.getByRole('button', { name: 'Join queue' }))
   await expect(page.getByTestId('ticket-number')).toHaveText('3')
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Refresh queue' }))
@@ -186,6 +212,7 @@ test('customer joins and recovers a ticket; operator serves, skips, and hands of
       name: 'Choose a service',
     }),
   )
+  await page.getByRole('radio', { name: /General Service.*Quevo Demo Branch/ }).click()
   await activateWithKeyboard(page, page.getByRole('button', { name: 'Join queue' }))
   await expect(page.getByTestId('ticket-number')).toHaveText('4')
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Refresh queue' }))
@@ -197,6 +224,7 @@ test('customer joins and recovers a ticket; operator serves, skips, and hands of
   await expect(operator.getByText('No customers are waiting.')).toBeFocused()
 
   await page.goto('/customer')
+  await page.getByRole('radio', { name: /General Service.*Quevo Demo Branch/ }).click()
   await page.getByRole('button', { name: 'Join queue' }).click()
   await expect(page.getByTestId('ticket-number')).toHaveText('5')
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Refresh queue' }))
@@ -220,13 +248,6 @@ test('customer joins and recovers a ticket; operator serves, skips, and hands of
   await operator.getByLabel('Email').fill('handoff-operator@quevo.local')
   await operator.getByLabel('Password').fill(process.env.QUEVO_E2E_OPERATOR_PASSWORD!)
   await operator.getByRole('button', { name: 'Sign in' }).click()
-  await activateWithKeyboard(
-    operator,
-    operator.getByRole('button', { name: 'Open navigation menu' }),
-  )
-  const openHandoffOperatorQueue = operator.getByRole('link', { name: 'Open operator queue' })
-  await expect(openHandoffOperatorQueue).toBeVisible()
-  await activateWithKeyboard(operator, openHandoffOperatorQueue)
   await expect(operator.getByRole('navigation', { name: 'Application' })).toBeVisible()
   await expect(operator.getByRole('heading', { name: 'Operator queue' })).toBeVisible()
   await expect(operator.getByTestId('operator-current-ticket')).toHaveText('5')
