@@ -170,6 +170,157 @@
   }
 }
 
+.ticket-reflective {
+  position: relative;
+  isolation: isolate;
+  transform: perspective(1100px) rotateX(var(--ticket-tilt-x, 0deg))
+    rotateY(var(--ticket-tilt-y, 0deg));
+  transform-style: preserve-3d;
+  transition:
+    transform 220ms ease-out,
+    border-color 180ms ease-out;
+}
+
+.queue-ticket {
+  --foreground: #f5f5f5;
+  --muted: #292a2b;
+  --muted-foreground: #b2b2b2;
+  --border: #414243;
+
+  overflow: visible;
+  border-color: #414243;
+  background: #1c1d1e;
+  color: #f5f5f5;
+  box-shadow:
+    0 18px 44px rgb(0 0 0 / 18%),
+    inset 0 1px 0 rgb(255 255 255 / 6%);
+}
+
+.queue-ticket-notch {
+  position: absolute;
+  z-index: 30;
+  top: 50%;
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 9999px;
+  background: var(--background);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.queue-ticket-notch-start {
+  left: -0.6875rem;
+}
+
+.queue-ticket-notch-end {
+  right: -0.6875rem;
+}
+
+.queue-ticket-perforation {
+  position: relative;
+  z-index: 20;
+  border-top: 1px dashed color-mix(in srgb, var(--border) 82%, transparent);
+}
+
+.ticket-stub {
+  border-top: 1px dashed var(--border);
+}
+
+@media (min-width: 48rem) {
+  .ticket-stub {
+    border-top: 0;
+    border-left: 1px dashed var(--border);
+  }
+}
+
+.ticket-reflective::before {
+  position: absolute;
+  z-index: -1;
+  inset: 5px -4px -6px 4px;
+  border: 1px solid var(--border);
+  border-radius: inherit;
+  content: "";
+  background: var(--muted);
+  transform: rotate(1deg);
+}
+
+.ticket-reflective::after {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  content: "";
+  pointer-events: none;
+  background:
+    radial-gradient(
+      380px circle at var(--ticket-shine-x, 50%) var(--ticket-shine-y, 0%),
+      color-mix(in srgb, var(--foreground) 10%, transparent),
+      transparent 74%
+    ),
+    linear-gradient(
+      118deg,
+      transparent 20%,
+      color-mix(in srgb, var(--foreground) 3%, transparent) 47%,
+      transparent 68%
+    ),
+    linear-gradient(
+      108deg,
+      transparent 42%,
+      color-mix(in srgb, var(--foreground) 11%, transparent) 50%,
+      transparent 58%
+    );
+  background-size:
+    auto,
+    auto,
+    260% 100%;
+  background-position:
+    center,
+    center,
+    -160% 0;
+  animation: ticket-shine-sweep 7s ease-in-out infinite;
+}
+
+@keyframes ticket-shine-sweep {
+  0%,
+  16% {
+    background-position:
+      center,
+      center,
+      -160% 0;
+  }
+
+  68%,
+  100% {
+    background-position:
+      center,
+      center,
+      160% 0;
+  }
+}
+
+.queue-flow-dashes {
+  animation: queue-dash-travel 4s linear infinite;
+}
+
+@keyframes queue-dash-travel {
+  to {
+    stroke-dashoffset: -23;
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .ticket-reflective:hover {
+    border-color: color-mix(in srgb, var(--foreground) 24%, var(--border));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticket-reflective {
+    transform: none;
+    transition: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

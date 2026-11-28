@@ -82,8 +82,17 @@ func TestOperatorQueueAPIWithPostgres(t *testing.T) {
 	}
 	overview := queueAPIRequest(router, "GET", "/api/v1/operator/queues", nil, operator)
 	var overviewBody OperatorQueuesResponse
-	if overview.Code != http.StatusOK || json.Unmarshal(overview.Body.Bytes(), &overviewBody) != nil || len(overviewBody.Items) != 1 || overviewBody.Items[0].WaitingCount != 2 {
-		t.Fatalf("operator overview = %d %s; want one authorized queue with two waiting", overview.Code, overview.Body.String())
+	if overview.Code != http.StatusOK || json.Unmarshal(overview.Body.Bytes(), &overviewBody) != nil || len(overviewBody.Items) != 6 {
+		t.Fatalf("operator overview = %d %s; want all six assigned demo queues", overview.Code, overview.Body.String())
+	}
+	var generalQueueFound bool
+	for _, item := range overviewBody.Items {
+		if item.QueueID == database.DemoServiceID {
+			generalQueueFound = item.WaitingCount == 2
+		}
+	}
+	if !generalQueueFound {
+		t.Fatalf("operator overview = %#v; want General Service to have two waiting", overviewBody.Items)
 	}
 	queueResponse := queueAPIRequest(router, "GET", queuePath, nil, operator)
 	var queueBody OperatorQueueDetailResponse

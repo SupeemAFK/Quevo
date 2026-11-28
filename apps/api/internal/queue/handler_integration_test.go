@@ -51,6 +51,12 @@ func TestCustomerQueueAPIWithPostgres(t *testing.T) {
 	authService := auth.NewService(auth.NewGORMRepository(gormDB), time.Hour)
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
+	router.Use(func(c *gin.Context) {
+		c.Next()
+		if len(c.Errors) > 0 {
+			t.Logf("request handler errors: %v", c.Errors)
+		}
+	})
 	api := router.Group("/api/v1")
 	auth.RegisterRoutes(api, authService)
 	RegisterRoutes(api, authService, NewRepository(gormDB))
@@ -65,9 +71,19 @@ func TestCustomerQueueAPIWithPostgres(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create OpenAPI router: %v", err)
 	}
-	assertContractResponse := func(method, path string, response *httptest.ResponseRecorder) {
+	assertContractResponse := func(method, path string, response *httptest.ResponseRecorder, requestBody ...any) {
 		t.Helper()
-		contractRequest := httptest.NewRequest(method, "http://api.test"+path, nil)
+		var body []byte
+		if len(requestBody) > 0 && requestBody[0] != nil {
+			body, err = json.Marshal(requestBody[0])
+			if err != nil {
+				t.Fatalf("encode contract request body: %v", err)
+			}
+		}
+		contractRequest := httptest.NewRequest(method, "http://api.test"+path, bytes.NewReader(body))
+		if len(requestBody) > 0 && requestBody[0] != nil {
+			contractRequest.Header.Set("Content-Type", "application/json")
+		}
 		route, pathParams, err := contractRouter.FindRoute(contractRequest)
 		if err != nil {
 			t.Fatalf("match OpenAPI route for %s %s: %v", method, path, err)
@@ -106,8 +122,15 @@ func TestCustomerQueueAPIWithPostgres(t *testing.T) {
 	if err := json.Unmarshal(services.Body.Bytes(), &serviceList); err != nil {
 		t.Fatalf("decode service list: %v", err)
 	}
-	if len(serviceList.Items) != 1 || serviceList.Items[0].ID != database.DemoServiceID {
-		t.Fatalf("available services = %#v; want only the seeded active service", serviceList.Items)
+	if len(serviceList.Items) != 6 || serviceList.Items[0].ID == "" {
+		t.Fatalf("available services = %#v; want the seeded bank service catalog", serviceList.Items)
+	}
+	for _, service := range serviceList.Items {
+		if service.ID == "10000000-0000-4000-8000-000000000010" {
+			if len(service.Fields) != 3 || service.Fields[0].Type != "single_select" || service.Fields[1].Type != "single_select" || service.Fields[2].Type != "long_text" {
+				t.Fatalf("account opening fields = %#v; want account choices and an optional long answer", service.Fields)
+			}
+		}
 	}
 	activeTickets := queueAPIRequest(router, http.MethodGet, "/api/v1/tickets/active", nil, customerSession)
 	if activeTickets.Code != http.StatusOK {
@@ -142,13 +165,68 @@ func TestCustomerQueueAPIWithPostgres(t *testing.T) {
 	if ticket.BusinessDate != expectedBusinessDate {
 		t.Fatalf("ticket business date = %q, want branch-local date %q", ticket.BusinessDate, expectedBusinessDate)
 	}
+	bankQueuePath := "/api/v1/branches/" + database.DemoBranchID + "/queues/10000000-0000-4000-8000-000000000010/tickets"
+	activeConflict := queueAPIRequest(router, http.MethodPost, bankQueuePath, map[string]any{
+		"requestAnswers": map[string]string{
+			"10000000-0000-4000-8000-000000000020": "Savings account",
+		},
+	}, customerSession)
+	if activeConflict.Code != http.StatusConflict || !strings.Contains(activeConflict.Body.String(), "Finish or cancel it before joining another service") {
+		t.Fatalf("cross-service active-ticket status = %d, want %d: %s", activeConflict.Code, http.StatusConflict, activeConflict.Body.String())
+	}
+	assertContractResponse(http.MethodPost, bankQueuePath, activeConflict, map[string]any{
+		"requestAnswers": map[string]string{
+			"10000000-0000-4000-8000-000000000020": "Savings account",
+		},
+	})
+	cancelled := queueAPIRequest(router, http.MethodPost, "/api/v1/tickets/"+ticket.ID+"/cancel", nil, customerSession)
+	if cancelled.Code != http.StatusOK {
+		t.Fatalf("cancel general ticket status = %d, want %d: %s", cancelled.Code, http.StatusOK, cancelled.Body.String())
+	}
+	assertContractResponse(http.MethodPost, "/api/v1/tickets/"+ticket.ID+"/cancel", cancelled)
+	invalidBankJoin := queueAPIRequest(router, http.MethodPost, bankQueuePath, map[string]any{
+		"requestAnswers": map[string]string{
+			"10000000-0000-4000-8000-000000000020": "Unlisted account type",
+		},
+	}, customerSession)
+	if invalidBankJoin.Code != http.StatusBadRequest {
+		t.Fatalf("invalid bank form status = %d, want %d: %s", invalidBankJoin.Code, http.StatusBadRequest, invalidBankJoin.Body.String())
+	}
+	assertContractResponse(http.MethodPost, bankQueuePath, invalidBankJoin, map[string]any{
+		"requestAnswers": map[string]string{
+			"10000000-0000-4000-8000-000000000020": "Unlisted account type",
+		},
+	})
+	bankAnswers := map[string]string{
+		"10000000-0000-4000-8000-000000000020": "Savings account",
+		"10000000-0000-4000-8000-000000000025": "Joint",
+		"10000000-0000-4000-8000-000000000026": "I want to compare the savings options.",
+	}
+	bankJoin := queueAPIRequest(router, http.MethodPost, bankQueuePath, map[string]any{
+		"requestAnswers": bankAnswers,
+	}, customerSession)
+	if bankJoin.Code != http.StatusCreated {
+		t.Fatalf("bank queue join status = %d, want %d: %s", bankJoin.Code, http.StatusCreated, bankJoin.Body.String())
+	}
+	assertContractResponse(http.MethodPost, bankQueuePath, bankJoin, map[string]any{"requestAnswers": bankAnswers})
+	var bankTicket TicketResponse
+	if err := json.Unmarshal(bankJoin.Body.Bytes(), &bankTicket); err != nil {
+		t.Fatalf("decode bank ticket: %v", err)
+	}
+	if bankTicket.ServiceName != "Account Opening" || !bankTicket.AllowsUploads || !bankTicket.RequiresDocuments || bankTicket.RequestAnswers["10000000-0000-4000-8000-000000000020"] != "Savings account" || bankTicket.RequestAnswers["10000000-0000-4000-8000-000000000026"] != "I want to compare the savings options." {
+		t.Fatalf("bank ticket = %#v; want saved form answer and required upload policy", bankTicket)
+	}
 	activeTickets = queueAPIRequest(router, http.MethodGet, "/api/v1/tickets/active", nil, customerSession)
 	if activeTickets.Code != http.StatusOK || json.Unmarshal(activeTickets.Body.Bytes(), &ticketList) != nil {
 		t.Fatalf("active-ticket list after joining = %d %s", activeTickets.Code, activeTickets.Body.String())
 	}
 	assertContractResponse(http.MethodGet, "/api/v1/tickets/active", activeTickets)
-	if len(ticketList.Items) != 1 || ticketList.Items[0].ID != ticket.ID {
-		t.Fatalf("active tickets after joining = %#v; want the customer's new ticket", ticketList.Items)
+	activeTicketIDs := make(map[string]bool, len(ticketList.Items))
+	for _, activeTicket := range ticketList.Items {
+		activeTicketIDs[activeTicket.ID] = true
+	}
+	if len(ticketList.Items) != 1 || !activeTicketIDs[bankTicket.ID] || activeTicketIDs[ticket.ID] {
+		t.Fatalf("active tickets after switching services = %#v; want only the bank ticket", ticketList.Items)
 	}
 
 	duplicate := queueAPIRequest(router, http.MethodPost, joinPath, nil, customerSession)
@@ -157,10 +235,10 @@ func TestCustomerQueueAPIWithPostgres(t *testing.T) {
 	}
 	assertContractResponse(http.MethodPost, joinPath, duplicate)
 	var ticketCount, lastIssued int64
-	if err := sqlDB.QueryRowContext(ctx, `SELECT count(*) FROM tickets WHERE customer_id = $1 AND business_date = $2`, database.DemoCustomerID, ticket.BusinessDate).Scan(&ticketCount); err != nil {
+	if err := sqlDB.QueryRowContext(ctx, `SELECT count(*) FROM tickets WHERE customer_id = $1 AND business_date = $2 AND queue_id = $3`, database.DemoCustomerID, ticket.BusinessDate, database.DemoServiceID).Scan(&ticketCount); err != nil {
 		t.Fatalf("count customer tickets after duplicate: %v", err)
 	}
-	if err := sqlDB.QueryRowContext(ctx, `SELECT last_issued FROM queue_sequences WHERE branch_id = $1 AND service_id = $2 AND business_date = $3`, database.DemoBranchID, database.DemoServiceID, ticket.BusinessDate).Scan(&lastIssued); err != nil {
+	if err := sqlDB.QueryRowContext(ctx, `SELECT last_issued FROM queue_sequences WHERE branch_id = $1 AND queue_id = $2 AND business_date = $3`, database.DemoBranchID, database.DemoServiceID, ticket.BusinessDate).Scan(&lastIssued); err != nil {
 		t.Fatalf("read queue number after duplicate: %v", err)
 	}
 	if ticketCount != 1 || lastIssued != 1 {
