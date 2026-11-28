@@ -3,7 +3,9 @@
 package queue
 
 import (
+	"database/sql"
 	"errors"
+	"strconv"
 	"testing"
 	"time"
 
@@ -105,12 +107,45 @@ func TestSprint2QueueExpansionPostgres(t *testing.T) {
 	if err != nil || cancelled.Status != "CANCELLED" {
 		t.Fatalf("cancelled ticket = %#v, err %v", cancelled, err)
 	}
+	var persistedStatus string
+	var persistedCancelledAt sql.NullTime
+	if err := db.QueryRowContext(ctx, `SELECT status, cancelled_at FROM tickets WHERE id = $1`, cancelled.ID).
+		Scan(&persistedStatus, &persistedCancelledAt); err != nil {
+		t.Fatalf("read persisted cancellation: %v", err)
+	}
+	if persistedStatus != "CANCELLED" || !persistedCancelledAt.Valid {
+		t.Fatalf("persisted cancellation = %s at %v; want CANCELLED with a timestamp", persistedStatus, persistedCancelledAt)
+	}
+	reread, err := repo.FindCustomerTicket(ctx, customer2, cancelled.ID)
+	if err != nil || reread.ID != cancelled.ID || reread.Status != "CANCELLED" {
+		t.Fatalf("reread cancelled ticket = %#v, err %v; want the same terminal ticket", reread, err)
+	}
+	var cancelEvents int
+	if err := db.QueryRowContext(ctx, `SELECT count(*) FROM ticket_events
+		WHERE ticket_id = $1 AND from_status = 'WAITING' AND to_status = 'CANCELLED'`, cancelled.ID).
+		Scan(&cancelEvents); err != nil || cancelEvents != 1 {
+		t.Fatalf("cancellation events = %d, err %v; want exactly one WAITING to CANCELLED event", cancelEvents, err)
+	}
+	if _, err := repo.CancelCustomerTicket(ctx, customer2, cancelled.ID); !errors.Is(err, ErrInvalidTransition) {
+		t.Fatalf("cancelling a terminal ticket = %v; want invalid transition", err)
+	}
 	if _, err := repo.CancelCustomerTicket(ctx, customer2, account.ID); !errors.Is(err, ErrTicketNotFound) {
 		t.Fatalf("another customer's cancellation = %v; want ticket not found", err)
 	}
 	rejoined, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: customer2, BranchID: database.DemoBranchID, ServiceID: database.DemoServiceID})
 	if err != nil || rejoined.ID == cancelled.ID {
 		t.Fatalf("customer rejoin after cancellation = %#v, err %v", rejoined, err)
+	}
+	cancelledNumber, err := strconv.Atoi(cancelled.TicketNumber)
+	if err != nil {
+		t.Fatalf("cancelled ticket number %q: %v", cancelled.TicketNumber, err)
+	}
+	rejoinedNumber, err := strconv.Atoi(rejoined.TicketNumber)
+	if err != nil || rejoinedNumber != cancelledNumber+1 {
+		t.Fatalf("rejoined ticket number = %q after %q; want the next number in the queue", rejoined.TicketNumber, cancelled.TicketNumber)
+	}
+	if _, err := repo.JoinQueue(ctx, JoinQueueInput{CustomerID: customer2, BranchID: database.DemoBranchID, ServiceID: database.DemoServiceID}); !errors.Is(err, ErrActiveTicket) {
+		t.Fatalf("second active ticket after rejoin = %v; want ErrActiveTicket", err)
 	}
 	if _, err := repo.CancelCustomerTicket(ctx, customer2, rejoined.ID); err != nil {
 		t.Fatalf("cancel rejoined ticket: %v", err)
@@ -126,6 +161,9 @@ func TestSprint2QueueExpansionPostgres(t *testing.T) {
 	called, ok, err = repo.CallNext(ctx, CallNextInput{OperatorID: database.DemoOperatorID, BranchID: database.DemoBranchID, QueueID: database.DemoServiceID})
 	if err != nil || !ok || called.ID != noShow.ID {
 		t.Fatalf("call next general ticket = %#v, found %v, err %v", called, ok, err)
+	}
+	if _, err := repo.CancelCustomerTicket(ctx, customer3, noShow.ID); !errors.Is(err, ErrInvalidTransition) {
+		t.Fatalf("cancelling a called ticket = %v; want invalid transition", err)
 	}
 	noShow, err = repo.MarkNoShow(ctx, database.DemoOperatorID, noShow.ID)
 	if err != nil || noShow.Status != "NO_SHOW" {
