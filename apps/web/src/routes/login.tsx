@@ -6,7 +6,7 @@ import { LoginForm } from '@/components/login-form'
 import { PageHeading } from '@/components/page-heading'
 import { QueueBackdrop } from '@/components/queue-backdrop'
 import { QuevoMark } from '@/components/quevo-mark'
-import { type Identity, signIn } from '@/lib/auth'
+import { signIn } from '@/lib/auth'
 import { usePrefersReducedMotion } from '@/lib/use-prefers-reduced-motion'
 
 export const Route = createFileRoute('/login')({
@@ -18,17 +18,10 @@ function LoginPage() {
   const queryClient = useQueryClient()
   const prefersReducedMotion = usePrefersReducedMotion()
 
-  function handleLoginSuccess(user: Identity) {
+  function handleLoginSuccess() {
     queryClient.removeQueries({ queryKey: ['customer'] })
     queryClient.removeQueries({ queryKey: ['operator'] })
-    void router.navigate({
-      to:
-        user.role === 'CUSTOMER'
-          ? '/customer'
-          : user.role === 'BRANCH_MANAGER'
-            ? '/manager'
-            : '/operator',
-    })
+    void router.navigate({ to: '/' })
   }
 
   return (

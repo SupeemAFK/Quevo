@@ -26,9 +26,6 @@ func ZapRequestLogger(logger *zap.Logger) gin.HandlerFunc {
 			zap.Duration("latency", time.Since(started)),
 		}
 		if c.Writer.Status() >= http.StatusInternalServerError {
-			if len(c.Errors) > 0 {
-				fields = append(fields, zap.Strings("errors", c.Errors.Errors()))
-			}
 			logger.Error("HTTP request", fields...)
 			return
 		}

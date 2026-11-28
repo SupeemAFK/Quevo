@@ -11,23 +11,17 @@ import (
 )
 
 type OperatorTicketResponse struct {
-	ID                string         `json:"id" binding:"required"`
-	TicketNumber      string         `json:"ticketNumber" binding:"required"`
-	Status            string         `json:"status" binding:"required"`
-	RequestAnswers    RequestAnswers `json:"requestAnswers" binding:"required"`
-	RequestLabels     RequestAnswers `json:"requestLabels" binding:"required"`
-	AllowsUploads     bool           `json:"allowsUploads"`
-	RequiresDocuments bool           `json:"requiresDocuments"`
-	BusinessDate      string         `json:"businessDate" binding:"required"`
-	JoinedAt          time.Time      `json:"joinedAt" binding:"required"`
+	ID           string    `json:"id" binding:"required"`
+	TicketNumber string    `json:"ticketNumber" binding:"required"`
+	Status       string    `json:"status" binding:"required"`
+	BusinessDate string    `json:"businessDate" binding:"required"`
+	JoinedAt     time.Time `json:"joinedAt" binding:"required"`
 }
 
 type OperatorQueueResponse struct {
 	BranchID     string `json:"branchId" binding:"required"`
 	BranchName   string `json:"branchName" binding:"required"`
 	ServiceID    string `json:"serviceId" binding:"required"`
-	QueueID      string `json:"queueId" binding:"required"`
-	QueueName    string `json:"queueName" binding:"required"`
 	ServiceName  string `json:"serviceName" binding:"required"`
 	BusinessDate string `json:"businessDate" binding:"required"`
 	WaitingCount int64  `json:"waitingCount"`
@@ -39,7 +33,6 @@ type OperatorQueuesResponse struct {
 type OperatorQueueDetailResponse struct {
 	Queue   OperatorQueueResponse    `json:"queue" binding:"required"`
 	Waiting []OperatorTicketResponse `json:"waiting" binding:"required"`
-	Recent  []OperatorTicketResponse `json:"recent" binding:"required"`
 	Current *OperatorTicketResponse  `json:"current,omitempty"`
 }
 
@@ -71,13 +64,9 @@ func registerOperatorRoutes(routes *gin.RouterGroup, service *auth.Service, repo
 	group.GET("/queues", h.listOperatorQueues)
 	group.GET("/branches/:branchID/services/:serviceID/tickets", h.getOperatorQueue)
 	group.POST("/branches/:branchID/services/:serviceID/tickets/call-next", h.callNext)
-	group.GET("/branches/:branchID/queues/:queueID/tickets", h.getOperatorQueueByID)
-	group.POST("/branches/:branchID/queues/:queueID/tickets/call-next", h.callNextByQueue)
 	group.POST("/tickets/:ticketID/start", h.startTicket)
 	group.POST("/tickets/:ticketID/complete", h.completeTicket)
 	group.POST("/tickets/:ticketID/skip", h.skipTicket)
-
-	group.POST("/tickets/:ticketID/no-show", h.noShowTicket)
 	group.GET("/tickets/:ticketID/handoff-options", h.listHandoffCandidates)
 	group.POST("/tickets/:ticketID/handoff", h.handoffTicket)
 }
@@ -164,38 +153,7 @@ func (h Handler) handoffTicket(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, OperatorHandoffResponse(handoff))
-
 }
-
-// getOperatorQueueByID returns the waiting order for one assigned queue.
-// @Summary Get an authorized queue
-// @Tags operator
-// @ID getOperatorQueueByID
-// @Produce json
-// @Param branchId path string true "Branch ID" format(uuid)
-// @Param queueId path string true "Queue ID" format(uuid)
-// @Security BearerAuth
-// @Success 200 {object} OperatorQueueDetailResponse
-// @Failure 401 {object} auth.ErrorResponse
-// @Failure 403 {object} QueueErrorResponse
-// @Router /operator/branches/{branchId}/queues/{queueId}/tickets [get]
-func (h Handler) getOperatorQueueByID(c *gin.Context) { h.getOperatorQueue(c) }
-
-// callNextByQueue assigns the oldest waiting ticket in one queue.
-// @Summary Call the next waiting ticket in a queue
-// @Tags operator
-// @ID postOperatorCallNextByQueue
-// @Produce json
-// @Param branchId path string true "Branch ID" format(uuid)
-// @Param queueId path string true "Queue ID" format(uuid)
-// @Security BearerAuth
-// @Success 200 {object} OperatorTicketResponse
-// @Success 204 "No waiting ticket"
-// @Failure 401 {object} auth.ErrorResponse
-// @Failure 403 {object} QueueErrorResponse
-// @Failure 409 {object} QueueErrorResponse
-// @Router /operator/branches/{branchId}/queues/{queueId}/tickets/call-next [post]
-func (h Handler) callNextByQueue(c *gin.Context) { h.callNext(c) }
 
 // listOperatorQueues godoc
 // @Summary List authorized operator queues
@@ -251,27 +209,19 @@ func (h Handler) getOperatorQueue(c *gin.Context) {
 	if !ok {
 		return
 	}
-	queueParam := c.Param("queueID")
-	if queueParam == "" {
-		queueParam = c.Param("serviceID")
-	}
-	queueID, err := uuid.Parse(queueParam)
-	if err != nil {
-		writeQueueError(c, http.StatusBadRequest, "invalid_request", "A valid queue ID is required")
+	serviceID, ok := parsePathUUID(c, "serviceID")
+	if !ok {
 		return
 	}
 	actor, _ := auth.ActorFromContext(c)
-	detail, err := h.repository.GetOperatorQueue(c.Request.Context(), actor.ID, branchID, queueID.String())
+	detail, err := h.repository.GetOperatorQueue(c.Request.Context(), actor.ID, branchID, serviceID)
 	if err != nil {
 		operatorError(c, err)
 		return
 	}
-	response := OperatorQueueDetailResponse{Queue: operatorQueueResponse(detail.Queue), Waiting: make([]OperatorTicketResponse, 0, len(detail.Waiting)), Recent: make([]OperatorTicketResponse, 0, len(detail.Recent))}
+	response := OperatorQueueDetailResponse{Queue: operatorQueueResponse(detail.Queue), Waiting: make([]OperatorTicketResponse, 0, len(detail.Waiting))}
 	for _, ticket := range detail.Waiting {
 		response.Waiting = append(response.Waiting, operatorTicketResponse(ticket))
-	}
-	for _, ticket := range detail.Recent {
-		response.Recent = append(response.Recent, operatorTicketResponse(ticket))
 	}
 	if detail.Current != nil {
 		current := operatorTicketResponse(*detail.Current)
@@ -306,17 +256,12 @@ func (h Handler) callNext(c *gin.Context) {
 	if !ok {
 		return
 	}
-	queueParam := c.Param("queueID")
-	if queueParam == "" {
-		queueParam = c.Param("serviceID")
-	}
-	queueID, err := uuid.Parse(queueParam)
-	if err != nil {
-		writeQueueError(c, http.StatusBadRequest, "invalid_request", "A valid queue ID is required")
+	serviceID, ok := parsePathUUID(c, "serviceID")
+	if !ok {
 		return
 	}
 	actor, _ := auth.ActorFromContext(c)
-	ticket, found, err := h.repository.CallNext(c.Request.Context(), CallNextInput{OperatorID: actor.ID, BranchID: branchID, QueueID: queueID.String()})
+	ticket, found, err := h.repository.CallNext(c.Request.Context(), CallNextInput{OperatorID: actor.ID, BranchID: branchID, ServiceID: serviceID})
 	if err != nil {
 		operatorError(c, err)
 		return
@@ -382,18 +327,6 @@ func (h Handler) completeTicket(c *gin.Context) { h.transitionTicket(c, "complet
 // @Router /operator/tickets/{ticketId}/skip [post]
 func (h Handler) skipTicket(c *gin.Context) { h.transitionTicket(c, "skip") }
 
-// noShowTicket godoc
-// @Summary Mark a called ticket as no-show
-// @Tags operator
-// @ID postOperatorNoShowTicket
-// @Produce json
-// @Param ticketId path string true "Ticket ID" format(uuid)
-// @Security BearerAuth
-// @Success 200 {object} OperatorTicketResponse
-// @Failure 409 {object} QueueErrorResponse
-// @Router /operator/tickets/{ticketId}/no-show [post]
-func (h Handler) noShowTicket(c *gin.Context) { h.transitionTicket(c, "no-show") }
-
 func (h Handler) transitionTicket(c *gin.Context, action string) {
 	if h.repository == nil {
 		writeQueueError(c, http.StatusServiceUnavailable, "service_unavailable", "Tickets are temporarily unavailable")
@@ -417,15 +350,8 @@ func operatorQueueResponse(q OperatorQueue) OperatorQueueResponse {
 }
 
 func operatorTicketResponse(t Ticket) OperatorTicketResponse {
-	if t.RequestAnswers == nil {
-		t.RequestAnswers = RequestAnswers{}
-	}
-	if t.RequestLabels == nil {
-		t.RequestLabels = RequestAnswers{}
-	}
 	return OperatorTicketResponse{ID: t.ID, TicketNumber: t.TicketNumber, Status: t.Status,
-		RequestAnswers: t.RequestAnswers, RequestLabels: t.RequestLabels, AllowsUploads: t.AllowsUploads,
-		RequiresDocuments: t.RequiresDocuments, BusinessDate: t.BusinessDate.Format("2006-01-02"), JoinedAt: t.JoinedAt}
+		BusinessDate: t.BusinessDate.Format("2006-01-02"), JoinedAt: t.JoinedAt}
 }
 
 func operatorError(c *gin.Context, err error) {
@@ -440,8 +366,6 @@ func operatorError(c *gin.Context, err error) {
 		writeQueueError(c, http.StatusConflict, "handoff_recipient_unavailable", "Choose an authorized operator who has no active ticket")
 	case errors.Is(err, ErrInvalidTransition):
 		writeQueueError(c, http.StatusConflict, "invalid_transition", "This action is not available for the ticket's current status")
-	case errors.Is(err, ErrRequiredDocumentsMissing):
-		writeQueueError(c, http.StatusConflict, "required_documents_missing", "Upload the required documents before starting service")
 	default:
 		writeQueueError(c, http.StatusInternalServerError, "internal_error", "The request could not be completed")
 	}

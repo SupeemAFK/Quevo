@@ -36,7 +36,7 @@ func run(allowPipedOutput bool) error {
 		return fmt.Errorf("DATABASE_URL is required")
 	}
 
-	customerPassword, operatorPassword, managerPassword := rand.Text(), rand.Text(), rand.Text()
+	customerPassword, operatorPassword := rand.Text(), rand.Text()
 	customerHash, err := bcrypt.GenerateFromPassword([]byte(customerPassword), bcrypt.DefaultCost)
 	if err != nil {
 		return fmt.Errorf("hash customer password: %w", err)
@@ -44,10 +44,6 @@ func run(allowPipedOutput bool) error {
 	operatorHash, err := bcrypt.GenerateFromPassword([]byte(operatorPassword), bcrypt.DefaultCost)
 	if err != nil {
 		return fmt.Errorf("hash operator password: %w", err)
-	}
-	managerHash, err := bcrypt.GenerateFromPassword([]byte(managerPassword), bcrypt.DefaultCost)
-	if err != nil {
-		return fmt.Errorf("hash branch manager password: %w", err)
 	}
 	db, err := database.Open(cfg.DatabaseURL, database.PoolConfig{
 		MaxIdleConns: cfg.DBMaxIdleConns, MaxOpenConns: cfg.DBMaxOpenConns, ConnMaxLifetime: cfg.DBConnMaxLifetime,
@@ -65,17 +61,13 @@ func run(allowPipedOutput bool) error {
 	defer cancel()
 	created, err := database.SeedDemo(ctx, db, database.SeedCredentials{
 		CustomerPasswordHash: string(customerHash), OperatorPasswordHash: string(operatorHash),
-		ManagerPasswordHash: string(managerHash),
 	}, func(created database.SeededAccounts) error {
-		credentials := make(map[string]string, 3)
+		credentials := make(map[string]string, 2)
 		if created.Customer {
 			credentials[database.DemoCustomerEmail] = customerPassword
 		}
 		if created.Operator {
 			credentials[database.DemoOperatorEmail] = operatorPassword
-		}
-		if created.Manager {
-			credentials[database.DemoManagerEmail] = managerPassword
 		}
 		if err := json.NewEncoder(os.Stdout).Encode(credentials); err != nil {
 			return fmt.Errorf("write generated credentials: %w", err)
@@ -85,7 +77,7 @@ func run(allowPipedOutput bool) error {
 	if err != nil {
 		return err
 	}
-	if !created.Customer && !created.Operator && !created.Manager {
+	if !created.Customer && !created.Operator {
 		fmt.Fprintln(os.Stderr, "Demo data seeded. Existing demo passwords are unchanged.")
 	}
 	return nil
