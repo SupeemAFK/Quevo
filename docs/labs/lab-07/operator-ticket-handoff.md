@@ -1,17 +1,57 @@
-# CPE334 · Lab 7
-## Software maintenance, metrics & release readiness
+:::cover
+**CPE334  /  SOFTWARE ENGINEERING**
+# Lab 7
+## Sprint 1 maintenance & release evidence
 
-**Project:** Quevo — a customer and operator queue-management system for in-person banking services
-**Team:** EN-046 · 2 Boys 1 Repo
-**Students:** Peeranat Ngamkiatkajorn (67070503429) · Peemmapat Sripongsai (67070503436)
+**PROJECT**  Quevo · in-person queue management
+
+| TEAM | STUDENT CONTRIBUTORS |
+| --- | --- |
+| EN-046 · 2 Boys 1 Repo | Peeranat Ngamkiatkajorn · 67070503429; Peemmapat Sripongsai · 67070503436 |
+
+**SUBMITTED VERSION**  Sprint 1 maintenance change CR-L7-01
+
+**SUBMISSION FORMAT**  Self-contained A4 PDF · deadline 29 November 2026, 23:59 ICT
+
+**REPORT SNAPSHOT**  28 November 2026 · 20:30 ICT
+
+**READINESS**  READY for the maintained Sprint 1 scope and CR-L7-01.
+
+**EVIDENCE NOTE**  Test accounts and tickets are synthetic; no secrets or production ticket data are shown.
+
 **Repository:** [github.com/SupeemAFK/Quevo](https://github.com/SupeemAFK/Quevo)
-**Report snapshot:** 28 November 2026, 20:30 ICT
-**Submission:** one self-contained A4 PDF; deadline 29 November 2026, 23:59 Thailand time
-**Readiness decision:** **READY for the maintained Sprint 1 scope and CR-L7-01**. This does not declare all later-sprint product work complete.
 
-This report records a bounded change to a rule that already existed in the accepted Sprint 1 queue: operator assignment and authority over a called ticket. CR-L7-01 adds a controlled same-service handoff while preserving the customer’s ticket and its lifecycle. It was reviewed, integrated through staging, smoke-tested in UAT, promoted to main, and deployed to Cloud Run. Evidence is identified in the contents and reproduced in this PDF so the assessment does not depend on opening links.
+> This dossier follows the change from its original Sprint 1 rule through contract review, implementation, independent code review, UAT, production deployment and evidence capture. Later-sprint work is outside this report’s release scope.
+:::
 
-**Evidence handling:** all test accounts and tickets shown in screenshots are synthetic. No customer password, secret, token, or production ticket data is included. The production check only read public health/root endpoints; the changed handoff behavior was exercised against UAT and synthetic browser fixtures.
+[[PAGEBREAK]]
+
+:::summary
+## Executive summary
+
+### What changed
+
+CR-L7-01 lets the operator currently assigned to a called ticket hand it to another authorized, same-service operator who has no active ticket. The customer keeps the same ticket, status, queue position and lifecycle timestamps. The new assignment and audit record are committed together; the former operator loses authority and the recipient inherits the next valid action.
+
+### Evidence at a glance
+
+:::metric-grid
+- **1** reviewed Sprint 1 change
+- **11 / 11** UAT smoke assertions passed
+- **9 / 9** browser E2E checks passed
+- **6** original browser screenshots embedded
+- **8 / 11** implementation CI runs passed; all 3 failed runs were corrected before merge
+- **100%** production traffic on the latest verified Cloud Run revisions
+:::
+
+### Release result
+
+The change merged to `staging` as `172729f`, passed an authenticated UAT smoke, then was promoted to `main` as `9e50d82`. The latest production deployment at the report snapshot was `2fadedb`; both production endpoints returned HTTP 200. The release identifier is the commit SHA; no Git tag was created.
+
+### What this report can and cannot establish
+
+The PDF contains the source excerpts, review decisions, test results, deployment records and original synthetic browser screenshots. UAT behavior was verified with an authenticated API smoke; the six visual journey captures came from Playwright CI. This is not represented as a separately observed human UAT session. Production verification was read-only and did not alter customer tickets.
+:::
 
 [[PAGEBREAK]]
 
@@ -19,15 +59,70 @@ This report records a bounded change to a rule that already existed in the accep
 
 | Section | Pages | Evidence IDs | Assessment focus |
 | --- | --- | --- | --- |
-| Part A — Change impact and updated contract | 4–6 | A-01–A-06 | Sprint 1 baseline, approved behavior change, impact, revised contract, pre-code peer review |
-| Part B — Implementation and regression-safe delivery | 7–17 | B-01–B-08 | RED/GREEN, code and migration, tests, CI, review, UAT, browser evidence, deployment |
-| Part C — Objective engineering metrics | 18–19 | C-01–C-05 | Five dated metrics with embedded source lists and one evidence-based action |
-| Part D — Readiness and retrospective | 20–21 | D-01–D-04 | Sprint 1 readiness, defects/debt, deployment and configuration, reflection and contributions |
-| Evidence register and source notes | 22 | A-01–D-04 | Evidence IDs, revisions, sources, limitations |
+| Executive summary | {{PAGE_SUMMARY}} | — | Change, result, scope and evidence at a glance |
+| Discussion and decision log | {{PAGE_DISCUSSIONS}} | A-01–B-08 | Course guidance, contract and code review, release decisions |
+| Step-by-step maintenance and release | {{PAGE_STEPS}} | A-01–B-08 | Ordered actions, outputs and release hand-off points |
+| Version and release chain | {{PAGE_CHAIN}} | A-01, B-06–B-08 | Baseline, UAT, staging, main and production lineage |
+| Part A — Change impact and updated contract | {{PAGE_PART_A}} | A-01–A-06 | Sprint 1 baseline, change, impact, revised contract and peer review |
+| Part B — Implementation and regression-safe delivery | {{PAGE_PART_B}} | B-01–B-08 | RED/GREEN, code and migration, tests, CI, review, UAT and screenshots |
+| Part C — Objective engineering metrics | {{PAGE_PART_C}} | C-01–C-05 | Five dated metrics, sources and evidence-based action |
+| Part D — Readiness and retrospective | {{PAGE_PART_D}} | D-01–D-04 | Readiness, defects/debt, deployment, reflection and limitations |
+| Evidence register and source notes | {{PAGE_EVIDENCE}} | A-01–D-04 | IDs, revisions, artifacts, links and limitations |
 
 [[PAGEBREAK]]
 
-### Version and release chain
+## Discussion and decision log
+
+This log records the substantive Lab 7 decisions and review conversations evidenced by the course announcement, PRs, issue history and CI runs. It excludes unrelated product-design conversations and PR #86 work, which is outside this release.
+
+:::timeline
+1. **Course scope · instructor announcement shared with the team.** The instructor announcement waived instructor/TA approval and asked each team to select a sufficiently complex change to an existing Sprint 1 behavior. The team selected operator ownership/handoff rather than adding an unrelated later-sprint feature.
+2. **Contract review · 27 November, 23:54–23:56 ICT.** Peeranat reviewed the revised SRS/SDS in [PR #91](https://github.com/SupeemAFK/Quevo/pull/91) and approved with “Keep this plan.” The review was completed before the first implementation commit. PR #91 targeted a feature branch; its reviewed contract text was carried into the staging implementation.
+3. **Change-request timing · 28 November.** Implementation had started before [issue #95](https://github.com/SupeemAFK/Quevo/issues/95) was created. The team records this as a process deviation; #95 is not presented as a pre-code approval. The earlier PR #91 review is the pre-code contract evidence.
+4. **Initial implementation and CI · 05:56–06:22 ICT.** [PR #94](https://github.com/SupeemAFK/Quevo/pull/94) began with a staticcheck failure. The response/error mapping was corrected, and the following four full CI runs passed through `4352f9e`.
+5. **Review decision changed · 11:19–11:29 ICT.** Peeranat’s detailed review on [PR #94](https://github.com/SupeemAFK/Quevo/pull/94) identified three merge gates: cover the recipient session in Playwright, restore keyboard focus after transfer, and test the specific migration ledger row. An initial approval at 11:20 was replaced by a changes-requested review at 11:29; merge remained blocked pending those fixes.
+6. **Fix-and-rerun cycle · 14:33–15:03 ICT.** Two browser navigation assertions failed while the recipient journey was being corrected. The team fixed the path, focus recovery and migration assertion in `6126d1e`, `05c2b13` and `803262b`. [PR #94 CI history](https://github.com/SupeemAFK/Quevo/actions) then showed passes at 14:42, 14:50, 14:58 and 15:03.
+7. **Final implementation review · 15:16–15:17 ICT.** Peeranat confirmed all three requested fixes, noted the full CI and latest PR-head check were green, and found no new actionable issues. PR #94 merged to `staging` at 15:17.
+8. **UAT evidence requested and supplied · 15:49–17:21 ICT.** The team ran an 11-assertion authenticated smoke against UAT and recorded the result in [PR #97](https://github.com/SupeemAFK/Quevo/pull/97). The UAT API and web were on the implementation release; synthetic data was removed after the smoke.
+9. **Production promotion review · 28 November, before 17:56 ICT.** [PR #96](https://github.com/SupeemAFK/Quevo/pull/96) review asked for explicit UAT-smoke evidence, then for the release/readiness record to reflect it. The team added the smoke record through PR #97 and updated the readiness evidence before PR #96 was approved and merged to `main` at 17:56.
+10. **Post-deployment evidence · 19:11–20:30 ICT.** Documentation-only [PR #98](https://github.com/SupeemAFK/Quevo/pull/98) merged at 19:11 and triggered a deployment of unchanged app source. The report snapshot records the resulting revisions/digests, 100% traffic, and read-only HTTP 200 checks for the public web and API health endpoints.
+:::
+
+[[PAGEBREAK]]
+
+## Step-by-step maintenance and release
+
+Use this sequence to reproduce the evidence trail. The commit identifiers below distinguish the tested source from later documentation-only deployments.
+
+:::process
+1. **Anchor the change to Sprint 1.** Confirm the existing operator assignment/one-active-ticket rule in accepted baseline `82cd9c9` and actual pre-change staging/UAT SHA `675df62`. Write the proposed exception as a controlled handoff, not a new queue lifecycle.
+2. **Revise the contract before coding.** Update the SRS, SDS and traceability; define eligibility, ownership, invalid cases, state preservation and audit behavior. Obtain Peeranat’s review and approval in PR #91. The instructor announcement means no separate instructor/TA approval was needed.
+3. **Demonstrate the missing behavior.** Run `TestLab7HandoffOptionsAvailableToAssignedOperator` against pre-change SHA `675df62`. The authenticated options request returned 404 where the revised contract requires 200. Preserve the actual RED output; disclose that the test source was first committed with the implementation.
+4. **Implement the smallest complete change.** Add authenticated options/handoff routes, server-side eligibility checks, one transaction for assignment plus audit event, the migration, the operator dialog, contract documentation and targeted tests. Keep ticket state and lifecycle timestamps unchanged.
+5. **Run regression checks and respond to review.** Execute API/unit/integration, web, lint/type, migration and Playwright checks in CI. Address all three requested review fixes and each failed CI cause; do not merge while any check remains red.
+6. **Merge to staging and deploy UAT.** Merge PR #94 as `172729f`; confirm migration job and immutable API/web images are deployed to the UAT revisions with 100% traffic.
+7. **Run the UAT behavior smoke.** Authenticate as synthetic customer/operator accounts; verify owner reads, another customer denial, call-next, successful eligible handoff, preserved PENDING state and `called_at`, one audit row, former-assignee denial, and recipient start/complete. Remove test data and record all 11 results.
+8. **Promote the reviewed release.** Use PR #96 to promote the staged feature SHA `9e50d82` to `main`. Supply the requested UAT and readiness evidence before approval. Keep the later-sprint PR #86 out of this Lab 7 scope.
+9. **Verify production deployment without customer mutations.** Confirm the migration job, current API/web revisions, image digests, 100% traffic, and read-only web/API health responses. Do not exercise handoff against live customer tickets.
+10. **Assemble and check the submission record.** Preserve the exact source SHAs, CI run IDs, review decisions, UAT assertions, original screenshots, production snapshot, limitations and contributor/AI statement in one self-contained A4 report.
+:::
+
+[[PAGEBREAK]]
+
+## Version and release chain
+
+### Release path at a glance
+
+:::release-steps
+1. **Accepted Sprint 1 · `82cd9c9`** — Existing assignment and operator-ownership behavior.
+2. **Pre-change UAT · `675df62`** — Baseline deployed successfully; used as the RED target.
+3. **Reviewed implementation · PR #94** — Peer-reviewed and merged to `staging` as `172729f`.
+4. **Behavior-tested UAT · run `46125113341`** — 11/11 authenticated smoke assertions; synthetic data removed.
+5. **Production promotion · PR #96** — Reviewed staging source merged to `main` as `9e50d82`.
+6. **Latest recorded production · run `46143445046`** — Documentation-only follow-up deployment; same app source, verified image digests and 100% traffic.
+:::
+
+### Exact revisions and deployment evidence
 
 | Point in chain | Commit / release | Evidence and meaning |
 | --- | --- | --- |
@@ -234,13 +329,13 @@ All 11 PR #94 CI runs and final outcomes, copied from the repository’s GitHub 
 
 | Run | Head | Time, 28 Nov ICT | Outcome | Recorded reason / disposition |
 | --- | --- | --- | --- | --- |
-| `46079877876` | `aff7976` | 05:59 | **Failed** | Staticcheck flagged response/error mapping; corrected in follow-up. |
+| `46079877876` | `aff7976` | 05:59 | **Failed** | Staticcheck flagged response/error mapping; corrected in `6132d3e`. |
 | `46080085875` | `6132d3e` | 06:01 | Passed | GREEN integration assertion and full CI. |
 | `46081073959` | `690a7a4` | 06:11 | Passed | Full CI. |
 | `46081524297` | `67db6b0` | 06:16 | Passed | Full CI. |
 | `46082115861` | `4352f9e` | 06:22 | Passed | Full CI; detailed teammate review followed. |
-| `46121740761` | `6126d1e` | 14:33 | **Failed** | Browser navigation assertion after required review fixes; test corrected. |
-| `46122126910` | `05c2b13` | 14:38 | **Failed** | Browser navigation assertion while establishing recipient journey; corrected. |
+| `46121740761` | `6126d1e` | 14:33 | **Failed** | Browser navigation assertion after review fixes; recipient navigation was corrected in the follow-up. |
+| `46122126910` | `05c2b13` | 14:38 | **Failed** | Browser navigation assertion persisted in the recipient journey; corrected by `803262b`. |
 | `46122420288` | `803262b` | 14:42 | Passed | Browser handoff/recipient flow and full CI passed. |
 | `46123022741` | `44edbed` | 14:50 | Passed | Full CI. |
 | `46123593995` | `358ba9d` | 14:58 | Passed | Full CI. |
@@ -260,6 +355,18 @@ Peeranat’s substantive review on PR #94 at 11:19 ICT identified three merge-ga
 
 > “The three requested fixes are addressed: the browser test covers handoff through the recipient session, focus returns to the queue after transfer, and the migration test checks the specific ledger entry. The full CI run for the implementation commit passed, and the latest PR-head check is green. I found no new actionable issues.”
 
+| Review request | Response | Evidence after the fix |
+| --- | --- | --- |
+| Exercise a full handoff through a recipient operator session. | Extend the Playwright journey through recipient sign-in and service completion. | PR #94 CI latest run `46124024679`; later browser run `46146702527`; screenshots B-07e and B-07f. |
+| Return keyboard focus to the queue after a successful transfer. | Restore focus to the queue control after the dialog closes. | Playwright handoff journey in PR #94; full E2E passed. |
+| Assert the named migration ledger entry instead of assuming a fixed row count. | Query and assert the specific Lab 7 migration record. | PostgreSQL integration suite in CI; run `46124024679` passed. |
+
+| Non-blocking review observation | Release disposition |
+| --- | --- |
+| Candidate lookup takes a row lock although POST revalidates. | Deferred; listed with impact and priority in D-02. |
+| Lock-order relationship with CallNext needs a clear invariant. | Deferred; current concurrency tests remain in CI. |
+| Audit row does not snapshot transfer-time status. | Deferred; not required by the current contract. |
+
 PR #94 merged to `staging` at 15:17:24 ICT as `172729ff7b66874cfe8755dca7478a49061158e8`. The reviewer’s non-blocking observations that remain as deferred engineering debt are listed in Part D.
 
 ### B-06 · UAT deployment and post-deployment behavior smoke
@@ -268,74 +375,101 @@ PR #94 merged to `staging` at 15:17:24 ICT as `172729ff7b66874cfe8755dca7478a490
 
 **UAT-01 — authenticated API smoke, 28 Nov 2026 at 15:49 ICT; API revision `quevo-uat-api-sha-172729ff7b66-a1`.** This was a manual authenticated API smoke using synthetic accounts and records; it was not an independent Lab 6 UAT session.
 
-```text
-01 PASS Customer joined General Service and received ticket 2 (HTTP 201)
-02 PASS Ticket owner read succeeded (HTTP 200)
-03 PASS Another customer was denied access (HTTP 404)
-04 PASS Operator A called the waiting ticket: WAITING → PENDING
-05 PASS Before transfer: PENDING, Operator A assigned, called_at set, zero handoffs
-06 PASS Transfer to same-service idle Operator B succeeded
-07 PASS Ticket status remained PENDING
-08 PASS called_at matched exactly before and after transfer
-09 PASS One audit row recorded Operator A → B
-10 PASS Former assignee start request was denied (HTTP 404)
-11 PASS Recipient started/completed; customer could read completed ticket
-Result: 11/11 assertions passed; synthetic test accounts and records were removed
-```
+| # | Account / action | Expected and observed result | Result |
+| --- | --- | --- | --- |
+| 01 | Customer joins General Service. | Ticket 2 issued; HTTP 201. | PASS |
+| 02 | Ticket owner reads their ticket. | Authorized read; HTTP 200. | PASS |
+| 03 | A different customer reads that ticket. | Access denied; HTTP 404. | PASS |
+| 04 | Operator A calls the waiting ticket. | State changes WAITING → PENDING. | PASS |
+| 05 | Record state before handoff. | PENDING; Operator A assigned; `called_at` set; zero handoffs. | PASS |
+| 06 | Operator A transfers to same-service idle Operator B. | Handoff accepted. | PASS |
+| 07 | Read ticket state after transfer. | Ticket remains PENDING. | PASS |
+| 08 | Compare lifecycle time. | `called_at` is identical before and after transfer. | PASS |
+| 09 | Read audit record. | Exactly one Operator A → B audit row. | PASS |
+| 10 | Former assignee starts service. | Former operator denied; HTTP 404. | PASS |
+| 11 | Recipient starts/completes; customer reads ticket. | Recipient action succeeds; owner can read COMPLETED ticket. | PASS |
+
+**Result:** 11/11 assertions passed. Synthetic test accounts and records were removed after the smoke.
 
 The latest UAT redeployment (run `46134789501`, SHA `8132eded6f2f...`) followed a documentation-only staging merge. No app code changed after UAT-01. The UAT revisions were `quevo-uat-api-sha-8132eded6f2f-a1` and `quevo-uat-web-sha-8132eded6f2f-a1`.
+
+[[PAGEBREAK]]
 
 ### B-07 · Browser evidence — synthetic Playwright run
 
 The following six screenshots were captured by the actual Playwright customer/operator E2E path in CI run `46146702527` on 28 Nov 2026, approximately 19:51–19:54 ICT. The test uses isolated synthetic fixtures, not production data. The [CI run artifact](https://github.com/SupeemAFK/Quevo/actions/runs/46146702527/artifacts/15264051637) contains the original screenshot files. The screenshot-capture commit `83dd0fa` changes only the CI upload configuration and E2E test; `apps/` application code is unchanged from the main deployed source. Each image records the visible result and is reproduced at readable scale.
 
+:::screenshot-detail
+### B-07.0 · Six-screen journey overview
+
+The contact sheet is an index only. It is assembled from the six original 1280 × 960 Playwright screenshots below; each unaltered original follows on its own page.
+
+![Storyboard: six original screenshots in the synthetic handoff journey](evidence/L7-B07-storyboard.jpg)
+:::
+
 [[PAGEBREAK]]
 
+:::screenshot-detail
 ### B-07.1 · Customer ticket remains WAITING
 
 **Evidence ID:** B-07a · **Action:** create a customer ticket before it is called. **Expected:** customer can see ticket number and WAITING state. **Actual:** synthetic ticket 5 appears as WAITING. **Version:** test commit `83dd0fa`; app source matches production application commit `9e50d82`. **Time:** 28 Nov 2026, 19:51–19:54 ICT, CI run `46146702527`.
 
 ![B-07a: Customer sees synthetic ticket 5 in Waiting state](evidence/L7-B01-customer-ticket-waiting.png)
+:::
 
 [[PAGEBREAK]]
 
+:::screenshot-detail
 ### B-07.2 · Assigned operator holds active ticket
 
 **Evidence ID:** B-07b · **Action:** operator calls the next ticket. **Expected:** current assignee sees the active ticket and the handoff action. **Actual:** ticket 5 is shown as Called with “Transfer ticket” available to the assigned operator. **Version/time:** same CI run and revisions as B-07a.
 
 ![B-07b: Assigned operator sees active ticket 5 and the transfer action](evidence/L7-B02-assigned-operator-active-ticket.png)
+:::
 
 [[PAGEBREAK]]
 
+:::screenshot-detail
 ### B-07.3 · Eligible recipient selection
 
 **Evidence ID:** B-07c · **Action:** open Transfer ticket. **Expected:** dialog offers an eligible same-service, idle operator and an explicit transfer action. **Actual:** “Handoff Operator” is selectable in the accessible dialog. **Version/time:** same CI run and revisions as B-07a.
 
 ![B-07c: Transfer dialog offers the eligible synthetic recipient](evidence/L7-B03-transfer-dialog-eligible-operator.png)
+:::
 
 [[PAGEBREAK]]
 
+:::screenshot-detail
 ### B-07.4 · Former assignee loses access
 
 **Evidence ID:** B-07d · **Action:** complete the transfer and inspect the former operator queue. **Expected:** former assignee no longer owns the active ticket. **Actual:** the former operator’s queue has no current customer; the transfer success feedback is visible. **Version/time:** same CI run and revisions as B-07a.
 
 ![B-07d: Former assignee no longer sees the handed-off ticket](evidence/L7-B04-former-assignee-no-longer-has-ticket.png)
+:::
 
 [[PAGEBREAK]]
 
+:::screenshot-detail
 ### B-07.5 · Recipient inherits ticket and authority
 
 **Evidence ID:** B-07e · **Action:** sign in as the recipient operator and open the queue. **Expected:** recipient sees the transferred current ticket and allowed actions. **Actual:** ticket 5 is active for the recipient and the next action is available. **Version/time:** same CI run and revisions as B-07a.
 
+The green outline is the visible keyboard-focus indicator after the handoff; it is included to show that focus returns to the operator queue when the dialog closes.
+
 ![B-07e: Recipient sees ticket 5 after handoff](evidence/L7-B05-recipient-operator-inherits-ticket.png)
+:::
 
 [[PAGEBREAK]]
 
+:::screenshot-detail
 ### B-07.6 · Recipient completes service
 
 **Evidence ID:** B-07f · **Action:** recipient completes the ticket. **Expected:** existing operator transition succeeds after handoff. **Actual:** completion confirmation appears and the ticket leaves the active queue. **Version/time:** same CI run and revisions as B-07a.
 
+The focus outline on the completion state is also intentional keyboard-focus evidence from the browser journey.
+
 ![B-07f: Recipient completes the handed-off ticket](evidence/L7-B06-recipient-completes-ticket.png)
+:::
 
 [[PAGEBREAK]]
 
@@ -459,7 +593,8 @@ These are deferred improvements from the reviewer’s non-blocking notes, not kn
 | B-03–B-04 | Suite commands, versions, pass/fail/skip counts and all 11 PR #94 run outcomes. | CI runs listed in B-04; latest browser run `46146702527`. |
 | B-05 | Actual peer-review findings, fix commits and approval excerpts. | PR #94 review by `jarbbie`; fix commits `6126d1e`, `05c2b13`, `803262b`. |
 | B-06 | Authenticated UAT smoke assertions and cleanup. | UAT deployment run `46125113341`; API revision `quevo-uat-api-sha-172729ff7b66-a1`; smoke timestamp 15:49 ICT. |
-| B-07a–B-07f | Six embedded customer/operator screenshots from the complete transfer journey. | Playwright CI run `46146702527`, test commit `83dd0fa`, synthetic fixture. |
+| B-07.0 | Contact sheet index assembled from the six original screenshots; originals are reproduced individually on the following pages. | Playwright CI run `46146702527`, test commit `83dd0fa`, synthetic fixture. |
+| B-07a–B-07f | Six original embedded customer/operator screenshots from the complete transfer journey. | Playwright CI run `46146702527`, test commit `83dd0fa`, synthetic fixture. |
 | B-08 / PROD-01 | Main release, latest Cloud Run revisions, immutable digests, 100% traffic and live HTTP checks. | PR #96; PR #98; CD run `46143445046`; live checks 28 Nov 20:30 ICT. |
 | C-01–C-04 | Five metrics, embedded merged-PR list, CI source list and action. | GitHub PR/issue/Actions records within repository `SupeemAFK/Quevo`; snapshot 28 Nov 20:30 ICT. |
 | D-01–D-04 | Readiness, defect/debt distinction, reflection, pair contribution, AI statement and limitations. | Release and verification records above. |
