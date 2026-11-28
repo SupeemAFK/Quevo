@@ -44,8 +44,11 @@ Zap writes structured JSON for application and HTTP request logs. Request logs i
 
 ```sh
 curl http://localhost:8080/api/v1/health
+curl http://localhost:8080/swagger/
 curl http://localhost:8080/openapi.json
 ```
+
+Swagger UI and the OpenAPI document are available without signing in in local development and on the production API service. The deployed URL and access policy are recorded in the [Lab 5 deployment guide](../../docs/labs/lab-05/deployment.md#swagger-access-policy). API endpoint authentication and role checks remain in force when requests are sent from Swagger UI.
 
 Response:
 

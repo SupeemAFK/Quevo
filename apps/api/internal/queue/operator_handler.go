@@ -7,6 +7,7 @@ import (
 
 	"example.com/quevo/apps/api/internal/auth"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type OperatorTicketResponse struct {
@@ -35,6 +36,27 @@ type OperatorQueueDetailResponse struct {
 	Current *OperatorTicketResponse  `json:"current,omitempty"`
 }
 
+type HandoffCandidateResponse struct {
+	ID          string `json:"id" binding:"required"`
+	DisplayName string `json:"displayName" binding:"required"`
+}
+
+type HandoffCandidatesResponse struct {
+	Items []HandoffCandidateResponse `json:"items" binding:"required"`
+}
+
+type OperatorHandoffRequest struct {
+	RecipientOperatorID string `json:"recipientOperatorId" binding:"required"`
+}
+
+type OperatorHandoffResponse struct {
+	ID                  string    `json:"id" binding:"required"`
+	TicketNumber        string    `json:"ticketNumber" binding:"required"`
+	Status              string    `json:"status" binding:"required"`
+	RecipientOperatorID string    `json:"recipientOperatorId" binding:"required"`
+	TransferredAt       time.Time `json:"transferredAt" binding:"required"`
+}
+
 func registerOperatorRoutes(routes *gin.RouterGroup, service *auth.Service, repository *Repository) {
 	h := Handler{repository: repository}
 	group := routes.Group("/operator")
@@ -45,6 +67,92 @@ func registerOperatorRoutes(routes *gin.RouterGroup, service *auth.Service, repo
 	group.POST("/tickets/:ticketID/start", h.startTicket)
 	group.POST("/tickets/:ticketID/complete", h.completeTicket)
 	group.POST("/tickets/:ticketID/skip", h.skipTicket)
+	group.GET("/tickets/:ticketID/handoff-options", h.listHandoffCandidates)
+	group.POST("/tickets/:ticketID/handoff", h.handoffTicket)
+}
+
+// listHandoffCandidates godoc
+// @Summary List eligible operators for a ticket handoff
+// @Tags operator
+// @ID getOperatorTicketHandoffOptions
+// @Produce json
+// @Param ticketId path string true "Ticket ID" format(uuid)
+// @Security BearerAuth
+// @Success 200 {object} HandoffCandidatesResponse
+// @Failure 400 {object} QueueErrorResponse
+// @Failure 401 {object} auth.ErrorResponse
+// @Failure 403 {object} auth.ErrorResponse
+// @Failure 404 {object} QueueErrorResponse
+// @Failure 409 {object} QueueErrorResponse
+// @Failure 500 {object} QueueErrorResponse
+// @Failure 503 {object} auth.ErrorResponse
+// @Router /operator/tickets/{ticketId}/handoff-options [get]
+func (h Handler) listHandoffCandidates(c *gin.Context) {
+	if h.repository == nil {
+		writeQueueError(c, http.StatusServiceUnavailable, "service_unavailable", "Tickets are temporarily unavailable")
+		return
+	}
+	ticketID, ok := parsePathUUID(c, "ticketID")
+	if !ok {
+		return
+	}
+	actor, _ := auth.ActorFromContext(c)
+	candidates, err := h.repository.ListHandoffCandidates(c.Request.Context(), actor.ID, ticketID)
+	if err != nil {
+		operatorError(c, err)
+		return
+	}
+	response := HandoffCandidatesResponse{Items: make([]HandoffCandidateResponse, 0, len(candidates))}
+	for _, candidate := range candidates {
+		response.Items = append(response.Items, HandoffCandidateResponse(candidate))
+	}
+	c.JSON(http.StatusOK, response)
+}
+
+// handoffTicket godoc
+// @Summary Transfer an active ticket to another eligible operator
+// @Tags operator
+// @ID postOperatorTicketHandoff
+// @Accept json
+// @Produce json
+// @Param ticketId path string true "Ticket ID" format(uuid)
+// @Param request body OperatorHandoffRequest true "Handoff recipient"
+// @Security BearerAuth
+// @Success 200 {object} OperatorHandoffResponse
+// @Failure 400 {object} QueueErrorResponse
+// @Failure 401 {object} auth.ErrorResponse
+// @Failure 403 {object} auth.ErrorResponse
+// @Failure 404 {object} QueueErrorResponse
+// @Failure 409 {object} QueueErrorResponse
+// @Failure 500 {object} QueueErrorResponse
+// @Failure 503 {object} auth.ErrorResponse
+// @Router /operator/tickets/{ticketId}/handoff [post]
+func (h Handler) handoffTicket(c *gin.Context) {
+	if h.repository == nil {
+		writeQueueError(c, http.StatusServiceUnavailable, "service_unavailable", "Tickets are temporarily unavailable")
+		return
+	}
+	ticketID, ok := parsePathUUID(c, "ticketID")
+	if !ok {
+		return
+	}
+	var request OperatorHandoffRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		writeQueueError(c, http.StatusBadRequest, "invalid_request", "A recipient operator is required")
+		return
+	}
+	recipientID, err := uuid.Parse(request.RecipientOperatorID)
+	if err != nil {
+		writeQueueError(c, http.StatusBadRequest, "invalid_request", "A valid recipient operator ID is required")
+		return
+	}
+	actor, _ := auth.ActorFromContext(c)
+	handoff, err := h.repository.HandoffTicket(c.Request.Context(), actor.ID, ticketID, recipientID.String())
+	if err != nil {
+		operatorError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, OperatorHandoffResponse(handoff))
 }
 
 // listOperatorQueues godoc
@@ -254,6 +362,8 @@ func operatorError(c *gin.Context, err error) {
 		writeQueueError(c, http.StatusNotFound, "ticket_not_found", "The ticket could not be found")
 	case errors.Is(err, ErrOperatorHasActiveTicket):
 		writeQueueError(c, http.StatusConflict, "active_ticket_exists", "Finish your current ticket before calling another")
+	case errors.Is(err, ErrHandoffRecipientUnavailable):
+		writeQueueError(c, http.StatusConflict, "handoff_recipient_unavailable", "Choose an authorized operator who has no active ticket")
 	case errors.Is(err, ErrInvalidTransition):
 		writeQueueError(c, http.StatusConflict, "invalid_transition", "This action is not available for the ticket's current status")
 	default:

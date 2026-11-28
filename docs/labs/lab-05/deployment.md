@@ -33,6 +33,25 @@ Commit example files with placeholders or local endpoints. Keep real values in i
 | `POSTGRES_DB`, `POSTGRES_USER` | Local PostgreSQL container | Initial database and username | No | Local defaults in Compose. Create the database and user separately for Cloud SQL. |
 | `POSTGRES_PASSWORD` | Local PostgreSQL container | Initial database user password | Yes outside local development | Compose defines a disposable local value. Cloud SQL credentials are provisioned separately and consumed through `DATABASE_URL`. |
 
+## Swagger access policy
+
+Swagger UI and the OpenAPI document are intentionally public documentation surfaces in both local development and the current production deployment. Viewing them does not require a Quevo account. API operations continue to enforce their existing session and role checks; the documentation UI does not bypass API authorization. The landing-page cleanup tracked by [issue #65](https://github.com/SupeemAFK/Quevo/issues/65) removes the stale localhost Swagger CTA; keep API documentation outside landing-page navigation. Avoid sending write operations to production while exploring the contract.
+
+| Environment | Swagger UI | OpenAPI document | Health endpoint |
+| --- | --- | --- | --- |
+| Local Compose | `http://localhost:8080/swagger/` | `http://localhost:8080/openapi.json` | `http://localhost:8080/api/v1/health` |
+| Production Cloud Run | `https://quevo-api-5unjfhgfwa-as.a.run.app/swagger/` | `https://quevo-api-5unjfhgfwa-as.a.run.app/openapi.json` | `https://quevo-api-5unjfhgfwa-as.a.run.app/api/v1/health` |
+
+The production API base URL was read from the `quevo-api` Cloud Run service in project `cpe334-student-project`, region `asia-southeast1`; all three URLs returned HTTP 200 on 2026-11-22. Recheck the service URL after recreating the service:
+
+```sh
+gcloud run services describe quevo-api \
+  --project cpe334-student-project --region asia-southeast1 \
+  --format='value(status.url)'
+```
+
+The health route remains separate from the Swagger UI and OpenAPI document. It reports API health without checking PostgreSQL; the production release pipeline continues to use the web URL as its public application smoke check.
+
 ## Build, test, and run locally
 
 From the repository root, build the Compose images and start PostgreSQL:
@@ -70,9 +89,9 @@ Run migrations as a separate release step before updating the API. Seed the lab 
 
 The reusable CI workflow is `.github/workflows/ci.yml`, displayed as **CI**. Its `test` job name remains unchanged for the required branch-protection check. Feature and fix branches enter `staging` through teammate-reviewed PRs. A release PR promotes `staging` to `main` after the required CI checks pass. Merging that release PR pushes a commit to `main` and triggers `.github/workflows/deploy.yml`, displayed as **CD**; changes pushed to feature branches or merged only into `staging` do not deploy.
 
-CD waits for CI and serializes deployments to the `demo` environment. It skips a commit if `main` has advanced before migrations begin. Once a migration starts, the active release holds the concurrency lock and completes its API and web updates before another queued release can run. This keeps the running app compatible with the schema after migration. CD builds the API and web production images, pushes them to Artifact Registry at `quevo/api` and `quevo/web` tagged with the full commit SHA, and resolves the immutable Linux AMD64 image digests that Cloud Run actually runs. It updates and executes the `quevo-migrate` Cloud Run job before updating `quevo-api` and `quevo-web`. It then verifies the public web URL, the expected images on the latest ready revisions, and that each revision receives 100% of production traffic.
+CD waits for CI and serializes deployments to the `prod` environment. It skips a commit if `main` has advanced before migrations begin. Once a migration starts, the active release holds the concurrency lock and completes its API and web updates before another queued release can run. This keeps the running app compatible with the schema after migration. CD builds the API and web production images, pushes them to Artifact Registry at `quevo/api` and `quevo/web` tagged with the full commit SHA, and resolves the immutable Linux AMD64 image digests that Cloud Run actually runs. It updates and executes the `quevo-migrate` Cloud Run job before updating `quevo-api` and `quevo-web`. It then verifies the public web URL, the expected images on the latest ready revisions, and that each revision receives 100% of production traffic.
 
-For each release, open the **CD** workflow run for the merge commit in GitHub Actions. Its run summary records the commit SHA, public URL, image digests, and Cloud Run revision names. To check the running revision independently, run these commands with `GCP_PROJECT_ID` and `GCP_REGION` set to the values in the GitHub `demo` environment:
+For each release, open the **CD** workflow run for the merge commit in GitHub Actions. Its run summary records the commit SHA, public URL, image digests, and Cloud Run revision names. To check the running revision independently, run these commands with `GCP_PROJECT_ID` and `GCP_REGION` set to the values in the GitHub `prod` environment:
 
 ```sh
 gcloud run services describe quevo-api \
