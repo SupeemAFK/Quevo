@@ -224,11 +224,10 @@ test('customer joins and recovers a ticket; operator serves, skips, and hands of
     operator,
     operator.getByRole('button', { name: 'Open navigation menu' }),
   )
+  const openHandoffOperatorQueue = operator.getByRole('link', { name: 'Open operator queue' })
+  await expect(openHandoffOperatorQueue).toBeVisible()
+  await activateWithKeyboard(operator, openHandoffOperatorQueue)
   await expect(operator.getByRole('navigation', { name: 'Application' })).toBeVisible()
-  await activateWithKeyboard(
-    operator,
-    operator.getByRole('link', { name: 'Open operator queue' }),
-  )
   await expect(operator.getByRole('heading', { name: 'Operator queue' })).toBeVisible()
   await expect(operator.getByTestId('operator-current-ticket')).toHaveText('5')
   await activateWithKeyboard(operator, operator.getByRole('button', { name: 'Start service' }))
