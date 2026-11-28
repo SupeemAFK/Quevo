@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import {
+  ArrowRightLeft,
   Check,
   CircleCheck,
   Layers3,
@@ -36,6 +37,7 @@ type Props = {
   onAction: (action: Action) => void
   onRefresh: () => void
   operatorId?: string
+  onHandoff?: (source: HTMLButtonElement) => void
 }
 
 export function OperatorQueue({
@@ -48,6 +50,7 @@ export function OperatorQueue({
   onAction,
   onRefresh,
   operatorId = '',
+  onHandoff,
 }: Props) {
   const { current, waiting } = detail
   const documents = useQuery({
@@ -87,6 +90,12 @@ export function OperatorQueue({
     if (busy) return
     restoreActionFocusRef.current = document.activeElement === source ? source : null
     onAction(action)
+  }
+
+  function handleHandoff(source: HTMLButtonElement) {
+    if (busy) return
+    restoreActionFocusRef.current = document.activeElement === source ? source : null
+    onHandoff?.(source)
   }
 
   function handleRefresh() {
@@ -203,6 +212,7 @@ export function OperatorQueue({
                             <SkipForward aria-hidden="true" />
                             Skip ticket
                           </Button>
+
                           <Button
                             className="min-h-12 px-5"
                             disabled={busy}
@@ -212,17 +222,42 @@ export function OperatorQueue({
                             <UserX aria-hidden="true" />
                             Mark no-show
                           </Button>
+
+                          {onHandoff ? (
+                            <Button
+                              className="min-h-12 px-5"
+                              disabled={busy}
+                              variant="outline"
+                              onClick={(event) => handleHandoff(event.currentTarget)}
+                            >
+                              <ArrowRightLeft aria-hidden="true" />
+                              Transfer ticket
+                            </Button>
+                          ) : null}
                         </>
                       ) : current.status === 'OPERATING' ? (
-                        <Button
-                          className="min-h-12 px-5"
-                          disabled={busy}
-                          onClick={(event) => handleAction('complete', event.currentTarget)}
-                          ref={focusTargetRef}
-                        >
-                          <Check aria-hidden="true" />
-                          Complete service
-                        </Button>
+                        <>
+                          <Button
+                            className="min-h-12 px-5"
+                            disabled={busy}
+                            onClick={(event) => handleAction('complete', event.currentTarget)}
+                            ref={focusTargetRef}
+                          >
+                            <Check aria-hidden="true" />
+                            Complete service
+                          </Button>
+                          {onHandoff ? (
+                            <Button
+                              className="min-h-12 px-5"
+                              disabled={busy}
+                              variant="outline"
+                              onClick={(event) => handleHandoff(event.currentTarget)}
+                            >
+                              <ArrowRightLeft aria-hidden="true" />
+                              Transfer ticket
+                            </Button>
+                          ) : null}
+                        </>
                       ) : null}
                     </div>
                     {Object.entries(current.requestAnswers ?? {}).length > 0 ? (

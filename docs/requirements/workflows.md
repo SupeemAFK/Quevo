@@ -86,4 +86,9 @@ For Lab 7, the current assignee may hand off an active PENDING or OPERATING tick
 - The journey includes notifying the customer after a call. The diagrams leave the actor and delivery channel open; they do not imply SMS, push, or another integration.
 - The current implementation uses branch-scoped queues and counters with FIFO ordering. Queue configuration and role rules are Quevo product decisions, not claims about requirements in the course brief.
 - FIFO orders tickets by joined time and immutable ticket ID; only the assigned operator can perform the allowed transitions.
-- The Lab 7 handoff contract is documented in [operator-ticket-handoff.md](../labs/lab-07/operator-ticket-handoff.md); it is a controlled assignment change and does not add a ticket lifecycle status.
+
+
+## Lab 7 assignment-change overlay
+
+This section amends the Sprint 1 assignment rule under change request CR-L7-01; it does not rewrite the accepted Sprint 1 baseline above. The current assignee may transfer a `PENDING` or `OPERATING` ticket to another operator authorized for the same service when that operator has no active ticket. A successful transfer changes assignment and appends an audit record atomically. Ticket state and lifecycle timestamps stay unchanged. Afterward, only the new assignee may start, complete, or skip according to the existing state rules. `WAITING`, `COMPLETED`, and `SKIPPED` tickets cannot be transferred.
+

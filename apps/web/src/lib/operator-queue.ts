@@ -51,6 +51,7 @@ export function applyOperatorTicketUpdate(
 
   return { ...detail, current: ticket }
 }
+type HandoffInput = { ticketId: string; recipientOperatorId: string }
 
 function api() {
   const token = getCookie(SESSION_COOKIE_NAME)
@@ -127,6 +128,39 @@ export const updateOperatorTicket = createServerFn({ method: 'POST' })
     return result.data
   })
 
+export const getHandoffCandidates = createServerFn({ method: 'GET' })
+  .validator((data: { ticketId: string }) => data)
+  .handler(async ({ data: input }) => {
+    setResponseHeader('Cache-Control', 'private, no-store')
+    const { client, headers } = api()
+    const { data, response } = await client.GET('/operator/tickets/{ticketId}/handoff-options', {
+      params: { path: input },
+      headers,
+    })
+    if (response.status === 404) throw new Error('This ticket is no longer assigned to you.')
+    if (response.status === 409) throw new Error('This ticket can no longer be transferred.')
+    if (!response.ok || !data)
+      throw new Error('Could not load available operators. Please try again.')
+    return data.items
+  })
+
+export const handoffOperatorTicket = createServerFn({ method: 'POST' })
+  .validator((data: HandoffInput) => data)
+  .handler(async ({ data: input }) => {
+    setResponseHeader('Cache-Control', 'private, no-store')
+    const { client, headers } = api()
+    const { data, response } = await client.POST('/operator/tickets/{ticketId}/handoff', {
+      params: { path: { ticketId: input.ticketId } },
+      body: { recipientOperatorId: input.recipientOperatorId },
+      headers,
+    })
+    if (response.status === 404) throw new Error('This ticket is no longer assigned to you.')
+    if (response.status === 409)
+      throw new Error('The ticket or recipient is no longer eligible. Refresh and choose again.')
+    if (!response.ok || !data) throw new Error('Could not transfer the ticket. Please try again.')
+    return data
+  })
+
 export const operatorQueuesOptions = (operatorID: string) =>
   queryOptions({
     queryKey: ['operator', operatorID, 'queues'],
@@ -153,4 +187,11 @@ export const getOperatorTicketHistory = createServerFn({ method: 'GET' })
     )
     if (!response.ok) throw new Error('Could not load ticket history.')
     return (await response.json()) as TicketHistory
+  })
+
+export const handoffCandidatesOptions = (operatorID: string, ticketId: string) =>
+  queryOptions({
+    queryKey: ['operator', operatorID, 'handoff-candidates', ticketId],
+    queryFn: () => getHandoffCandidates({ data: { ticketId } }),
+    enabled: Boolean(ticketId),
   })

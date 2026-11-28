@@ -13,11 +13,12 @@ import (
 )
 
 var (
-	ErrActiveTicket            = errors.New("customer already has an active ticket")
-	ErrOperatorHasActiveTicket = errors.New("operator already has an active ticket")
-	ErrQueueUnauthorized       = errors.New("user is not authorized for this queue action")
-	ErrServiceUnavailable      = errors.New("service is not available")
-	ErrTicketNotFound          = errors.New("customer ticket not found")
+	ErrActiveTicket                = errors.New("customer already has an active ticket")
+	ErrOperatorHasActiveTicket     = errors.New("operator already has an active ticket")
+	ErrQueueUnauthorized           = errors.New("user is not authorized for this queue action")
+	ErrServiceUnavailable          = errors.New("service is not available")
+	ErrTicketNotFound              = errors.New("customer ticket not found")
+	ErrHandoffRecipientUnavailable = errors.New("handoff recipient is unavailable")
 )
 
 type Repository struct{ db *gorm.DB }

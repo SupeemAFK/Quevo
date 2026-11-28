@@ -23,8 +23,21 @@ func TestMigrationsAndSeedAreIdempotent(t *testing.T) {
 	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM schema_migrations").Scan(&migrationCount); err != nil {
 		t.Fatalf("count migration records: %v", err)
 	}
-	if migrationCount == 0 {
-		t.Fatal("migration ledger is empty after applying migrations")
+	var handoffMigrationRecorded bool
+	if err := db.QueryRowContext(ctx, `SELECT EXISTS (
+		SELECT 1 FROM schema_migrations WHERE version = '000003_sprint1_ticket_handoffs'
+	)`).Scan(&handoffMigrationRecorded); err != nil {
+		t.Fatalf("check ticket handoff migration record: %v", err)
+	}
+	if !handoffMigrationRecorded {
+		t.Fatal("ticket handoff migration is missing from the migration ledger")
+	}
+	var handoffTableExists bool
+	if err := db.QueryRowContext(ctx, `SELECT to_regclass('public.ticket_handoffs') IS NOT NULL`).Scan(&handoffTableExists); err != nil {
+		t.Fatalf("check ticket handoff audit table: %v", err)
+	}
+	if !handoffTableExists {
+		t.Fatal("ticket handoff audit table is missing after migration")
 	}
 	if err := database.Migrate(ctx, gormDB); err != nil {
 		t.Fatalf("apply migrations a second time: %v", err)

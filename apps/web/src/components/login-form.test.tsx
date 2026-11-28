@@ -70,6 +70,25 @@ describe('LoginForm', () => {
     expect(screen.getByLabelText('Password')).toHaveValue('')
   })
 
+  it('blocks sign-in when the email field is empty', async () => {
+    const user = userEvent.setup()
+    const signIn = vi.fn().mockResolvedValue({
+      id: 'customer-1',
+      displayName: 'Demo Customer',
+      role: 'CUSTOMER',
+    })
+
+    render(<LoginForm signIn={signIn} />)
+
+    await user.type(screen.getByLabelText('Password'), 'local-demo-password')
+    await user.click(screen.getByRole('button', { name: 'Sign in' }))
+
+    expect(signIn).not.toHaveBeenCalled()
+    expect(screen.getByLabelText('Email')).toBeRequired()
+    expect(screen.getByLabelText('Email')).toBeInvalid()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
   it('announces sign-in progress while disabling another submission', async () => {
     const user = userEvent.setup()
     let finishSignIn = () => {}

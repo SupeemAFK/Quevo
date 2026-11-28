@@ -66,7 +66,7 @@ SELECT md5(id::text || ':counter-1')::uuid, id, 'Counter 1', true FROM branches;
 INSERT INTO counter_queues (counter_id, queue_id)
 SELECT c.id, q.id FROM branch_counters c JOIN service_queues q ON q.branch_id = c.branch_id;
 INSERT INTO counter_operators (counter_id, operator_id)
-SELECT c.id, os.operator_id FROM operator_services os JOIN services s ON s.id = os.service_id
+SELECT DISTINCT c.id, os.operator_id FROM operator_services os JOIN services s ON s.id = os.service_id
 JOIN branch_counters c ON c.branch_id = s.branch_id;
 
 ALTER TABLE tickets ADD COLUMN queue_id UUID;

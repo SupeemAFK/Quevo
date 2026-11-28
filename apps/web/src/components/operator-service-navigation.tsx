@@ -20,7 +20,7 @@ export function OperatorServiceNavigation({ queues, selectedQueueKey, onSelect }
 
   return (
     <>
-      <div className="lg:hidden">
+      <div className="min-w-0 lg:hidden">
         <label
           className="mb-2 flex items-center gap-2 text-sm font-medium"
           htmlFor="operator-service-select"
@@ -35,8 +35,11 @@ export function OperatorServiceNavigation({ queues, selectedQueueKey, onSelect }
           }}
           value={selectedQueueKey}
         >
-          <SelectTrigger className="min-h-11 w-full" id="operator-service-select">
-            <SelectValue />
+          <SelectTrigger
+            className="min-h-11 w-full min-w-0 [&>span]:min-w-0 [&>span]:truncate"
+            id="operator-service-select"
+          >
+            <SelectValue className="block truncate" />
           </SelectTrigger>
           <SelectContent>
             {queues.map((queue) => (

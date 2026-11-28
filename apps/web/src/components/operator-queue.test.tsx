@@ -124,6 +124,33 @@ describe('OperatorQueue', () => {
     expect(screen.queryByRole('button', { name: 'Skip ticket' })).not.toBeInTheDocument()
   })
 
+  it('offers a handoff only for the operator current ticket', async () => {
+    const user = userEvent.setup()
+    const onHandoff = vi.fn()
+    const props = {
+      detail,
+      busy: false,
+      refreshing: false,
+      pendingAction: null,
+      message: '',
+      error: '',
+      onAction: vi.fn(),
+      onRefresh: vi.fn(),
+      onHandoff,
+    }
+    const { rerender } = renderQueue(<OperatorQueue {...props} />)
+    expect(screen.queryByRole('button', { name: 'Transfer ticket' })).not.toBeInTheDocument()
+
+    rerender(
+      <OperatorQueue
+        {...props}
+        detail={{ ...detail, current: { ...ticket, status: 'PENDING' } }}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: 'Transfer ticket' }))
+    expect(onHandoff).toHaveBeenCalledOnce()
+  })
+
   it('shows a concise empty state without an unavailable call action', () => {
     renderQueue(
       <OperatorQueue

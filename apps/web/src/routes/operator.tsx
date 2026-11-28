@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { Inbox, PanelsTopLeft, RefreshCw } from 'lucide-react'
+import { ArrowRightLeft, Inbox, PanelsTopLeft, RefreshCw, X } from 'lucide-react'
 import { useState } from 'react'
 import { AuthenticatedShell } from '@/components/authenticated-shell'
 import { FeedbackMessage, LoadingMessage } from '@/components/feedback-message'
@@ -8,10 +8,19 @@ import { OperatorQueue } from '@/components/operator-queue'
 import { OperatorServiceNavigation } from '@/components/operator-service-navigation'
 import { PageHeading } from '@/components/page-heading'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { getCurrentUser } from '@/lib/auth'
 import {
   applyOperatorTicketUpdate,
   callNext,
+  handoffCandidatesOptions,
+  handoffOperatorTicket,
   operatorQueueOptions,
   operatorQueuesOptions,
   updateOperatorTicket,
@@ -47,15 +56,19 @@ function OperatorPage() {
   const [selectedQueueID, setSelectedQueueID] = useState('')
   const [message, setMessage] = useState('')
   const [refreshing, setRefreshing] = useState(false)
+  const [handoffTicketID, setHandoffTicketID] = useState('')
+  const [recipientOperatorID, setRecipientOperatorID] = useState('')
   const selected =
     queues.data?.find((queue) => queueKey(queue) === selectedQueueID) ?? queues.data?.[0]
   const multipleQueues = (queues.data?.length ?? 0) > 1
+
   const queue = useQuery({
     ...operatorQueueOptions(user.id, selected?.branchId ?? '', selected?.queueId ?? ''),
     refetchInterval: pageActive ? 10_000 : false,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
   })
+  const handoffCandidates = useQuery(handoffCandidatesOptions(user.id, handoffTicketID))
 
   async function refresh() {
     setMessage('')
@@ -120,10 +133,43 @@ function OperatorPage() {
     },
   })
 
+  const handoffCommand = useMutation({
+    mutationFn: async (recipientID: string) => {
+      if (!handoffTicketID) throw new Error('Choose a current ticket to transfer.')
+      return handoffOperatorTicket({
+        data: { ticketId: handoffTicketID, recipientOperatorId: recipientID },
+      })
+    },
+    onMutate: () => setMessage(''),
+    onSuccess: async (ticket, selectedRecipientID) => {
+      const recipient = handoffCandidates.data?.find(
+        (candidate) => candidate.id === selectedRecipientID,
+      )
+      setHandoffTicketID('')
+      setRecipientOperatorID('')
+      await refresh()
+      setMessage(
+        `Ticket ${ticket.ticketNumber} transferred${recipient ? ` to ${recipient.displayName}` : ''}.`,
+      )
+    },
+    onError: async () => {
+      await refresh()
+    },
+  })
+
   function selectQueue(id: string) {
     setSelectedQueueID(id)
     setMessage('')
     command.reset()
+    handoffCommand.reset()
+    setHandoffTicketID('')
+    setRecipientOperatorID('')
+  }
+
+  function openHandoff(ticketID: string) {
+    handoffCommand.reset()
+    setRecipientOperatorID('')
+    setHandoffTicketID(ticketID)
   }
 
   return (
@@ -183,7 +229,7 @@ function OperatorPage() {
           <div
             className={
               multipleQueues
-                ? 'grid min-w-0 gap-7 lg:grid-cols-[minmax(13rem,16rem)_minmax(0,1fr)]'
+                ? 'grid min-w-0 grid-cols-1 gap-7 lg:grid-cols-[minmax(13rem,16rem)_minmax(0,1fr)]'
                 : 'min-w-0'
             }
           >
@@ -240,6 +286,9 @@ function OperatorPage() {
                         : ''
                   }
                   onAction={(action) => command.mutate(action)}
+                  onHandoff={() => {
+                    if (queue.data.current) openHandoff(queue.data.current.id)
+                  }}
                   onRefresh={() => {
                     command.reset()
                     void refresh()
@@ -250,6 +299,114 @@ function OperatorPage() {
           </div>
         )}
       </div>
+      <Dialog
+        open={Boolean(handoffTicketID)}
+        onOpenChange={(open) => {
+          if (open || handoffCommand.isPending) return
+          setHandoffTicketID('')
+          setRecipientOperatorID('')
+          handoffCommand.reset()
+        }}
+      >
+        <DialogContent>
+          <header className="relative pr-10">
+            <DialogTitle>Transfer ticket</DialogTitle>
+            <DialogDescription className="mt-2">
+              Ticket{' '}
+              {queue.data?.current?.id === handoffTicketID ? queue.data.current.ticketNumber : ''}{' '}
+              will keep its status and timing. Choose an available operator authorized for this
+              service.
+            </DialogDescription>
+            <DialogClose asChild>
+              <Button
+                aria-label="Close transfer dialog"
+                className="absolute -right-2 -top-2"
+                disabled={handoffCommand.isPending}
+                size="icon-sm"
+                variant="ghost"
+              >
+                <X aria-hidden="true" />
+              </Button>
+            </DialogClose>
+          </header>
+
+          {handoffCandidates.isPending ? (
+            <LoadingMessage>Loading available operators…</LoadingMessage>
+          ) : handoffCandidates.isError ? (
+            <div className="space-y-3">
+              <FeedbackMessage kind="error">{handoffCandidates.error.message}</FeedbackMessage>
+              <Button
+                disabled={handoffCandidates.isFetching}
+                variant="outline"
+                onClick={() => void handoffCandidates.refetch()}
+              >
+                <RefreshCw
+                  aria-hidden="true"
+                  className={
+                    handoffCandidates.isFetching
+                      ? 'animate-spin motion-reduce:animate-none'
+                      : undefined
+                  }
+                />
+                {handoffCandidates.isFetching ? 'Retrying…' : 'Retry operator list'}
+              </Button>
+            </div>
+          ) : handoffCandidates.data.length === 0 ? (
+            <p className="rounded-md border px-4 py-3 text-sm text-muted-foreground" role="status">
+              No other authorized operator is available for this service right now.
+            </p>
+          ) : (
+            <form
+              className="space-y-5"
+              onSubmit={(event) => {
+                event.preventDefault()
+                if (recipientOperatorID && !handoffCommand.isPending) {
+                  handoffCommand.mutate(recipientOperatorID)
+                }
+              }}
+            >
+              <div className="space-y-2">
+                <label className="text-sm font-medium" htmlFor="handoff-recipient">
+                  Available operator
+                </label>
+                <select
+                  className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  disabled={handoffCommand.isPending}
+                  id="handoff-recipient"
+                  required
+                  value={recipientOperatorID}
+                  onChange={(event) => setRecipientOperatorID(event.target.value)}
+                >
+                  <option disabled value="">
+                    Select an operator
+                  </option>
+                  {handoffCandidates.data.map((candidate) => (
+                    <option key={candidate.id} value={candidate.id}>
+                      {candidate.displayName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {handoffCommand.error ? (
+                <FeedbackMessage kind="error">{handoffCommand.error.message}</FeedbackMessage>
+              ) : null}
+
+              <footer className="flex flex-col-reverse justify-end gap-2 border-t pt-4 sm:flex-row">
+                <DialogClose asChild>
+                  <Button disabled={handoffCommand.isPending} type="button" variant="outline">
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button disabled={!recipientOperatorID || handoffCommand.isPending} type="submit">
+                  <ArrowRightLeft aria-hidden="true" />
+                  {handoffCommand.isPending ? 'Transferring…' : 'Transfer ticket'}
+                </Button>
+              </footer>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </AuthenticatedShell>
   )
 }
